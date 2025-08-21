@@ -17,7 +17,7 @@ export interface Customer {
   providedIn: 'root',
 })
 export class CustomerService {
-  private apiUrl = 'http://localhost:8080/api/customers'; // Backend-URL anpassen
+  private apiUrl = 'https://erp-system-backend-yo8w.onrender.com/api/customers'; // Backend-URL anpassen
 
   private username = 'erp';  // Basic Auth Benutzername
   private password = 'erp';  // Basic Auth Passwort
