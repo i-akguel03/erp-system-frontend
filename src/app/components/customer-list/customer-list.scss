@@ -1,0 +1,13 @@
+.customer-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.customer-card {
+  width: 300px;
+}
+.error-message {
+  color: red;
+  margin: 1rem;
+}

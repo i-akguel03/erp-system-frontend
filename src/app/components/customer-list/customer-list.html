@@ -1,0 +1,28 @@
+<p-progressSpinner *ngIf="loading"></p-progressSpinner>
+
+<div *ngIf="error" class="error-message">{{ error }}</div>
+
+<div class="customer-cards">
+  <p-card>
+    <p-table [value]="customers" [tableStyle]="{ 'min-width': '50rem' }">
+      <ng-template #header>
+          <tr>
+              <th>Vorname</th>
+              <th>Name</th>
+              <th>Telefon</th>
+              <th>Wohnadresse</th>
+          </tr>
+      </ng-template>
+      <ng-template #body let-customer>
+          <tr>
+              <td>{{customer.firstName}}</td>
+              <td>{{ customer.lastName }}</td>
+              <td>{{ customer.tel }}</td>
+              <td>{{ customer.residentialAddressId }}</td>
+          </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-togglebutton [(ngModel)]="checked" onLabel="On" offLabel="Off" class="w-24" />
