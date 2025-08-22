@@ -3,15 +3,16 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Customer {
-  id: string;
+  id?: string; // nur für Daten vom Backend
   firstName: string;
   lastName: string;
   email: string;
   tel: string;
+  residentialAddressId?: string;
   billingAddressId?: string;
   shippingAddressId?: string;
-  residentialAddressId?: string;
 }
+
 
 @Injectable({
   providedIn: 'root',

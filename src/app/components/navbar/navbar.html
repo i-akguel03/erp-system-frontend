@@ -1,5 +1,31 @@
-<p-menubar [model]="items">
-  <ng-template pTemplate="start">
-    <a routerLink="/" class="navbar-brand">ERP-System</a>
-  </ng-template>
-</p-menubar>
+<!-- navbar.html -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" routerLink="/">ERP-System</a>
+    <button class="navbar-toggler" type="button" (click)="toggleNavbar()">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" [class.show]="!isCollapsed">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item" *ngFor="let item of items">
+          <a
+            class="nav-link"
+            *ngIf="item.routerLink"
+            [routerLink]="item.routerLink"
+            routerLinkActive="active"
+            (click)="isCollapsed = true">
+            <i class="bi {{ item.icon }}"></i> {{ item.label }}
+          </a>
+          <a
+            class="nav-link"
+            *ngIf="item.command"
+            href="#"
+            (click)="item.command(); isCollapsed = true">
+            <i class="bi {{ item.icon }}"></i> {{ item.label }}
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
