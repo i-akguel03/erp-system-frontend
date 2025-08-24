@@ -22,31 +22,35 @@
 </div>
 
 <!-- Kundenliste -->
-<table class="table table-striped table-hover mb-0">
-  <thead>
-    <tr>
-      <th>Kundennummer</th>
-      <th>Vorname</th>
-      <th>Name</th>
-      <th>Telefon</th>
-      <th>Wohnadresse</th>
-      <th>Aktionen</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let customer of filteredCustomers">
-      <td>{{ customer.customerNumber }}</td>
-      <td>{{ customer.firstName }}</td>
-      <td>{{ customer.lastName }}</td>
-      <td>{{ customer.tel }}</td>
-      <td>{{ customer.residentialAddressId }}</td>
-      <td>
-        <button class="btn btn-warning btn-sm me-2" (click)="openEditModal(customer)">Bearbeiten</button>
-        <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id)">Löschen</button>
-      </td>
-    </tr>
-  </tbody>
-</table>
+<!-- Kundenliste -->
+<div class="table-responsive mb-3"> <!-- ✅ table-responsive Wrapper -->
+  <table class="table table-striped table-hover mb-0">
+    <thead>
+      <tr>
+        <th>Kundennummer</th>
+        <th>Vorname</th>
+        <th>Name</th>
+        <th>Telefon</th>
+        <th>Wohnadresse</th>
+        <th>Aktionen</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let customer of filteredCustomers">
+        <td>{{ customer.customerNumber }}</td>
+        <td>{{ customer.firstName }}</td>
+        <td>{{ customer.lastName }}</td>
+        <td>{{ customer.tel }}</td>
+        <td>{{ customer.residentialAddressId }}</td>
+        <td>
+          <button class="btn btn-warning btn-sm me-2" (click)="openEditModal(customer)">Bearbeiten</button>
+          <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id)">Löschen</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 
 <!-- Modal Neuer Kunde -->
 <div *ngIf="showNewModal">
