@@ -1,12 +1,18 @@
-<!-- Navbar -->
-<app-navbar></app-navbar>
+<!-- app.html -->
 
-<!-- Content -->
-<div class="container my-4">
-  <div class="row justify-content-center">
-    <div class="col-12 col-md-10">
-      <div class="card shadow-sm p-3">
-        <router-outlet></router-outlet>
+<!-- Backend-Check Overlay nur anzeigen, solange Backend nicht bereit -->
+<app-backend-check *ngIf="!backendReady()" (backendStatus)="backendReady.set($event)"></app-backend-check>
+
+<!-- App-Inhalt erst anzeigen, wenn Backend bereit ist -->
+<div *ngIf="backendReady()">
+  <app-navbar></app-navbar>
+
+  <div class="container my-4">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10">
+        <div class="card shadow-sm p-3">
+          <router-outlet></router-outlet>
+        </div>
       </div>
     </div>
   </div>

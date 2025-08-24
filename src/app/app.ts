@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar';
 import { CardModule } from 'primeng/card';
 import { CommonModule } from '@angular/common';
-
+import { BackendCheckComponent } from './shared/backend-check/backend-check/backend-check';
 
 @Component({
   selector: 'app-root',
@@ -12,11 +12,13 @@ import { CommonModule } from '@angular/common';
     RouterOutlet,
     NavbarComponent,
     CardModule,
-    CommonModule 
+    CommonModule,
+    BackendCheckComponent // ✅ Registrieren
   ],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrls: ['./app.scss']
 })
 export class App {
   protected readonly title = signal('erp-system-frontend');
+  protected backendReady = signal(false); // ✅ als Signal
 }
