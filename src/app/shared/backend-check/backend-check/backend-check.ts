@@ -11,10 +11,10 @@ import { catchError } from 'rxjs';
     <div class="overlay" [ngClass]="{'backend-ready': backendReady}">
       <div *ngIf="!backendReady && !timeoutReached">
         <div class="spinner-border text-primary" role="status"></div>
-        <p>Backend wird gestartet, dies kann bis zu 50 Sekunden dauern...</p>
+        <p>Server wird gestartet, dies kann bis zu 50 Sekunden dauern...</p>
       </div>
       <p *ngIf="timeoutReached" class="text-danger">
-        Backend konnte nicht erreicht werden. Bitte prüfen Sie die Verbindung.
+        Server konnte nicht erreicht werden. Bitte prüfen Sie die Verbindung.
       </p>
     </div>
   `,
