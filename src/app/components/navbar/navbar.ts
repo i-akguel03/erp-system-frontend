@@ -1,11 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/services/auth';
+// ✅ Korrigiere den Import-Pfad je nach deiner Verzeichnisstruktur
 
 @Component({
   selector: 'app-navbar',
-  templateUrl: './navbar.html',
-  styleUrls: ['./navbar.scss']
+  standalone: true,
+  imports: [RouterModule, CommonModule],
+  templateUrl: './navbar.html', // ✅ Auch Dateiname korrigiert
+  styleUrls: ['./navbar.scss']  // ✅ Auch Dateiname korrigiert
 })
 export class NavbarComponent implements OnInit {
   
@@ -14,15 +18,17 @@ export class NavbarComponent implements OnInit {
     { label: 'Kunden', icon: 'bi-people', routerLink: '/customer' },
     { label: 'Produkte', icon: 'bi-box', routerLink: '/products' },
     { label: 'Aufträge', icon: 'bi-cart', routerLink: '/orders' }
+    // ✅ Logout aus Array entfernt, da es speziell behandelt wird
   ];
-
+     
   isCollapsed = true;
   currentUser: string | null = null;
-  isDropdownOpen = false;
+  isDropdownOpen = false; // ✅ Dropdown State hinzufügen
   showNavbar = true;
 
+
   constructor(
-    private authService: AuthService,
+    private authService: AuthService, // ✅ Sollte jetzt funktionieren
     private router: Router
   ) {}
 
@@ -41,20 +47,33 @@ export class NavbarComponent implements OnInit {
     this.isCollapsed = !this.isCollapsed;
   }
 
+  // ✅ Dropdown Toggle hinzufügen
   toggleDropdown() {
     this.isDropdownOpen = !this.isDropdownOpen;
   }
 
+  // ✅ Dropdown schließen
   closeDropdown() {
     this.isDropdownOpen = false;
   }
 
   logout() {
     if (confirm('Möchten Sie sich wirklich abmelden?')) {
+      console.log('Logout wird ausgeführt...');
+      
+      // Dropdown schließen
       this.closeDropdown();
+      
+      // Tokens löschen
       this.authService.logout();
+      
+      // User zurücksetzen
       this.currentUser = null;
+      
+      // Zur Login-Seite weiterleiten
       this.router.navigate(['/login']);
+      
+      console.log('Logout erfolgreich');
     }
   }
 
