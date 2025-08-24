@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-// register.component.ts
->>>>>>> 6b2df44ff80255c44cda5948f2b8a05fc933e89a
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,18 +16,13 @@ export class RegisterComponent {
   username = '';
   password = '';
   error = '';
-<<<<<<< HEAD
   successMessage = '';
   isRegistered = false;
   isLoading = false;
-=======
-  isRegistered = false; // ✅ Neuer Status für erfolgreiche Registrierung
->>>>>>> 6b2df44ff80255c44cda5948f2b8a05fc933e89a
   
   constructor(private auth: AuthService, private router: Router) { }
   
   register() {
-<<<<<<< HEAD
     if (!this.username || !this.password) {
       this.error = 'Benutzername und Passwort sind erforderlich';
       return;
@@ -87,23 +78,3 @@ export class RegisterComponent {
     this.isRegistered = false;
   }
 }
-=======
-    const req: AuthRequest = { username: this.username, password: this.password };
-    this.auth.register(req).subscribe({
-      next: () => {
-        this.isRegistered = true; // ✅ Erfolgreiche Registrierung
-        this.error = ''; // Fehlermeldung zurücksetzen
-      },
-      error: () => {
-        this.error = 'Registrierung fehlgeschlagen';
-        this.isRegistered = false;
-      }
-    });
-  }
-
-  // ✅ Methode für Navigation zum Login
-  goToLogin() {
-    this.router.navigate(['/login']);
-  }
-}
->>>>>>> 6b2df44ff80255c44cda5948f2b8a05fc933e89a
