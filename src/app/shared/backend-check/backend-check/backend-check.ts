@@ -48,27 +48,35 @@ export class BackendCheckComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    const startTime = Date.now();
+  const startTime = Date.now();
 
-    const intervalId = setInterval(() => {
-      if (this.backendReady || this.timeoutReached) {
-        clearInterval(intervalId);
-        return;
-      }
+  const checkBackend = () => {
+    if (this.backendReady || this.timeoutReached) return;
 
-      this.http.get('https://erp-system-backend-yo8w.onrender.com/actuator/health')
-        .pipe(catchError(() => [null]))
-        .subscribe(res => {
-          if (res) {
-            this.backendReady = true;
-            this.backendStatus.emit(true);
-            clearInterval(intervalId);
-          } else if (Date.now() - startTime >= this.maxWaitTime) {
-            this.timeoutReached = true;
-            this.backendStatus.emit(false);
-            clearInterval(intervalId);
-          }
-        });
-    }, this.checkInterval);
-  }
+    this.http.get('https://erp-system-backend-yo8w.onrender.com/actuator/health')
+      .pipe(catchError(() => [null]))
+      .subscribe(res => {
+        if (res) {
+          this.backendReady = true;
+          this.backendStatus.emit(true);
+        } else if (Date.now() - startTime >= this.maxWaitTime) {
+          this.timeoutReached = true;
+          this.backendStatus.emit(false);
+        }
+      });
+  };
+
+  // erste Prüfung sofort
+  checkBackend();
+
+  // dann alle 3 Sekunden
+  const intervalId = setInterval(() => {
+    if (this.backendReady || this.timeoutReached) {
+      clearInterval(intervalId);
+    } else {
+      checkBackend();
+    }
+  }, this.checkInterval);
+}
+
 }
