@@ -31,10 +31,16 @@ export class AuthService {
   }
 
   // ✅ Register Request
+<<<<<<< HEAD
  register(data: AuthRequest): Observable<string> {
   // Angular behandelt die Response als Text, kein JSON-Parsing
   return this.http.post(`${this.baseUrl}/register`, data, { responseType: 'text' });
 }
+=======
+  register(data: AuthRequest): Observable<any> {
+    return this.http.post(`${this.baseUrl}/register`, data);
+  }
+>>>>>>> 6b2df44ff80255c44cda5948f2b8a05fc933e89a
 
   // ✅ Tokens speichern
   saveTokens(tokens: AuthResponse): void {
