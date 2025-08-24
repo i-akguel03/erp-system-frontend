@@ -1,15 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterModule, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../auth/services/auth';
-// ✅ Korrigiere den Import-Pfad je nach deiner Verzeichnisstruktur
 
 @Component({
   selector: 'app-navbar',
-  standalone: true,
-  imports: [RouterModule, CommonModule],
-  templateUrl: './navbar.html', // ✅ Auch Dateiname korrigiert
-  styleUrls: ['./navbar.scss']  // ✅ Auch Dateiname korrigiert
+  templateUrl: './navbar.html',
+  styleUrls: ['./navbar.scss']
 })
 export class NavbarComponent implements OnInit {
   
@@ -18,53 +14,47 @@ export class NavbarComponent implements OnInit {
     { label: 'Kunden', icon: 'bi-people', routerLink: '/customer' },
     { label: 'Produkte', icon: 'bi-box', routerLink: '/products' },
     { label: 'Aufträge', icon: 'bi-cart', routerLink: '/orders' }
-    // ✅ Logout aus Array entfernt, da es speziell behandelt wird
   ];
-     
+
   isCollapsed = true;
   currentUser: string | null = null;
-  isDropdownOpen = false; // ✅ Dropdown State hinzufügen
+  isDropdownOpen = false;
+  showNavbar = true;
 
   constructor(
-    private authService: AuthService, // ✅ Sollte jetzt funktionieren
+    private authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit() {
     this.loadCurrentUser();
+
+    // Navbar nur anzeigen, wenn nicht Login-Seite
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.showNavbar = !event.url.includes('/login');
+      }
+    });
   }
 
   toggleNavbar() {
     this.isCollapsed = !this.isCollapsed;
   }
 
-  // ✅ Dropdown Toggle hinzufügen
   toggleDropdown() {
     this.isDropdownOpen = !this.isDropdownOpen;
   }
 
-  // ✅ Dropdown schließen
   closeDropdown() {
     this.isDropdownOpen = false;
   }
 
   logout() {
     if (confirm('Möchten Sie sich wirklich abmelden?')) {
-      console.log('Logout wird ausgeführt...');
-      
-      // Dropdown schließen
       this.closeDropdown();
-      
-      // Tokens löschen
       this.authService.logout();
-      
-      // User zurücksetzen
       this.currentUser = null;
-      
-      // Zur Login-Seite weiterleiten
       this.router.navigate(['/login']);
-      
-      console.log('Logout erfolgreich');
     }
   }
 
