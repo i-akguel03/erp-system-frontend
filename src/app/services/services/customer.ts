@@ -4,9 +4,16 @@ import { Observable } from 'rxjs';
 import { AuthService } from '../../auth/services/auth';
 import { environment } from '../../../environments/environment';
 
+export interface Address {
+  street: string;
+  postalCode: string;
+  city: string;
+  country: string;
+}
+
 export interface Customer {
-  id?: string; // nur für Daten vom Backend
-  customerNumber?: string; // ✅ neu
+  id?: string;
+  customerNumber?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -14,7 +21,13 @@ export interface Customer {
   residentialAddressId?: string;
   billingAddressId?: string;
   shippingAddressId?: string;
+
+  // komplette Objekte, optional
+  residentialAddress?: Address;
+  billingAddress?: Address;
+  shippingAddress?: Address;
 }
+
 
 @Injectable({
   providedIn: 'root',

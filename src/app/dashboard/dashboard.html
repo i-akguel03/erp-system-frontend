@@ -1,1 +1,80 @@
-<p>dashboard works!</p>
+<div class="container my-5">
+  <!-- Header -->
+  <div class="text-center mb-5">
+    <h1 class="display-3 fw-bold text-gradient">ERP-System Dashboard</h1>
+    <p class="lead text-muted">Ein modernes Fullstack-ERP-System für Vertrieb, Kunden- und Produktmanagement</p>
+  </div>
+
+  <!-- Projektbeschreibung -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card p-4 shadow-lg border-0 bg-light rounded-4">
+        <div class="card-body text-center">
+          <h4 class="card-title mb-3">Über das Projekt</h4>
+          <p class="card-text fs-5 text-secondary">
+            Unser ERP-System ermöglicht effiziente Verwaltung von Produkten, Kunden und Lagerbeständen. 
+            Die moderne Architektur kombiniert ein robustes Backend mit einer dynamischen Angular-Oberfläche.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technologien -->
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="tech-card shadow-lg rounded-4 text-white p-4 text-center" style="background: linear-gradient(135deg,#1f4037,#99f2c8)">
+        <i class="bi bi-server display-4 mb-3"></i>
+        <h5 class="fw-bold mb-2">Backend</h5>
+        <p>Spring Boot, Spring Security & JWT, MSSQL/PostgreSQL</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="tech-card shadow-lg rounded-4 text-white p-4 text-center" style="background: linear-gradient(135deg,#ff416c,#ff4b2b)">
+        <i class="bi bi-browser-chrome display-4 mb-3"></i>
+        <h5 class="fw-bold mb-2">Frontend</h5>
+        <p>Angular, Bootstrap, Responsive Design & interaktive Tabellen</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="tech-card shadow-lg rounded-4 text-white p-4 text-center" style="background: linear-gradient(135deg,#1e3c72,#2a5298)">
+        <i class="bi bi-cloud-arrow-up display-4 mb-3"></i>
+        <h5 class="fw-bold mb-2">Deployment & CI/CD</h5>
+        <p>Docker, GitHub Actions, Render Cloud oder lokale Server</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call to Action -->
+  <div class="text-center mt-5">
+    <p class="fs-5">Starte die Anwendung und verwalte Kunden, Produkte und Bestände effizient!</p>
+    <a href="https://erp-system-backend-yo8w.onrender.com/swagger-ui/index.html" class="btn btn-gradient btn-lg text-white fw-bold">API Dokumentation</a>
+  </div>
+</div>
+
+<style>
+.text-gradient {
+  background: linear-gradient(90deg, #ff416c, #ff4b2b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tech-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.tech-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.btn-gradient {
+  background: linear-gradient(90deg, #1f4037, #99f2c8);
+  border: none;
+}
+.btn-gradient:hover {
+  background: linear-gradient(90deg, #99f2c8, #1f4037);
+}
+</style>
+

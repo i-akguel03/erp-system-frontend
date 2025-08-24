@@ -24,26 +24,36 @@ export class CustomerListComponent implements OnInit {
   searchTerm: string = '';
 
   // Formular-Model für neuen Kunden
-  newCustomer: Customer = {
-    id: '',
-    customerNumber: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    tel: '',
-    residentialAddressId: ''
-  };
+newCustomer: Customer = {
+  id: '',
+  customerNumber: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  tel: '',
+  residentialAddress: {
+    street: '',
+    postalCode: '',
+    city: '',
+    country: ''
+  }
+};
 
   // Formular-Model für Bearbeiten
-  editCustomer: Customer = {
-    id: '',
-    customerNumber: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    tel: '',
-    residentialAddressId: ''
-  };
+editCustomer: Customer = {
+  id: '',
+  customerNumber: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  tel: '',
+  residentialAddress: {
+    street: '',
+    postalCode: '',
+    city: '',
+    country: ''
+  }
+};
 
   // Modal-Steuerung
   showNewModal = false;
