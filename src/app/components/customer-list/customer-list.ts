@@ -25,6 +25,7 @@ export class CustomerListComponent implements OnInit {
   // Formular-Model für neuen Kunden
   newCustomer: Customer = {
     id: '',
+    customerNumber: '', // ✅ neu
     firstName: '',
     lastName: '',
     email: '',

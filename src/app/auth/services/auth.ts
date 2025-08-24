@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface AuthRequest {
   username: string;
@@ -18,8 +19,9 @@ export interface AuthResponse {
 })
 export class AuthService {
   
-  private baseUrl = 'https://erp-system-backend-yo8w.onrender.com/auth'; // Backend-URL
-  //private baseUrl = 'http://localhost:8080/auth'; // Backend-URL
+  private baseUrl = environment.apiBaseUrl;
+  //private apiUrl = 'http://localhost:8080/api/customers'; // Backend-URL
+  private apiUrl = `${this.baseUrl}/auth`; // Backend-URL anpassen
   private readonly ACCESS_TOKEN_KEY = 'accessToken';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
 
@@ -27,13 +29,13 @@ export class AuthService {
 
   // ✅ Login Request
   login(data: AuthRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/login`, data);
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data);
   }
 
   // ✅ Register Request
  register(data: AuthRequest): Observable<string> {
   // Angular behandelt die Response als Text, kein JSON-Parsing
-  return this.http.post(`${this.baseUrl}/register`, data, { responseType: 'text' });
+  return this.http.post(`${this.apiUrl}/register`, data, { responseType: 'text' });
 }
 
   // ✅ Tokens speichern
@@ -143,14 +145,14 @@ export class AuthService {
       throw new Error('Kein Refresh Token verfügbar');
     }
 
-    return this.http.post<AuthResponse>(`${this.baseUrl}/refresh`, {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, {
       refreshToken: refreshToken
     });
   }
 
   // ✅ Backend Logout (falls Backend einen Logout-Endpoint hat)
   logoutFromBackend(): Observable<any> {
-    return this.http.post(`${this.baseUrl}/logout`, {
+    return this.http.post(`${this.apiUrl}/logout`, {
       refreshToken: this.getRefreshToken()
     });
   }

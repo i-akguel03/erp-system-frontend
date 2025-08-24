@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { catchError } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-backend-check',
@@ -38,6 +39,9 @@ import { catchError } from 'rxjs';
   `]
 })
 export class BackendCheckComponent implements OnInit {
+
+  private baseUrl = environment.apiBaseUrl;
+
   backendReady = false;
   timeoutReached = false;
   private maxWaitTime = 50000; // 50 Sekunden
@@ -53,7 +57,7 @@ export class BackendCheckComponent implements OnInit {
   const checkBackend = () => {
     if (this.backendReady || this.timeoutReached) return;
 
-    this.http.get('https://erp-system-backend-yo8w.onrender.com/actuator/health')
+    this.http.get(`${this.baseUrl}/actuator/health`)
       .pipe(catchError(() => [null]))
       .subscribe(res => {
         if (res) {

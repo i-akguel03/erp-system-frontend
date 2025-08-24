@@ -16,36 +16,31 @@
 </div>
 
 <!-- Kundenliste -->
-<div class="card shadow-sm mb-3">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-striped table-hover mb-0">
-        <thead>
-          <tr>
-            <th>Vorname</th>
-            <th>Name</th>
-            <th>Telefon</th>
-            <th>Wohnadresse</th>
-            <th>Aktionen</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let customer of customers">
-            <td>{{ customer.firstName }}</td>
-            <td>{{ customer.lastName }}</td>
-            <td>{{ customer.tel }}</td>
-            <td>{{ customer.residentialAddressId }}</td>
-            <td>
-              <button class="btn btn-warning btn-sm me-2" (click)="openEditModal(customer)">Bearbeiten</button>
-              <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id)">Löschen</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
+<table class="table table-striped table-hover mb-0">
+  <thead>
+    <tr>
+      <th>Kundennummer</th>
+      <th>Vorname</th>
+      <th>Name</th>
+      <th>Telefon</th>
+      <th>Wohnadresse</th>
+      <th>Aktionen</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let customer of customers">
+      <td>{{ customer.customerNumber }}</td>
+      <td>{{ customer.firstName }}</td>
+      <td>{{ customer.lastName }}</td>
+      <td>{{ customer.tel }}</td>
+      <td>{{ customer.residentialAddressId }}</td>
+      <td>
+        <button class="btn btn-warning btn-sm me-2" (click)="openEditModal(customer)">Bearbeiten</button>
+        <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id)">Löschen</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- Modal Neuer Kunde -->
 <div *ngIf="showNewModal">
@@ -59,6 +54,14 @@
             <button type="button" class="btn-close" (click)="closeNewModal()"></button>
           </div>
           <div class="modal-body">
+            <!-- Kundennummer readonly + ausgegraut -->
+            <div class="mb-3" *ngIf="newCustomer.customerNumber">
+              <label class="form-label">Kundennummer</label>
+              <input type="text" class="form-control bg-light text-muted"
+                     [(ngModel)]="newCustomer.customerNumber"
+                     name="customerNumber"
+                     readonly>
+            </div>
             <div class="mb-3">
               <label class="form-label">Vorname</label>
               <input type="text" class="form-control" [(ngModel)]="newCustomer.firstName" name="firstName" required>
@@ -102,6 +105,14 @@
             <button type="button" class="btn-close" (click)="closeEditModal()"></button>
           </div>
           <div class="modal-body">
+            <!-- Kundennummer readonly + ausgegraut -->
+            <div class="mb-3">
+              <label class="form-label">Kundennummer</label>
+              <input type="text" class="form-control bg-light text-muted"
+                     [(ngModel)]="editCustomer.customerNumber"
+                     name="editCustomerNumber"
+                     readonly>
+            </div>
             <div class="mb-3">
               <label class="form-label">Vorname</label>
               <input type="text" class="form-control" [(ngModel)]="editCustomer.firstName" name="editFirstName" required>

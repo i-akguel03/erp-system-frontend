@@ -2,9 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../auth/services/auth';
+import { environment } from '../../../environments/environment';
 
 export interface Customer {
   id?: string; // nur für Daten vom Backend
+  customerNumber?: string; // ✅ neu
   firstName: string;
   lastName: string;
   email: string;
@@ -18,8 +20,11 @@ export interface Customer {
   providedIn: 'root',
 })
 export class CustomerService {
+
+  private baseUrl = environment.apiBaseUrl;
   //private apiUrl = 'http://localhost:8080/api/customers'; // Backend-URL
-  private apiUrl = 'https://erp-system-backend-yo8w.onrender.com/api/customers'; // Backend-URL anpassen
+  private apiUrl = `${this.baseUrl}/api/customers`; // Backend-URL anpassen
+
 
   constructor(
     private http: HttpClient,
