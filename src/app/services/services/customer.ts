@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { AuthService } from '../../auth/services/auth';
 
 export interface Customer {
   id?: string; // nur für Daten vom Backend
@@ -13,23 +14,52 @@ export interface Customer {
   shippingAddressId?: string;
 }
 
-
 @Injectable({
   providedIn: 'root',
 })
 export class CustomerService {
+  //private apiUrl = 'http://localhost:8080/api/customers'; // Backend-URL
   private apiUrl = 'https://erp-system-backend-yo8w.onrender.com/api/customers'; // Backend-URL anpassen
 
-  private username = 'erp';  // Basic Auth Benutzername
-  private password = 'erp';  // Basic Auth Passwort
-
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   private getAuthHeaders(): HttpHeaders {
-    const token = btoa(`${this.username}:${this.password}`); // Base64 Kodierung
-    return new HttpHeaders({
-      Authorization: `Basic ${token}`,
-    });
+    const token = this.authService.getAccessToken();
+    
+    if (token) {
+      return new HttpHeaders({
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      });
+    } else {
+      // Falls kein Token vorhanden, nur Content-Type setzen
+      return new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      });
+    }
+  }
+
+  // Prüfen ob Token vorhanden ist (über AuthService)
+  hasValidToken(): boolean {
+    const token = this.authService.getAccessToken();
+    if (!token) return false;
+
+    try {
+      // JWT Token Payload dekodieren (ohne Signatur-Verifikation)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      // Prüfen ob Token abgelaufen ist
+      const currentTime = Math.floor(Date.now() / 1000);
+      return payload.exp > currentTime;
+    } catch (error) {
+      console.error('Fehler beim Dekodieren des JWT Tokens:', error);
+      return false;
+    }
   }
 
   getCustomers(): Observable<Customer[]> {
@@ -62,3 +92,4 @@ export class CustomerService {
     });
   }
 }
+

@@ -1,31 +1,86 @@
-<!-- navbar.html -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<!-- navbar.component.html -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid">
-    <a class="navbar-brand" routerLink="/">ERP-System</a>
-    <button class="navbar-toggler" type="button" (click)="toggleNavbar()">
+    
+    <!-- ✅ Brand/Logo -->
+    <a class="navbar-brand" routerLink="/dashboard">
+      <i class="bi bi-building me-2"></i>
+      ERP System
+    </a>
+
+    <!-- ✅ Toggle Button für Mobile -->
+    <button 
+      class="navbar-toggler" 
+      type="button" 
+      (click)="toggleNavbar()"
+      [attr.aria-expanded]="!isCollapsed">
       <span class="navbar-toggler-icon"></span>
     </button>
 
+    <!-- ✅ Navbar Content -->
     <div class="collapse navbar-collapse" [class.show]="!isCollapsed">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item" *ngFor="let item of items">
-          <a
-            class="nav-link"
-            *ngIf="item.routerLink"
+      
+      <!-- ✅ Navigation Links -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item" *ngFor="let item of items.slice(0, -1)"> <!-- Alle außer Logout -->
+          <a 
+            class="nav-link" 
             [routerLink]="item.routerLink"
-            routerLinkActive="active"
-            (click)="isCollapsed = true">
-            <i class="bi {{ item.icon }}"></i> {{ item.label }}
-          </a>
-          <a
-            class="nav-link"
-            *ngIf="item.command"
-            href="#"
-            (click)="item.command(); isCollapsed = true">
-            <i class="bi {{ item.icon }}"></i> {{ item.label }}
+            routerLinkActive="active">
+            <i [class]="'bi ' + item.icon + ' me-2'"></i>
+            {{ item.label }}
           </a>
         </li>
       </ul>
+
+      <!-- ✅ User Info & Logout (rechts) -->
+      <div class="navbar-nav ms-auto">
+        
+        <!-- ✅ User Info anzeigen -->
+        <div class="nav-item dropdown" *ngIf="isLoggedIn()">
+          <a 
+            class="nav-link dropdown-toggle" 
+            (click)="toggleDropdown()"
+            style="cursor: pointer;">
+            <i class="bi bi-person-circle me-2"></i>
+            {{ currentUser || 'Benutzer' }}
+          </a>
+          
+          <!-- ✅ User Dropdown Menu -->
+          <ul class="dropdown-menu dropdown-menu-end" [class.show]="isDropdownOpen">
+            <li>
+              <a class="dropdown-item" routerLink="/profile" (click)="closeDropdown()">
+                <i class="bi bi-person me-2"></i>
+                Profil
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" routerLink="/settings" (click)="closeDropdown()">
+                <i class="bi bi-gear me-2"></i>
+                Einstellungen
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" (click)="logout()" style="cursor: pointer;">
+                <i class="bi bi-box-arrow-right me-2"></i>
+                Abmelden
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ✅ Direkter Logout Button (Alternative) -->
+        <!-- Uncomment wenn du keinen Dropdown willst:
+        <li class="nav-item" *ngIf="isLoggedIn()">
+          <a class="nav-link text-warning" (click)="logout()" style="cursor: pointer;">
+            <i class="bi bi-box-arrow-right me-2"></i>
+            Abmelden
+          </a>
+        </li>
+        -->
+        
+      </div>
     </div>
   </div>
 </nav>
