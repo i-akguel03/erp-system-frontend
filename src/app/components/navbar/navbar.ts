@@ -16,9 +16,10 @@ export class NavbarComponent implements OnInit {
   items = [
     { label: 'Dashboard', icon: 'bi-speedometer2', routerLink: '/dashboard' },
     { label: 'Kunden', icon: 'bi-people', routerLink: '/customer' },
-    { label: 'Produkte', icon: 'bi-box', routerLink: '/products' },
+    { label: 'Produkte', icon: 'bi-box', routerLink: '/product' },
     { label: 'Test', icon: 'bi-box', routerLink: '/test' },
-    { label: 'Aufträge', icon: 'bi-cart', routerLink: '/orders' }
+    { label: 'Verträge', icon: 'bi-box', routerLink: '/contract' },
+    { label: 'Aufträge', icon: 'bi-cart', routerLink: '/order' }
     // ✅ Logout aus Array entfernt, da es speziell behandelt wird
   ];
      

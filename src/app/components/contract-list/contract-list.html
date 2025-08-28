@@ -1,0 +1,100 @@
+<div class="container mt-3">
+  <div class="d-flex mb-3 align-items-center">
+    <input type="text" class="form-control me-2" placeholder="Vertrag suchen..." [(ngModel)]="searchTerm">
+    <button class="btn btn-primary" (click)="filterContracts()">Suchen</button>
+    <button class="btn btn-secondary ms-2" (click)="loadContracts()">Alle Anzeigen</button>
+    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neuen Vertrag erstellen</button>
+  </div>
+
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <table class="table table-hover table-bordered" *ngIf="filteredContracts.length > 0">
+    <thead class="table-light">
+      <tr>
+        <th>Nr.</th>
+        <th>Titel</th>
+        <th>Status</th>
+        <th>Startdatum</th>
+        <th>Enddatum</th>
+        <th>Aktionen</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let contract of filteredContracts">
+        <td>{{ contract.contractNumber }}</td>
+        <td>{{ contract.contractTitle }}</td>
+        <td>
+          <span class="badge" [ngClass]="{
+            'bg-success': contract.status === 'ACTIVE',
+            'bg-warning': contract.status === 'SUSPENDED',
+            'bg-danger': contract.status === 'EXPIRED'
+          }">{{ contract.status }}</span>
+        </td>
+        <td>{{ contract.startDate | date:'shortDate' }}</td>
+        <td>{{ contract.endDate | date:'shortDate' }}</td>
+        <td>
+          <button class="btn btn-sm btn-primary me-1" (click)="openEditModal(contract)">Bearbeiten</button>
+          <button class="btn btn-sm btn-danger me-1" (click)="deleteContract(contract.id!)">Löschen</button>
+          <button *ngIf="contract.status !== 'ACTIVE'" class="btn btn-sm btn-success me-1" (click)="activateContract(contract.id!)">Aktivieren</button>
+          <button *ngIf="contract.status === 'ACTIVE'" class="btn btn-sm btn-warning me-1" (click)="suspendContract(contract.id!)">Suspendieren</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="filteredContracts.length === 0 && !loading" class="text-center mt-3">
+    Keine Verträge gefunden.
+  </div>
+
+  <!-- Neuer Vertrag Modal -->
+  <div class="modal" tabindex="-1" [ngClass]="{'show d-block': showNewModal}" (click)="closeNewModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Neuen Vertrag erstellen</h5>
+          <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Titel" [(ngModel)]="newContract.contractTitle">
+          <select class="form-select" [(ngModel)]="newContract.status">
+            <option value="DRAFT">DRAFT</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="SUSPENDED">SUSPENDED</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="createContract()">Erstellen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bearbeiten Modal -->
+  <div class="modal" tabindex="-1" [ngClass]="{'show d-block': showEditModal}" (click)="closeEditModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Vertrag bearbeiten</h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Titel" [(ngModel)]="editContract.contractTitle">
+          <select class="form-select" [(ngModel)]="editContract.status">
+            <option value="DRAFT">DRAFT</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="SUSPENDED">SUSPENDED</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="updateContract()">Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

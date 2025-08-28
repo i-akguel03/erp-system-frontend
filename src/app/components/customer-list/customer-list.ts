@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Customer, Address, CustomerService } from '../../services/customer-service/customer';
+import { ErpService } from '../../services/testservice';
+import { Customer } from '../../models/Customer';
+import { CustomerService } from '../../services/customer-service';
 
 @Component({
   selector: 'app-customer-list',
@@ -53,8 +55,9 @@ editCustomer: Customer = {
   // Modal-Steuerung
   showNewModal = false;
   showEditModal = false;
+  message: string | null = null;
 
-  constructor(private customerService: CustomerService, private router: Router) {}
+  constructor(private customerService: CustomerService, private router: Router, private initService: ErpService) {}
 
   ngOnInit(): void {
     this.checkTokenAndLoad();
@@ -107,6 +110,22 @@ editCustomer: Customer = {
         error: (err) => this.handleApiError(err, 'Fehler beim Löschen des Kunden')
       });
     }
+  }
+
+  initTestData() {
+    this.loading = true;
+    this.message = null;
+
+    this.initService.initTestDB().subscribe({
+      next: (response) => {
+        this.message = response;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.message = 'Fehler: ' + (err.error || err.message);
+        this.loading = false;
+      }
+    });
   }
 
   // --- Neuer Kunde ---
