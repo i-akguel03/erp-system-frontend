@@ -1,0 +1,169 @@
+<div class="container-fluid mt-3" *ngIf="!loading">
+  <h1 class="mb-4 text-primary text-center">ERP Dashboard</h1>
+
+  <!-- KUNDEN -->
+  <div class="mb-5">
+    <h3 class="text-primary">Kunden</h3>
+    <input type="text" class="form-control mb-3" placeholder="Suche Kunden..." [(ngModel)]="customerSearch">
+    <div class="row">
+      <div class="col-md-3 mb-3" *ngFor="let customer of filteredCustomers">
+        <div class="card border-primary h-100 shadow-sm hover-card">
+          <div class="card-body">
+            <h5 class="card-title">{{ customer.firstName }} {{ customer.lastName }}</h5>
+            <p class="card-text"><i class="bi bi-envelope"></i> {{ customer.email }}</p>
+            <p class="card-text"><i class="bi bi-telephone"></i> {{ customer.tel }}</p>
+            <button class="btn btn-sm btn-primary" (click)="openCustomerModal(customer)">Details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUKTE -->
+  <div class="mb-5">
+    <h3 class="text-success">Produkte</h3>
+    <input type="text" class="form-control mb-3" placeholder="Suche Produkte..." [(ngModel)]="productSearch">
+    <div class="row">
+      <div class="col-md-3 mb-3" *ngFor="let product of filteredProducts">
+        <div class="card border-success h-100 shadow-sm hover-card">
+          <div class="card-body">
+            <h5 class="card-title">{{ product.name }}</h5>
+            <p class="card-text">{{ product.price | currency:'EUR':'symbol':'1.2-2' }} / {{ product.unit }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECHNUNGEN -->
+  <div class="mb-5">
+    <h3 class="text-danger">Rechnungen</h3>
+    <input type="text" class="form-control mb-3" placeholder="Suche Rechnungen..." [(ngModel)]="invoiceSearch">
+    <div class="row">
+      <div class="col-md-4 mb-3" *ngFor="let invoice of filteredInvoices">
+        <div class="card border-danger h-100 shadow-sm hover-card">
+          <div class="card-body">
+            <h5 class="card-title">{{ invoice.invoiceNumber }}</h5>
+            <p class="card-text">Kunde: {{ invoice.customer.firstName }} {{ invoice.customer.lastName }}</p>
+            <p class="card-text text-success">Total: {{ invoice.totalAmount | currency:'EUR':'symbol':'1.2-2' }}</p>
+            <button class="btn btn-sm btn-danger" (click)="openInvoiceModal(invoice)">Details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Kunden-Modal -->
+<ng-container *ngIf="selectedCustomer">
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.4)">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content border-primary shadow-lg">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Kunden-Details</h5>
+          <button type="button" class="btn-close" (click)="closeModals()"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Name:</strong> {{ selectedCustomer.firstName }} {{ selectedCustomer.lastName }}</p>
+          <p><strong>Email:</strong> {{ selectedCustomer.email }}</p>
+          <p><strong>Tel:</strong> {{ selectedCustomer.tel }}</p>
+          <hr>
+          <p><strong>Billing Address:</strong>
+            {{ selectedCustomer.billingAddress?.street }}, {{ selectedCustomer.billingAddress?.postalCode }} {{ selectedCustomer.billingAddress?.city }}
+          </p>
+          <p><strong>Shipping Address:</strong>
+            {{ selectedCustomer.shippingAddress?.street }}, {{ selectedCustomer.shippingAddress?.postalCode }} {{ selectedCustomer.shippingAddress?.city }}
+          </p>
+          <p><strong>Residential Address:</strong>
+            {{ selectedCustomer.residentialAddress?.street }}, {{ selectedCustomer.residentialAddress?.postalCode }} {{ selectedCustomer.residentialAddress?.city }}
+          </p>
+          <hr>
+          <p><strong>Verträge:</strong></p>
+          <ul>
+            <li *ngFor="let contract of selectedCustomer.contracts || []">
+              {{ contract.contractNumber }} - Start: {{ contract.startDate }}
+              <button class="btn btn-sm btn-info ms-2" (click)="openContractModal(contract)">Details</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- Vertrag-Modal -->
+<ng-container *ngIf="selectedContract">
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.4)">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content border-info shadow-lg">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title">Vertrags-Details</h5>
+          <button type="button" class="btn-close" (click)="closeModals()"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Nummer:</strong> {{ selectedContract.contractNumber }}</p>
+          <p><strong>Start:</strong> {{ selectedContract.startDate }}</p>
+          <hr>
+          <p><strong>Abonnements:</strong></p>
+          <ul>
+            <li *ngFor="let sub of selectedContract.subscriptions || []">
+              <button class="btn btn-sm btn-success ms-2" (click)="openSubscriptionModal(sub)">Details</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- Abonnement-Modal -->
+<ng-container *ngIf="selectedSubscription">
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.4)">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content border-success shadow-lg">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">Abonnement-Details</h5>
+          <button type="button" class="btn-close" (click)="closeModals()"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Nummer:</strong> {{ selectedSubscription.subscriptionNumber }}</p>
+          <p><strong>Produkt:</strong> {{ selectedSubscription.productName }}</p>
+          <p><strong>Preis:</strong> {{ selectedSubscription.monthlyPrice | currency:'EUR':'symbol':'1.2-2' }}</p>
+          <p><strong>Start:</strong> {{ selectedSubscription.startDate }}</p>
+          <p><strong>Ende:</strong> {{ selectedSubscription.endDate }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- Rechnung-Modal -->
+<ng-container *ngIf="selectedInvoice">
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.4)">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content border-danger shadow-lg">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Rechnungs-Details</h5>
+          <button type="button" class="btn-close" (click)="closeModals()"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Nummer:</strong> {{ selectedInvoice.invoiceNumber }}</p>
+          <p><strong>Kunde:</strong> {{ selectedInvoice.customer.firstName }} {{ selectedInvoice.customer.lastName }}</p>
+          <p><strong>Datum:</strong> {{ selectedInvoice.invoiceDate }}</p>
+          <p><strong>Fällig:</strong> {{ selectedInvoice.dueDate }}</p>
+          <p><strong>Status:</strong> {{ selectedInvoice.status }}</p>
+          <p><strong>Total:</strong> {{ selectedInvoice.totalAmount | currency:'EUR':'symbol':'1.2-2' }}</p>
+          <hr>
+          <p><strong>Positionen:</strong></p>
+          <ul>
+            <li *ngFor="let item of selectedInvoice.invoiceItems || []">
+              {{ item.description }} - {{ item.quantity }} {{ item.unit }} x {{ item.unitPrice | currency:'EUR':'symbol':'1.2-2' }} = {{ item.lineTotal | currency:'EUR':'symbol':'1.2-2' }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>

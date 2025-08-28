@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Customer, CustomerService } from '../../services/services/customer';
+import { Customer, Address, CustomerService } from '../../services/customer-service/customer';
 
 @Component({
   selector: 'app-customer-list',
@@ -23,7 +23,7 @@ export class CustomerListComponent implements OnInit {
   error: string | null = null;
   searchTerm: string = '';
 
-  // Formular-Model für neuen Kunden
+// Formular-Model für neuen Kunden
 newCustomer: Customer = {
   id: '',
   customerNumber: '',
@@ -31,15 +31,12 @@ newCustomer: Customer = {
   lastName: '',
   email: '',
   tel: '',
-  residentialAddress: {
-    street: '',
-    postalCode: '',
-    city: '',
-    country: ''
-  }
+  residentialAddress: { street: '', postalCode: '', city: '', country: '' },
+  billingAddress: { street: '', postalCode: '', city: '', country: '' },
+  shippingAddress: { street: '', postalCode: '', city: '', country: '' }
 };
 
-  // Formular-Model für Bearbeiten
+// Formular-Model für Bearbeiten
 editCustomer: Customer = {
   id: '',
   customerNumber: '',
@@ -47,32 +44,27 @@ editCustomer: Customer = {
   lastName: '',
   email: '',
   tel: '',
-  residentialAddress: {
-    street: '',
-    postalCode: '',
-    city: '',
-    country: ''
-  }
+  residentialAddress: { street: '', postalCode: '', city: '', country: '' },
+  billingAddress: { street: '', postalCode: '', city: '', country: '' },
+  shippingAddress: { street: '', postalCode: '', city: '', country: '' }
 };
+
 
   // Modal-Steuerung
   showNewModal = false;
   showEditModal = false;
 
-  constructor(
-    private customerService: CustomerService,
-    private router: Router
-  ) {}
+  constructor(private customerService: CustomerService, private router: Router) {}
 
   ngOnInit(): void {
     this.checkTokenAndLoad();
   }
 
   private checkTokenAndLoad(): void {
-    if (!this.customerService.hasValidToken()) {
-      this.error = 'Kein gültiges Login-Token vorhanden. Bitte loggen Sie sich ein.';
-      return;
-    }
+    // if (!this.customerService.isAuthenticated()) {
+    //   this.error = 'Kein gültiges Login-Token vorhanden. Bitte loggen Sie sich ein.';
+    //   return;
+    // }
     this.loadCustomers();
   }
 
@@ -100,7 +92,7 @@ editCustomer: Customer = {
       (c.firstName?.toLowerCase().includes(term)) ||
       (c.lastName?.toLowerCase().includes(term)) ||
       (c.tel?.toLowerCase().includes(term)) ||
-      (c.residentialAddressId?.toLowerCase().includes(term))
+      (c.residentialAddress?.street.toLowerCase().includes(term))
     );
   }
 
@@ -123,13 +115,21 @@ editCustomer: Customer = {
 
   createCustomer(): void {
     const customerToSend = { ...this.newCustomer };
-    delete customerToSend.id;
+    delete (customerToSend as any).id;
 
     this.customerService.createCustomer(customerToSend).subscribe({
       next: (created) => {
         this.customers.push(created);
         this.filteredCustomers = [...this.customers];
-        this.newCustomer = { id: '', customerNumber: '', firstName: '', lastName: '', email: '', tel: '', residentialAddressId: '' };
+        this.newCustomer = {
+          firstName: '',
+          lastName: '',
+          email: '',
+          tel: '',
+          residentialAddress: { street: '', postalCode: '', city: '', country: '' },
+          billingAddress: { street: '', postalCode: '', city: '', country: '' },
+          shippingAddress: { street: '', postalCode: '', city: '', country: '' }
+        };
         this.closeNewModal();
       },
       error: (err) => this.handleApiError(err, 'Fehler beim Erstellen des Kunden')
@@ -138,7 +138,7 @@ editCustomer: Customer = {
 
   // --- Bearbeiten ---
   openEditModal(customer: Customer): void {
-    this.editCustomer = { ...customer };
+    this.editCustomer = JSON.parse(JSON.stringify(customer)); // deep copy
     this.showEditModal = true;
   }
 
@@ -167,16 +167,16 @@ editCustomer: Customer = {
 
   generateTestData(): void {
     const testCustomers: Customer[] = [
-      { firstName: 'Max', lastName: 'Mustermann', email: 'max@example.com', tel: '123456789', residentialAddressId: 'Wohnung 1', customerNumber: 'C001' },
-      { firstName: 'Anna', lastName: 'Müller', email: 'anna@example.com', tel: '987654321', residentialAddressId: 'Wohnung 2', customerNumber: 'C002' },
-      { firstName: 'Peter', lastName: 'Schmidt', email: 'peter@example.com', tel: '555555555', residentialAddressId: 'Wohnung 3', customerNumber: 'C003' },
-      { firstName: 'Laura', lastName: 'Meier', email: 'laura@example.com', tel: '444444444', residentialAddressId: 'Wohnung 4', customerNumber: 'C004' },
-      { firstName: 'Tom', lastName: 'Klein', email: 'tom@example.com', tel: '333333333', residentialAddressId: 'Wohnung 5', customerNumber: 'C005' }
+      { firstName: 'Max', lastName: 'Mustermann', email: 'max@example.com', tel: '123456789', residentialAddress: { street: 'Wohnung 1', postalCode: '', city: '', country: '' }, customerNumber: 'C001' },
+      { firstName: 'Anna', lastName: 'Müller', email: 'anna@example.com', tel: '987654321', residentialAddress: { street: 'Wohnung 2', postalCode: '', city: '', country: '' }, customerNumber: 'C002' },
+      { firstName: 'Peter', lastName: 'Schmidt', email: 'peter@example.com', tel: '555555555', residentialAddress: { street: 'Wohnung 3', postalCode: '', city: '', country: '' }, customerNumber: 'C003' },
+      { firstName: 'Laura', lastName: 'Meier', email: 'laura@example.com', tel: '444444444', residentialAddress: { street: 'Wohnung 4', postalCode: '', city: '', country: '' }, customerNumber: 'C004' },
+      { firstName: 'Tom', lastName: 'Klein', email: 'tom@example.com', tel: '333333333', residentialAddress: { street: 'Wohnung 5', postalCode: '', city: '', country: '' }, customerNumber: 'C005' }
     ];
 
     testCustomers.forEach(cust => {
       const customerToSend = { ...cust };
-      delete customerToSend.id;
+      delete (customerToSend as any).id;
       this.customerService.createCustomer(customerToSend).subscribe({
         next: (created) => {
           this.customers.push(created);
