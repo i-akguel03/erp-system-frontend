@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://erp-backend.example.com/api'
+  apiBaseUrl: 'https://erp-system-backend-yo8w.onrender.com'
 };
