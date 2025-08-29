@@ -1,8 +1,9 @@
 <div class="container mt-3">
-  <div class="d-flex mb-3 align-items-center">
-    <input type="text" class="form-control me-2" placeholder="Vertrag suchen..." [(ngModel)]="searchTerm">
+  <!-- Suchleiste & Aktionen -->
+  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
+    <input type="text" class="form-control flex-grow-1" placeholder="Vertrag suchen..." [(ngModel)]="searchTerm">
     <button class="btn btn-primary" (click)="filterContracts()">Suchen</button>
-    <button class="btn btn-secondary ms-2" (click)="loadContracts()">Alle Anzeigen</button>
+    <button class="btn btn-secondary" (click)="loadContracts()">Alle Anzeigen</button>
     <button class="btn btn-success ms-auto" (click)="openNewModal()">Neuen Vertrag erstellen</button>
   </div>
 
@@ -12,46 +13,52 @@
 
   <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
-  <table class="table table-hover table-bordered" *ngIf="filteredContracts.length > 0">
-    <thead class="table-light">
-      <tr>
-        <th>Nr.</th>
-        <th>Titel</th>
-        <th>Status</th>
-        <th>Startdatum</th>
-        <th>Enddatum</th>
-        <th>Aktionen</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let contract of filteredContracts">
-        <td>{{ contract.contractNumber }}</td>
-        <td>{{ contract.contractTitle }}</td>
-        <td>
-          <span class="badge" [ngClass]="{
-            'bg-success': contract.status === 'ACTIVE',
-            'bg-warning': contract.status === 'SUSPENDED',
-            'bg-danger': contract.status === 'EXPIRED'
-          }">{{ contract.status }}</span>
-        </td>
-        <td>{{ contract.startDate | date:'shortDate' }}</td>
-        <td>{{ contract.endDate | date:'shortDate' }}</td>
-        <td>
-          <button class="btn btn-sm btn-primary me-1" (click)="openEditModal(contract)">Bearbeiten</button>
-          <button class="btn btn-sm btn-danger me-1" (click)="deleteContract(contract.id!)">Löschen</button>
-          <button *ngIf="contract.status !== 'ACTIVE'" class="btn btn-sm btn-success me-1" (click)="activateContract(contract.id!)">Aktivieren</button>
-          <button *ngIf="contract.status === 'ACTIVE'" class="btn btn-sm btn-warning me-1" (click)="suspendContract(contract.id!)">Suspendieren</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- Tabelle responsive -->
+  <div class="table-responsive" *ngIf="filteredContracts.length > 0">
+    <table class="table table-hover table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Nr.</th>
+          <th>Titel</th>
+          <th>Kunde</th>
+          <th>Status</th>
+          <th>Startdatum</th>
+          <th>Enddatum</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let contract of filteredContracts">
+          <td>{{ contract.contractNumber }}</td>
+          <td>{{ contract.contractTitle }}</td>
+          <td>
+            {{ getCustomerById(contract.customerId)?.firstName }} {{ getCustomerById(contract.customerId)?.lastName }}
+            <small class="text-muted">({{ getCustomerById(contract.customerId)?.customerNumber }})</small>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="getStatusBadgeClass(contract.contractStatus)">
+              {{ contract.contractStatus }}
+            </span>
+          </td>
+          <td>{{ contract.startDate | date:'shortDate' }}</td>
+          <td>{{ contract.endDate | date:'shortDate' }}</td>
+          <td class="d-flex flex-wrap gap-1">
+            <button class="btn btn-sm btn-primary" (click)="openEditModal(contract)" [disabled]="!canEdit(contract)">Bearbeiten</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteContract(contract.id!)">Löschen</button>
+            <button *ngIf="canActivate(contract)" class="btn btn-sm btn-success" (click)="activateContract(contract)">Aktivieren</button>
+            <button *ngIf="canSuspend(contract)" class="btn btn-sm btn-warning" (click)="suspendContract(contract)">Suspendieren</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   <div *ngIf="filteredContracts.length === 0 && !loading" class="text-center mt-3">
     Keine Verträge gefunden.
   </div>
 
   <!-- Neuer Vertrag Modal -->
-  <div class="modal" tabindex="-1" [ngClass]="{'show d-block': showNewModal}" (click)="closeNewModal()">
+  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
     <div class="modal-dialog" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header">
@@ -60,11 +67,27 @@
         </div>
         <div class="modal-body">
           <input type="text" class="form-control mb-2" placeholder="Titel" [(ngModel)]="newContract.contractTitle">
-          <select class="form-select" [(ngModel)]="newContract.status">
+
+          <!-- Kunde auswählen -->
+          <select class="form-select mb-2" [(ngModel)]="newContract.customerId">
+            <option value="" disabled>-- Wählen Sie einen Kunden --</option>
+            <option *ngFor="let customer of customers" [value]="customer.id">
+              {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
+            </option>
+          </select>
+
+          <select class="form-select mb-2" [(ngModel)]="newContract.contractStatus">
             <option value="DRAFT">DRAFT</option>
             <option value="ACTIVE">ACTIVE</option>
             <option value="SUSPENDED">SUSPENDED</option>
           </select>
+
+          <!-- Start- und Enddatum -->
+          <label class="form-label">Startdatum</label>
+          <input type="date" class="form-control mb-2" [(ngModel)]="newContract.startDate">
+
+          <label class="form-label">Enddatum</label>
+          <input type="date" class="form-control" [(ngModel)]="newContract.endDate">
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
@@ -75,7 +98,7 @@
   </div>
 
   <!-- Bearbeiten Modal -->
-  <div class="modal" tabindex="-1" [ngClass]="{'show d-block': showEditModal}" (click)="closeEditModal()">
+  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
     <div class="modal-dialog" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header">
@@ -84,11 +107,27 @@
         </div>
         <div class="modal-body">
           <input type="text" class="form-control mb-2" placeholder="Titel" [(ngModel)]="editContract.contractTitle">
-          <select class="form-select" [(ngModel)]="editContract.status">
+
+          <!-- Kunde auswählen -->
+          <select class="form-select mb-2" [(ngModel)]="editContract.customerId">
+            <option value="" disabled>Kunden auswählen</option>
+            <option *ngFor="let customer of customers" [value]="customer.id">
+              {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
+            </option>
+          </select>
+
+          <select class="form-select mb-2" [(ngModel)]="editContract.contractStatus">
             <option value="DRAFT">DRAFT</option>
             <option value="ACTIVE">ACTIVE</option>
             <option value="SUSPENDED">SUSPENDED</option>
           </select>
+
+          <!-- Start- und Enddatum -->
+          <label class="form-label">Startdatum</label>
+          <input type="date" class="form-control mb-2" [(ngModel)]="editContract.startDate">
+
+          <label class="form-label">Enddatum</label>
+          <input type="date" class="form-control" [(ngModel)]="editContract.endDate">
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>

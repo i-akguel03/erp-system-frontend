@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Contract } from '../../models/Contract';
 import { ContractService } from '../../services/contract-service';
+import { Customer } from '../../models/Customer';
+import { CustomerService } from '../../services/customer-service';
 
 @Component({
   selector: 'app-contract-list',
@@ -18,25 +20,30 @@ export class ContractListComponent implements OnInit {
   error: string | null = null;
   searchTerm: string = '';
 
-  // Neue Verträge
-  newContract: Contract = { contractTitle: '', status: 'DRAFT', subscriptions: [] };
+  customers: Customer[] = [];
 
-  // Bearbeiten
-  editContract: Contract = { contractTitle: '', status: '', subscriptions: [] };
+  newContract: Contract = this.createEmptyContract();
+  editContract: Contract = this.createEmptyContract();
 
   showNewModal = false;
   showEditModal = false;
+  showTerminateModal = false;
 
-  constructor(private contractService: ContractService) {}
+  contractToTerminate: Contract | null = null;
+  terminationDate: string = '';
+
+  constructor(private contractService: ContractService,
+              private customerService: CustomerService) {}
 
   ngOnInit(): void {
+    this.loadCustomers();
     this.loadContracts();
   }
 
+  // --- Load Methods ---
   loadContracts(): void {
     this.loading = true;
     this.error = null;
-
     this.contractService.getContracts(false).subscribe({
       next: data => {
         this.contracts = data;
@@ -47,19 +54,27 @@ export class ContractListComponent implements OnInit {
     });
   }
 
+  loadCustomers(): void {
+    this.customerService.getCustomers().subscribe({
+      next: data => this.customers = data,
+      error: err => this.handleApiError(err, 'Fehler beim Laden der Kunden')
+    });
+  }
+
   filterContracts(): void {
     const term = this.searchTerm.toLowerCase();
-    this.filteredContracts = this.contracts.filter(c =>
-      (c.contractNumber?.toLowerCase().includes(term)) ||
-      (c.contractTitle?.toLowerCase().includes(term)) ||
-      (c.status?.toLowerCase().includes(term))
-    );
+    this.filteredContracts = this.contracts.filter(c => {
+      const customer = this.getCustomerById(c.customerId);
+      const customerString = customer ? `${customer.firstName} ${customer.lastName} ${customer.customerNumber}` : '';
+      return (c.contractNumber?.toLowerCase().includes(term)) ||
+             (c.contractTitle?.toLowerCase().includes(term)) ||
+             (c.contractStatus?.toLowerCase().includes(term)) ||
+             customerString.toLowerCase().includes(term);
+    });
   }
 
   deleteContract(id?: string): void {
-    if (!id) return;
-    if (!confirm('Möchten Sie diesen Vertrag wirklich löschen?')) return;
-
+    if (!id || !confirm('Möchten Sie diesen Vertrag wirklich löschen?')) return;
     this.contractService.deleteContract(id).subscribe({
       next: () => {
         this.contracts = this.contracts.filter(c => c.id !== id);
@@ -69,69 +84,153 @@ export class ContractListComponent implements OnInit {
     });
   }
 
-  openNewModal(): void { this.showNewModal = true; }
+  // --- Modal Management ---
+  openNewModal(): void {
+    this.showNewModal = true;
+    this.error = null;
+    this.newContract = this.createEmptyContract();
+  }
+
   closeNewModal(): void { this.showNewModal = false; }
 
+  openEditModal(contract: Contract): void {
+    this.editContract = { ...contract };
+    this.showEditModal = true;
+    this.error = null;
+  }
+
+  closeEditModal(): void { this.showEditModal = false; }
+
+  openTerminateModal(contract: Contract): void {
+    this.contractToTerminate = contract;
+    this.terminationDate = '';
+    this.showTerminateModal = true;
+    this.error = null;
+  }
+
+  closeTerminateModal(): void {
+    this.showTerminateModal = false;
+    this.contractToTerminate = null;
+    this.terminationDate = '';
+  }
+
+  // --- CRUD Operations ---
   createContract(): void {
     const contractToSend = { ...this.newContract };
-    delete (contractToSend as any).id;
+
+    if (!contractToSend.customerId || contractToSend.customerId.trim() === '') {
+      this.error = 'Bitte wählen Sie einen Kunden aus.';
+      return;
+    }
 
     this.contractService.createContract(contractToSend).subscribe({
       next: created => {
         this.contracts.push(created);
         this.filteredContracts = [...this.contracts];
-        this.newContract = { contractTitle: '', status: 'DRAFT', subscriptions: [] };
         this.closeNewModal();
       },
       error: err => this.handleApiError(err, 'Fehler beim Erstellen des Vertrags')
     });
   }
 
-  openEditModal(contract: Contract): void {
-    this.editContract = JSON.parse(JSON.stringify(contract));
-    this.showEditModal = true;
-  }
-
-  closeEditModal(): void { this.showEditModal = false; }
-
   updateContract(): void {
     if (!this.editContract.id) return;
 
+    if (!this.editContract.customerId || this.editContract.customerId.trim() === '') {
+      this.error = 'Bitte wählen Sie einen Kunden aus.';
+      return;
+    }
+
     this.contractService.updateContract(this.editContract.id, this.editContract).subscribe({
       next: updated => {
-        const index = this.contracts.findIndex(c => c.id === updated.id);
-        if (index >= 0) this.contracts[index] = updated;
-        this.filteredContracts = [...this.contracts];
+        this.updateLocalContract(updated);
         this.closeEditModal();
       },
       error: err => this.handleApiError(err, 'Fehler beim Aktualisieren des Vertrags')
     });
   }
 
-  activateContract(id: string): void {
-    this.contractService.activateContract(id).subscribe({
-      next: updated => this.updateLocalContract(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Aktivieren')
-    });
-  }
+  // --- Status Changes ---
+activateContract(contractId: string): void {
+  if (!contractId) return;
+  this.contractService.activateContract(contractId).subscribe({
+    next: updated => this.updateLocalContract(updated),
+    error: err => this.handleApiError(err, 'Fehler beim Aktivieren')
+  });
+}
 
-  suspendContract(id: string): void {
-    this.contractService.suspendContract(id).subscribe({
-      next: updated => this.updateLocalContract(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Suspendieren')
-    });
-  }
+suspendContract(contractId: string): void {
+  if (!contractId) return;
+  this.contractService.suspendContract(contractId).subscribe({
+    next: updated => this.updateLocalContract(updated),
+    error: err => this.handleApiError(err, 'Fehler beim Suspendieren')
+  });
+}
 
-  private updateLocalContract(updated: Contract) {
+terminateContract(contractId: string, terminationDate?: string): void {
+  if (!contractId) return;
+  this.contractService.terminateContract(contractId, terminationDate).subscribe({
+    next: updated => this.updateLocalContract(updated),
+    error: err => this.handleApiError(err, 'Fehler beim Kündigen des Vertrags')
+  });
+}
+
+
+
+  // --- Helper Methods ---
+  private updateLocalContract(updated: Contract): void {
     const index = this.contracts.findIndex(c => c.id === updated.id);
-    if (index >= 0) this.contracts[index] = updated;
-    this.filteredContracts = [...this.contracts];
+    if (index >= 0) {
+      this.contracts[index] = updated;
+      this.filteredContracts = [...this.contracts];
+    }
   }
 
   private handleApiError(err: any, defaultMessage: string): void {
     console.error('API Error:', err);
-    if (err.status === 401) this.error = 'Login abgelaufen. Bitte neu einloggen.';
-    else if (err.status === 403) this.error = 'Zugriff verweigert.';
-    else this.error = defaultMessage;
+    this.loading = false;
+    this.error = err.error?.message || defaultMessage;
   }
+
+  private createEmptyContract(): Contract {
+    return { 
+      contractTitle: '', 
+      contractStatus: 'DRAFT', 
+      startDate: new Date(), 
+      subscriptions: [], 
+      customerId: '' 
+    };
+  }
+
+  getCustomerById(customerId?: string): Customer | undefined {
+    return this.customers.find(c => c.id === customerId);
+  }
+
+  getStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'bg-success';
+      case 'SUSPENDED': return 'bg-warning';
+      case 'TERMINATED': return 'bg-danger';
+      case 'DRAFT': return 'bg-secondary';
+      default: return 'bg-light';
+    }
+  }
+
+  canActivate(contract: Contract): boolean {
+    return contract.contractStatus === 'DRAFT' || contract.contractStatus === 'SUSPENDED';
+  }
+
+  canSuspend(contract: Contract): boolean {
+    return contract.contractStatus === 'ACTIVE';
+  }
+
+  canTerminate(contract: Contract): boolean {
+    return contract.contractStatus === 'ACTIVE' || contract.contractStatus === 'SUSPENDED';
+  }
+
+  canEdit(contract: Contract): boolean {
+    return contract.contractStatus !== 'TERMINATED';
+  }
+
+  clearError(): void { this.error = null; }
 }

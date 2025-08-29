@@ -3,7 +3,6 @@ import { map, Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 import { Contract } from '../models/Contract';
 
-
 @Injectable({
   providedIn: 'root',
 })
@@ -17,17 +16,14 @@ export class ContractService extends BaseApiService {
     sortBy: string = 'startDate',
     sortDirection: string = 'DESC'
   ): Observable<Contract[]> {
-
     const params = { 
       paginated: 'true', 
       page: page.toString(), 
       size: size.toString(), 
-      sortBy: sortBy, 
-      sortDirection: sortDirection
+      sortBy, 
+      sortDirection
     };
-
-    return this.http.get<any>(this.apiUrl, { headers: this.getAuthHeaders(), params })
-      .pipe(map(res => res.content as Contract[]));
+    return this.http.get<Contract[]>(this.apiUrl, { headers: this.getAuthHeaders(), params });
   } 
 
   getContracts(
@@ -37,21 +33,22 @@ export class ContractService extends BaseApiService {
     sortBy: string = 'startDate',
     sortDirection: string = 'DESC'
   ): Observable<Contract[]> {
-    const params: any = { paginated: paginated.toString(), page: page.toString(), size: size.toString(), sortBy, sortDirection };
+    const params: any = { 
+      paginated: paginated.toString(), 
+      page: page.toString(), 
+      size: size.toString(), 
+      sortBy, 
+      sortDirection 
+    };
     return this.http.get<Contract[]>(this.apiUrl, { headers: this.getAuthHeaders(), params });
   }
 
   getAllContracts(): Observable<Contract[]> {
-  return this.http.get<Contract[]>(this.apiUrl, { headers: this.getAuthHeaders() });
+    return this.http.get<Contract[]>(this.apiUrl, { headers: this.getAuthHeaders() });
   }
-
 
   getContractById(id: string): Observable<Contract> {
     return this.http.get<Contract>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
-  }
-
-  getContractByNumber(contractNumber: string): Observable<Contract> {
-    return this.http.get<Contract>(`${this.apiUrl}/by-number/${contractNumber}`, { headers: this.getAuthHeaders() });
   }
 
   createContract(contract: Contract): Observable<Contract> {
@@ -66,7 +63,28 @@ export class ContractService extends BaseApiService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
   }
 
-  // --- Status & Filter ---
+  // --- Status & Lifecycle Actions ---
+// --- Status & Lifecycle Actions ---
+activateContract(contractId: string): Observable<Contract> {
+  const url = `${this.apiUrl}/${contractId}/activate`;
+  return this.http.patch<Contract>(url, {}, { headers: this.getAuthHeaders() });
+}
+
+suspendContract(contractId: string): Observable<Contract> {
+  const url = `${this.apiUrl}/${contractId}/suspend`;
+  return this.http.patch<Contract>(url, {}, { headers: this.getAuthHeaders() });
+}
+
+terminateContract(contractId: string, terminationDate?: string): Observable<Contract> {
+  const url = terminationDate
+    ? `${this.apiUrl}/${contractId}/terminate?terminationDate=${terminationDate}`
+    : `${this.apiUrl}/${contractId}/terminate`;
+
+  return this.http.patch<Contract>(url, {}, { headers: this.getAuthHeaders() });
+}
+
+
+  // --- Filter & Queries ---
   getContractsByStatus(status: string): Observable<Contract[]> {
     return this.http.get<Contract[]>(`${this.apiUrl}/status/${status}`, { headers: this.getAuthHeaders() });
   }
@@ -74,7 +92,7 @@ export class ContractService extends BaseApiService {
   getContractsByCustomer(customerId: string, activeOnly: boolean = false): Observable<Contract[]> {
     return this.http.get<Contract[]>(`${this.apiUrl}/customer/${customerId}`, {
       headers: this.getAuthHeaders(),
-      params: { activeOnly }
+      params: { activeOnly: activeOnly.toString() }
     });
   }
 
@@ -83,7 +101,10 @@ export class ContractService extends BaseApiService {
   }
 
   getContractsExpiringInDays(days: number = 30): Observable<Contract[]> {
-    return this.http.get<Contract[]>(`${this.apiUrl}/expiring`, { headers: this.getAuthHeaders(), params: { days } });
+    return this.http.get<Contract[]>(`${this.apiUrl}/expiring`, { 
+      headers: this.getAuthHeaders(), 
+      params: { days: days.toString() } 
+    });
   }
 
   getExpiredContracts(): Observable<Contract[]> {
@@ -91,7 +112,10 @@ export class ContractService extends BaseApiService {
   }
 
   searchContracts(query: string): Observable<Contract[]> {
-    return this.http.get<Contract[]>(`${this.apiUrl}/search`, { headers: this.getAuthHeaders(), params: { q: query } });
+    return this.http.get<Contract[]>(`${this.apiUrl}/search`, { 
+      headers: this.getAuthHeaders(), 
+      params: { q: query } 
+    });
   }
 
   getContractsWithActiveSubscriptions(): Observable<Contract[]> {
@@ -100,22 +124,5 @@ export class ContractService extends BaseApiService {
 
   getTotalContractCount(): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/count`, { headers: this.getAuthHeaders() });
-  }
-
-  // --- Lifecycle Actions ---
-  activateContract(id: string): Observable<Contract> {
-    return this.http.patch<Contract>(`${this.apiUrl}/${id}/activate`, {}, { headers: this.getAuthHeaders() });
-  }
-
-  // terminateContract(id: string, terminationDate?: string): Observable<Contract> {
-  //   const params = terminationDate ? { terminationDate } : {};
-  //   return this.http.patch<Contract>(
-  //     `${this.apiUrl}/${id}/terminate`,
-  //     null,  // <- null statt {}
-  //     { headers: this.getAuthHeaders(), params, responseType: 'json' }
-  //   );
-  // }
-  suspendContract(id: string): Observable<Contract> {
-    return this.http.patch<Contract>(`${this.apiUrl}/${id}/suspend`, {}, { headers: this.getAuthHeaders() });
   }
 }
