@@ -7,6 +7,8 @@ import { AuthGuard } from './auth/guards/auth-guard/auth-guard';
 import { Dashboard } from './components/dashboard/dashboard';
 import { TestDashboardComponent } from './components/test-dashboard/test-dashboard';
 import { ContractListComponent } from './components/contract-list/contract-list';
+import { AddressListComponent } from './components/address-list/address-list';
+import { ProductListComponent } from './components/product-list/product-list';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -17,6 +19,8 @@ export const routes: Routes = [
   { path: 'test', component: TestDashboardComponent, canActivate: [AuthGuard] },
   { path: 'customer', component: CustomerListComponent, canActivate: [AuthGuard] },
   { path: 'contract', component: ContractListComponent, canActivate: [AuthGuard] },
+  { path: 'address', component: AddressListComponent, canActivate: [AuthGuard] },
+  { path: 'product', component: ProductListComponent, canActivate: [AuthGuard] },
 
   // Weiterleitungen
   { path: '', pathMatch: 'full', redirectTo: 'customer' },

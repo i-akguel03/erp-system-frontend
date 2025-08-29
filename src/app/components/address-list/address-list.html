@@ -1,0 +1,90 @@
+<div class="container mt-3">
+  <!-- Suchleiste & Aktionen -->
+  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
+    <input type="text" class="form-control flex-grow-1" placeholder="Adresse suchen..." [(ngModel)]="searchTerm">
+    <button class="btn btn-primary" (click)="filterAddresses()">Suchen</button>
+    <button class="btn btn-secondary" (click)="loadAddresses()">Alle Anzeigen</button>
+    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neue Adresse erstellen</button>
+  </div>
+
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <!-- Tabelle responsive -->
+  <div class="table-responsive" *ngIf="filteredAddresses.length > 0">
+    <table class="table table-hover table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Straße</th>
+          <th>PLZ</th>
+          <th>Stadt</th>
+          <th>Land</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let address of filteredAddresses">
+          <td>{{ address.id }}</td>
+          <td>{{ address.street }}</td>
+          <td>{{ address.postalCode }}</td>
+          <td>{{ address.city }}</td>
+          <td>{{ address.country }}</td>
+          <td class="d-flex gap-1">
+            <button class="btn btn-sm btn-primary" (click)="openEditModal(address)">Bearbeiten</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteAddress(address.id)">Löschen</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="filteredAddresses.length === 0 && !loading" class="text-center mt-3">
+    Keine Adressen gefunden.
+  </div>
+
+  <!-- Neuer Adresse Modal -->
+  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Neue Adresse erstellen</h5>
+          <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newAddress.street">
+          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newAddress.postalCode">
+          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newAddress.city">
+          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newAddress.country">
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="createAddress()">Erstellen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bearbeiten Modal -->
+  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Adresse bearbeiten</h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editAddress.street">
+          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editAddress.postalCode">
+          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editAddress.city">
+          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editAddress.country">
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="updateAddress()">Speichern</button>
+        </div>
+      </div>
+    </div>

@@ -1,5 +1,5 @@
 export interface Address {
-  id?: string;
+  id?: number;         // optional, weil neu erzeugt noch keine ID hat
   street: string;
   postalCode: string;
   city: string;

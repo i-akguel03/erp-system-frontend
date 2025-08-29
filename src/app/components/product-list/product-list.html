@@ -1,0 +1,108 @@
+<div class="container mt-3">
+  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
+    <input type="text" class="form-control flex-grow-1" placeholder="Produkt suchen..." [(ngModel)]="searchTerm">
+    <button class="btn btn-primary" (click)="filterProducts()">Suchen</button>
+    <button class="btn btn-secondary" (click)="loadProducts()">Alle Anzeigen</button>
+    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neues Produkt erstellen</button>
+  </div>
+
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="table-responsive" *ngIf="filteredProducts.length > 0">
+    <table class="table table-hover table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Nr.</th>
+          <th>Name</th>
+          <th>Beschreibung</th>
+          <th>Preis</th>
+          <th>Einheit</th>
+          <th>Typ</th>
+          <th>Status</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of filteredProducts">
+          <td>{{ product.productNumber }}</td>
+          <td>{{ product.name }}</td>
+          <td>{{ product.description }}</td>
+          <td>{{ product.price | currency }}</td>
+          <td>{{ product.unit }}</td>
+          <td>{{ product.productType }}</td>
+          <td>
+            <span class="badge" [ngClass]="product.active ? 'bg-success' : 'bg-secondary'">
+              {{ product.active ? 'AKTIV' : 'INAKTIV' }}
+            </span>
+          </td>
+          <td class="d-flex gap-1">
+            <button class="btn btn-sm btn-primary" (click)="openEditModal(product)">Bearbeiten</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteProduct(product.id)">Löschen</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="filteredProducts.length === 0 && !loading" class="text-center mt-3">
+    Keine Produkte gefunden.
+  </div>
+
+  <!-- Neues Produkt Modal -->
+  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Neues Produkt erstellen</h5>
+          <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Name" [(ngModel)]="newProduct.name">
+          <input type="text" class="form-control mb-2" placeholder="Beschreibung" [(ngModel)]="newProduct.description">
+          <input type="number" class="form-control mb-2" placeholder="Preis" [(ngModel)]="newProduct.price">
+          <input type="text" class="form-control mb-2" placeholder="Einheit" [(ngModel)]="newProduct.unit">
+          <input type="text" class="form-control mb-2" placeholder="Typ" [(ngModel)]="newProduct.productType">
+          <select class="form-select mb-2" [(ngModel)]="newProduct.active">
+            <option [ngValue]="true">AKTIV</option>
+            <option [ngValue]="false">INAKTIV</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="createProduct()">Erstellen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bearbeiten Modal -->
+  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Produkt bearbeiten</h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Name" [(ngModel)]="editProduct.name">
+          <input type="text" class="form-control mb-2" placeholder="Beschreibung" [(ngModel)]="editProduct.description">
+          <input type="number" class="form-control mb-2" placeholder="Preis" [(ngModel)]="editProduct.price">
+          <input type="text" class="form-control mb-2" placeholder="Einheit" [(ngModel)]="editProduct.unit">
+          <input type="text" class="form-control mb-2" placeholder="Typ" [(ngModel)]="editProduct.productType">
+          <select class="form-select mb-2" [(ngModel)]="editProduct.active">
+            <option [ngValue]="true">AKTIV</option>
+            <option [ngValue]="false">INAKTIV</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="updateProduct()">Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

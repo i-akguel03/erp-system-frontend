@@ -9,12 +9,15 @@ import { Customer } from '../models/Customer';
 
 
 export interface Product {
-  id: string;
-  productNumber: string;
+  id?: string;               // UUID vom Backend
+  productNumber?: string;
   name: string;
   description?: string;
-  price: number;
-  unit: string;
+  price?: number;
+  unit?: string;
+  taxRate?: number;
+  productType?: string;
+  active?: boolean;
 }
 
 export interface InvoiceItem {

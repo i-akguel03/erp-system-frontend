@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ErpService } from '../../services/testservice';
 import { Customer } from '../../models/Customer';
 import { CustomerService } from '../../services/customer-service';
+import { ErpService } from '../../services/testservice';
 
 @Component({
   selector: 'app-customer-list',
