@@ -1,0 +1,82 @@
+.contract-center-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  overflow: hidden; // verhindert Scrollen der Seite
+}
+
+/* Obere Vertragsliste: 70% auf großen Bildschirmen */
+.contracts-top {
+  flex: 6;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+
+  input {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Untere Panels: 30% auf großen Bildschirmen, flex-row */
+.contracts-bottom {
+  flex: 4;
+  display: flex;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+/* Linkes Panel: Abos */
+.subscriptions-panel,
+.details-panel {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Selektierter Vertrag */
+.selected {
+  background-color: #f0f0f0;
+}
+
+/* Klickbare Verträge */
+.list-group-item-action {
+  cursor: pointer;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .contracts-bottom {
+    flex-direction: column;  // Panels untereinander
+  }
+
+  .contracts-top {
+    flex: 4; // mehr Platz oben
+  }
+
+  .contracts-bottom {
+    flex: 6; // Panels unten nehmen den Rest
+  }
+
+  .subscriptions-panel,
+  .details-panel {
+    flex: none;
+    height: 50%;  // jedes Panel halb der unteren Fläche
+  }
+}
+
+@media (max-width: 480px) {
+  .contracts-top {
+    flex: 3;
+  }
+
+  .contracts-bottom {
+    flex: 7;
+  }
+
+  .subscriptions-panel,
+  .details-panel {
+    height: auto;
+    max-height: 200px; // begrenzt auf kleinen Handys
+  }
+}

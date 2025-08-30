@@ -1,18 +1,20 @@
-<div class="container mt-3">
-  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
+<div class="container mt-3 product-container">
+  <!-- Aktionen -->
+  <div class="d-flex flex-wrap mb-3 align-items-center gap-2 product-actions">
     <input type="text" class="form-control flex-grow-1" placeholder="Produkt suchen..." [(ngModel)]="searchTerm">
     <button class="btn btn-primary" (click)="filterProducts()">Suchen</button>
     <button class="btn btn-secondary" (click)="loadProducts()">Alle Anzeigen</button>
     <button class="btn btn-success ms-auto" (click)="openNewModal()">Neues Produkt erstellen</button>
   </div>
 
+  <!-- Ladeanzeige & Fehlermeldung -->
   <div *ngIf="loading" class="text-center my-3">
     <div class="spinner-border text-primary"></div>
   </div>
-
   <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
-  <div class="table-responsive" *ngIf="filteredProducts.length > 0">
+  <!-- Scrollbarer Tabellenbereich -->
+  <div class="product-table-wrapper flex-grow-1" *ngIf="filteredProducts.length > 0" style="overflow-y:auto; max-height:60vh;">
     <table class="table table-hover table-bordered">
       <thead class="table-light">
         <tr>

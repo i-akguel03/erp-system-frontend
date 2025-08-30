@@ -11,7 +11,10 @@
     <div class="spinner-border text-primary"></div>
   </div>
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div *ngIf="error" class="alert alert-danger">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
 
   <!-- Tabelle responsive -->
   <div class="table-responsive" *ngIf="filteredContracts.length > 0">
@@ -45,8 +48,10 @@
           <td class="d-flex flex-wrap gap-1">
             <button class="btn btn-sm btn-primary" (click)="openEditModal(contract)" [disabled]="!canEdit(contract)">Bearbeiten</button>
             <button class="btn btn-sm btn-danger" (click)="deleteContract(contract.id!)">Löschen</button>
-            <button *ngIf="canActivate(contract)" class="btn btn-sm btn-success" (click)="activateContract(contract)">Aktivieren</button>
-            <button *ngIf="canSuspend(contract)" class="btn btn-sm btn-warning" (click)="suspendContract(contract)">Suspendieren</button>
+            <!-- KORRIGIERT: Übergabe nur der ID, nicht des ganzen Objekts -->
+            <button *ngIf="canActivate(contract)" class="btn btn-sm btn-success" (click)="activateContract(contract.id!)">Aktivieren</button>
+            <button *ngIf="canSuspend(contract)" class="btn btn-sm btn-warning" (click)="suspendContract(contract.id!)">Suspendieren</button>
+            <button *ngIf="canTerminate(contract)" class="btn btn-sm btn-outline-danger" (click)="openTerminateModal(contract)">Kündigen</button>
           </td>
         </tr>
       </tbody>
@@ -66,32 +71,46 @@
           <button type="button" class="btn-close" (click)="closeNewModal()"></button>
         </div>
         <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Titel" [(ngModel)]="newContract.contractTitle">
+          <div class="mb-3">
+            <label class="form-label">Titel</label>
+            <input type="text" class="form-control" placeholder="Titel" [(ngModel)]="newContract.contractTitle">
+          </div>
 
-          <!-- Kunde auswählen -->
-          <select class="form-select mb-2" [(ngModel)]="newContract.customerId">
-            <option value="" disabled>-- Wählen Sie einen Kunden --</option>
-            <option *ngFor="let customer of customers" [value]="customer.id">
-              {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
-            </option>
-          </select>
+          <!-- KORRIGIERT: Kunde auswählen mit besserer Validierung -->
+          <div class="mb-3">
+            <label class="form-label">Kunde *</label>
+            <select class="form-select" [(ngModel)]="newContract.customerId" required>
+              <option value="">-- Wählen Sie einen Kunden --</option>
+              <option *ngFor="let customer of customers" [value]="customer.id">
+                {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
+              </option>
+            </select>
+            <div class="form-text">{{ customers.length }} Kunden verfügbar</div>
+          </div>
 
-          <select class="form-select mb-2" [(ngModel)]="newContract.contractStatus">
-            <option value="DRAFT">DRAFT</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="SUSPENDED">SUSPENDED</option>
-          </select>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" [(ngModel)]="newContract.contractStatus">
+              <option value="DRAFT">DRAFT</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </select>
+          </div>
 
-          <!-- Start- und Enddatum -->
-          <label class="form-label">Startdatum</label>
-          <input type="date" class="form-control mb-2" [(ngModel)]="newContract.startDate">
+          <!-- KORRIGIERT: Datum-Bindings mit String-Properties -->
+          <div class="mb-3">
+            <label class="form-label">Startdatum</label>
+            <input type="date" class="form-control" [(ngModel)]="newStartDateString">
+          </div>
 
-          <label class="form-label">Enddatum</label>
-          <input type="date" class="form-control" [(ngModel)]="newContract.endDate">
+          <div class="mb-3">
+            <label class="form-label">Enddatum (optional)</label>
+            <input type="date" class="form-control" [(ngModel)]="newEndDateString">
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="createContract()">Erstellen</button>
+          <button class="btn btn-primary" (click)="createContract()" [disabled]="!newContract.customerId">Erstellen</button>
         </div>
       </div>
     </div>
@@ -106,32 +125,73 @@
           <button type="button" class="btn-close" (click)="closeEditModal()"></button>
         </div>
         <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Titel" [(ngModel)]="editContract.contractTitle">
+          <div class="mb-3">
+            <label class="form-label">Titel</label>
+            <input type="text" class="form-control" placeholder="Titel" [(ngModel)]="editContract.contractTitle">
+          </div>
 
-          <!-- Kunde auswählen -->
-          <select class="form-select mb-2" [(ngModel)]="editContract.customerId">
-            <option value="" disabled>Kunden auswählen</option>
-            <option *ngFor="let customer of customers" [value]="customer.id">
-              {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
-            </option>
-          </select>
+          <!-- KORRIGIERT: Kunde auswählen mit besserer Anzeige -->
+          <div class="mb-3">
+            <label class="form-label">Kunde *</label>
+            <select class="form-select" [(ngModel)]="editContract.customerId" required>
+              <option value="">-- Kunden auswählen --</option>
+              <option *ngFor="let customer of customers" [value]="customer.id">
+                {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
+              </option>
+            </select>
+            <div class="form-text">Aktuell: {{ getCustomerById(editContract.customerId)?.firstName }} {{ getCustomerById(editContract.customerId)?.lastName }}</div>
+          </div>
 
-          <select class="form-select mb-2" [(ngModel)]="editContract.contractStatus">
-            <option value="DRAFT">DRAFT</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="SUSPENDED">SUSPENDED</option>
-          </select>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" [(ngModel)]="editContract.contractStatus">
+              <option value="DRAFT">DRAFT</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </select>
+          </div>
 
-          <!-- Start- und Enddatum -->
-          <label class="form-label">Startdatum</label>
-          <input type="date" class="form-control mb-2" [(ngModel)]="editContract.startDate">
+          <!-- KORRIGIERT: Datum-Bindings mit String-Properties -->
+          <div class="mb-3">
+            <label class="form-label">Startdatum</label>
+            <input type="date" class="form-control" [(ngModel)]="editStartDateString">
+          </div>
 
-          <label class="form-label">Enddatum</label>
-          <input type="date" class="form-control" [(ngModel)]="editContract.endDate">
+          <div class="mb-3">
+            <label class="form-label">Enddatum (optional)</label>
+            <input type="date" class="form-control" [(ngModel)]="editEndDateString">
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="updateContract()">Speichern</button>
+          <button class="btn btn-primary" (click)="updateContract()" [disabled]="!editContract.customerId">Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kündigen Modal -->
+  <div *ngIf="showTerminateModal" class="modal show d-block" tabindex="-1" (click)="closeTerminateModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Vertrag kündigen</h5>
+          <button type="button" class="btn-close" (click)="closeTerminateModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p>Möchten Sie den Vertrag <strong>{{ contractToTerminate?.contractTitle }}</strong> wirklich kündigen?</p>
+          
+          <div class="mb-3">
+            <label class="form-label">Kündigungsdatum (optional)</label>
+            <input type="date" class="form-control" [(ngModel)]="terminationDate">
+            <div class="form-text">Wenn leer, wird das heutige Datum verwendet.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeTerminateModal()">Abbrechen</button>
+          <button class="btn btn-danger" (click)="terminateContract(contractToTerminate!.id!, terminationDate); closeTerminateModal()">
+            Kündigen
+          </button>
         </div>
       </div>
     </div>

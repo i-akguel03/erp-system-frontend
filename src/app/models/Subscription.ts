@@ -1,15 +1,27 @@
+// src/app/models/Subscription.ts
 export interface Subscription {
   id?: string;
-  subscriptionNumber?: string;
+  subscriptionNumber: string;
   productName: string;
   monthlyPrice: number;
-  startDate: string;
-  endDate?: string;
-  billingCycle: string;
-  subscriptionStatus: string;
-  autoRenewal: boolean;
+  startDate: Date;    // <-- jetzt Date statt string
+  endDate?: Date;     // optional, ebenfalls Date
+  billingCycle: BillingCycle;
+  subscriptionStatus: SubscriptionStatus;
+  autoRenewal?: boolean;
   contractId?: string;
-  taxRate?: number;
-  quantity?: number;
-  unit?: string;
+}
+
+// --- Enums ---
+export enum SubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED'
+}
+
+export enum BillingCycle {
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  YEARLY = 'YEARLY'
 }

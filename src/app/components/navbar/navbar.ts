@@ -1,15 +1,15 @@
+// Debugging-Version der Navbar Component
 import { Component, OnInit } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/services/auth';
-// ✅ Korrigiere den Import-Pfad je nach deiner Verzeichnisstruktur
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [RouterModule, CommonModule],
-  templateUrl: './navbar.html', // ✅ Auch Dateiname korrigiert
-  styleUrls: ['./navbar.scss']  // ✅ Auch Dateiname korrigiert
+  templateUrl: './navbar.html',
+  styleUrls: ['./navbar.scss']
 })
 export class NavbarComponent implements OnInit {
   
@@ -19,77 +19,69 @@ export class NavbarComponent implements OnInit {
     { label: 'Adressen', icon: 'bi-box', routerLink: '/address' },
     { label: 'Produkte', icon: 'bi-box', routerLink: '/product' },
     { label: 'Verträge', icon: 'bi-box', routerLink: '/contract' },
-    { label: 'Aufträge', icon: 'bi-cart', routerLink: '/order' }
-    // ✅ Logout aus Array entfernt, da es speziell behandelt wird
+    { label: 'Abonnements', icon: 'bi-box', routerLink: '/subscription' },
+    { label: 'Vertragscenter', icon: 'bi-box', routerLink: '/contract-center' },
   ];
-     
+  
   isCollapsed = true;
   currentUser: string | null = null;
-  isDropdownOpen = false; // ✅ Dropdown State hinzufügen
+  isDropdownOpen = false;
   showNavbar = true;
-
-
+  
   constructor(
-    private authService: AuthService, // ✅ Sollte jetzt funktionieren
+    private authService: AuthService,
     private router: Router
   ) {}
-
+  
   ngOnInit() {
     this.loadCurrentUser();
-
-    // Navbar nur anzeigen, wenn nicht Login-Seite
+    
+    // Debug: Items in Konsole ausgeben
+    console.log('Navbar Items:', this.items);
+    
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.showNavbar = !event.url.includes('/login');
+        console.log('Current URL:', event.url);
+        console.log('Show Navbar:', this.showNavbar);
       }
     });
   }
-
+  
   toggleNavbar() {
     this.isCollapsed = !this.isCollapsed;
   }
-
-  // ✅ Dropdown Toggle hinzufügen
+  
   toggleDropdown() {
     this.isDropdownOpen = !this.isDropdownOpen;
   }
-
-  // ✅ Dropdown schließen
+  
   closeDropdown() {
     this.isDropdownOpen = false;
   }
-
+  
   logout() {
     if (confirm('Möchten Sie sich wirklich abmelden?')) {
       console.log('Logout wird ausgeführt...');
-      
-      // Dropdown schließen
       this.closeDropdown();
-      
-      // Tokens löschen
       this.authService.logout();
-      
-      // User zurücksetzen
       this.currentUser = null;
-      
-      // Zur Login-Seite weiterleiten
       this.router.navigate(['/login']);
-      
       console.log('Logout erfolgreich');
     }
   }
-
+  
   private loadCurrentUser() {
     this.currentUser = this.authService.getCurrentUser();
   }
-
+  
   isLoggedIn(): boolean {
     return this.authService.isAuthenticated();
   }
-
+  
   closeNavbar() {
-  if (!this.isCollapsed) {
-    this.isCollapsed = true;
+    if (!this.isCollapsed) {
+      this.isCollapsed = true;
+    }
   }
-}
 }

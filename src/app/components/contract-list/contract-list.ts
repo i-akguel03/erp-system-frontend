@@ -25,6 +25,12 @@ export class ContractListComponent implements OnInit {
   newContract: Contract = this.createEmptyContract();
   editContract: Contract = this.createEmptyContract();
 
+  // Zusätzliche String-Properties für Datums-Bindings
+  newStartDateString: string = '';
+  newEndDateString: string = '';
+  editStartDateString: string = '';
+  editEndDateString: string = '';
+
   showNewModal = false;
   showEditModal = false;
   showTerminateModal = false;
@@ -56,7 +62,10 @@ export class ContractListComponent implements OnInit {
 
   loadCustomers(): void {
     this.customerService.getCustomers().subscribe({
-      next: data => this.customers = data,
+      next: data => {
+        console.log('Geladene Kunden:', data); // Debug-Log
+        this.customers = data;
+      },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Kunden')
     });
   }
@@ -89,17 +98,28 @@ export class ContractListComponent implements OnInit {
     this.showNewModal = true;
     this.error = null;
     this.newContract = this.createEmptyContract();
+    // Setze Default-Datum Strings
+    this.newStartDateString = this.formatDateForInput(this.newContract.startDate);
+    this.newEndDateString = this.newContract.endDate ? this.formatDateForInput(this.newContract.endDate) : '';
   }
 
-  closeNewModal(): void { this.showNewModal = false; }
+  closeNewModal(): void { 
+    this.showNewModal = false; 
+  }
 
   openEditModal(contract: Contract): void {
     this.editContract = { ...contract };
     this.showEditModal = true;
     this.error = null;
+    
+    // Konvertiere Datumsfelder für Input-Felder
+    this.editStartDateString = this.formatDateForInput(contract.startDate);
+    this.editEndDateString = contract.endDate ? this.formatDateForInput(contract.endDate) : '';
   }
 
-  closeEditModal(): void { this.showEditModal = false; }
+  closeEditModal(): void { 
+    this.showEditModal = false; 
+  }
 
   openTerminateModal(contract: Contract): void {
     this.contractToTerminate = contract;
@@ -116,12 +136,19 @@ export class ContractListComponent implements OnInit {
 
   // --- CRUD Operations ---
   createContract(): void {
-    const contractToSend = { ...this.newContract };
+    // Konvertiere Datum-Strings zu Date-Objekten
+    const contractToSend = { 
+      ...this.newContract,
+      startDate: this.newStartDateString ? new Date(this.newStartDateString) : new Date(),
+      endDate: this.newEndDateString ? new Date(this.newEndDateString) : undefined
+    };
 
     if (!contractToSend.customerId || contractToSend.customerId.trim() === '') {
       this.error = 'Bitte wählen Sie einen Kunden aus.';
       return;
     }
+
+    console.log('Erstelle Vertrag:', contractToSend); // Debug-Log
 
     this.contractService.createContract(contractToSend).subscribe({
       next: created => {
@@ -141,7 +168,16 @@ export class ContractListComponent implements OnInit {
       return;
     }
 
-    this.contractService.updateContract(this.editContract.id, this.editContract).subscribe({
+    // Konvertiere Datum-Strings zu Date-Objekten
+    const contractToUpdate = {
+      ...this.editContract,
+      startDate: this.editStartDateString ? new Date(this.editStartDateString) : new Date(),
+      endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
+    };
+
+    console.log('Aktualisiere Vertrag:', contractToUpdate); // Debug-Log
+
+    this.contractService.updateContract(this.editContract.id, contractToUpdate).subscribe({
       next: updated => {
         this.updateLocalContract(updated);
         this.closeEditModal();
@@ -151,31 +187,29 @@ export class ContractListComponent implements OnInit {
   }
 
   // --- Status Changes ---
-activateContract(contractId: string): void {
-  if (!contractId) return;
-  this.contractService.activateContract(contractId).subscribe({
-    next: updated => this.updateLocalContract(updated),
-    error: err => this.handleApiError(err, 'Fehler beim Aktivieren')
-  });
-}
+  activateContract(contractId: string): void {
+    if (!contractId) return;
+    this.contractService.activateContract(contractId).subscribe({
+      next: updated => this.updateLocalContract(updated),
+      error: err => this.handleApiError(err, 'Fehler beim Aktivieren')
+    });
+  }
 
-suspendContract(contractId: string): void {
-  if (!contractId) return;
-  this.contractService.suspendContract(contractId).subscribe({
-    next: updated => this.updateLocalContract(updated),
-    error: err => this.handleApiError(err, 'Fehler beim Suspendieren')
-  });
-}
+  suspendContract(contractId: string): void {
+    if (!contractId) return;
+    this.contractService.suspendContract(contractId).subscribe({
+      next: updated => this.updateLocalContract(updated),
+      error: err => this.handleApiError(err, 'Fehler beim Suspendieren')
+    });
+  }
 
-terminateContract(contractId: string, terminationDate?: string): void {
-  if (!contractId) return;
-  this.contractService.terminateContract(contractId, terminationDate).subscribe({
-    next: updated => this.updateLocalContract(updated),
-    error: err => this.handleApiError(err, 'Fehler beim Kündigen des Vertrags')
-  });
-}
-
-
+  terminateContract(contractId: string, terminationDate?: string): void {
+    if (!contractId) return;
+    this.contractService.terminateContract(contractId, terminationDate).subscribe({
+      next: updated => this.updateLocalContract(updated),
+      error: err => this.handleApiError(err, 'Fehler beim Kündigen des Vertrags')
+    });
+  }
 
   // --- Helper Methods ---
   private updateLocalContract(updated: Contract): void {
@@ -200,6 +234,15 @@ terminateContract(contractId: string, terminationDate?: string): void {
       subscriptions: [], 
       customerId: '' 
     };
+  }
+
+  private formatDateForInput(date: Date | string | undefined): string {
+    if (!date) return '';
+    
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '';
+    
+    return d.toISOString().split('T')[0];
   }
 
   getCustomerById(customerId?: string): Customer | undefined {
@@ -232,5 +275,7 @@ terminateContract(contractId: string, terminationDate?: string): void {
     return contract.contractStatus !== 'TERMINATED';
   }
 
-  clearError(): void { this.error = null; }
+  clearError(): void { 
+    this.error = null; 
+  }
 }
