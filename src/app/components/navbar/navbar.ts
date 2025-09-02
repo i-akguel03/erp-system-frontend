@@ -20,6 +20,7 @@ export class NavbarComponent implements OnInit {
     { label: 'Produkte', icon: 'bi-box', routerLink: '/product' },
     { label: 'Verträge', icon: 'bi-box', routerLink: '/contract' },
     { label: 'Abonnements', icon: 'bi-box', routerLink: '/subscription' },
+    { label: 'Fälligkeitspläne', icon: 'bi-box', routerLink: '/due-schedule' },
     { label: 'Vertragscenter', icon: 'bi-box', routerLink: '/contract-center' },
   ];
   

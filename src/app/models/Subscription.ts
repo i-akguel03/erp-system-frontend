@@ -2,7 +2,7 @@
 export interface Subscription {
   id?: string;
   subscriptionNumber: string;
-  productName: string;
+  productName?: string; // <-- hinzufügen
   monthlyPrice: number;
   startDate: Date;    // <-- jetzt Date statt string
   endDate?: Date;     // optional, ebenfalls Date

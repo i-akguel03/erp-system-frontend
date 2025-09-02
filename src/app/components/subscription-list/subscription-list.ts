@@ -71,7 +71,7 @@ export class SubscriptionListComponent implements OnInit {
       const contract = this.getContractById(s.contractId);
       const contractString = contract ? `${contract.contractNumber} ${contract.contractTitle}` : '';
       return s.subscriptionNumber.toLowerCase().includes(term) ||
-             s.productName.toLowerCase().includes(term) ||
+             s.productName?.toLowerCase().includes(term) ||
              s.subscriptionStatus.toLowerCase().includes(term) ||
              contractString.toLowerCase().includes(term);
     });

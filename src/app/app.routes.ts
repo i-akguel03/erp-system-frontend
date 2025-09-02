@@ -11,6 +11,7 @@ import { AddressListComponent } from './components/address-list/address-list';
 import { ProductListComponent } from './components/product-list/product-list';
 import { SubscriptionListComponent } from './components/subscription-list/subscription-list';
 import { ContractCenterComponent } from './components/contract-center/contract-center';
+import { DueScheduleListComponent } from './components/schedule-list/schedule-list';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -25,6 +26,8 @@ export const routes: Routes = [
   { path: 'subscription', component: SubscriptionListComponent, canActivate: [AuthGuard] },
   { path: 'product', component: ProductListComponent, canActivate: [AuthGuard] },
   { path: 'contract-center', component: ContractCenterComponent, canActivate: [AuthGuard] },
+  { path: 'due-schedule', component: DueScheduleListComponent, canActivate: [AuthGuard] },
+
 
   // Weiterleitungen
   { path: '', pathMatch: 'full', redirectTo: 'customer' },

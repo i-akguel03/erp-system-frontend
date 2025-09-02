@@ -1,86 +1,74 @@
-html, body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden; /* kein Scrollen außen */
-}
+// html, body {
+//   height: 100%;
+//   margin: 0;
+// }
 
-.app-root-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
+// .app-root-container {
+//   display: flex;
+//   flex-direction: column;
+//   height: 100vh;
+// }
 
-app-navbar {
-  flex: 0 0 auto; /* Navbar feste Höhe */
-}
+// app-navbar {
+//   flex: 0 0 auto; /* Navbar feste Höhe */
+// }
 
-.app-main-wrapper {
-  flex: 1 1 auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden; /* kein Scrollen außen */
-}
+// .app-main-wrapper {
+//   flex: 1 1 auto;
+//   display: flex;
+//   justify-content: center;
+//   align-items: flex-start;
+//   overflow: hidden;
+// }
 
-.app-main-container {
-  width: 90%;
-  max-width: 1920px;
-  height: 90%;
-  max-height: 1080px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #fff;
-  border-radius: 0.5rem;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
-  padding: 1rem;
-}
+// .app-main-container {
+//   width: 90%;
+//   max-width: 1920px;
+//   height: 90%;
+//   max-height: 1080px;
+//   display: flex;
+//   flex-direction: column;
+//   overflow: hidden; /* kein Scrollen außen */
+//   background: #fff;
+//   border-radius: 0.5rem;
+//   box-shadow: 0 0 20px rgba(0,0,0,0.1);
+//   padding: 1rem;
+// }
 
-.customer-container, .address-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%; /* Container füllt den Bereich */
-}
+// /* Einheitliche Liste */
+// .list-container {
+//   display: flex;
+//   flex-direction: column;
+//   height: 100%;
+// }
 
-.customer-actions, .address-actions {
-  flex: 0 0 auto;
-  margin-bottom: 0.5rem;
-}
+// .list-actions {
+//   flex: 0 0 auto;
+//   margin-bottom: 0.5rem;
+// }
 
-.customer-table-wrapper, .address-table-wrapper {
-  flex: 1 1 auto;      /* Tabelle nimmt restliche Höhe ein */
-  overflow-y: auto;    /* Scrollen nur hier */
-}
+// .list-table-wrapper {
+//   flex: 1 1 auto;
+//   overflow-y: auto; /* scrollbar nur hier */
+// }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .app-main-container {
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
-    border-radius: 0;
-    box-shadow: none;
-  }
-  .customer-actions, .address-actions {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-}
+// /* Optional: max-height für Tabellen */
+// .list-table-wrapper table {
+//   width: 100%;
+// }
 
-.list-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.list-actions {
-  flex: 0 0 auto;
-  margin-bottom: 0.5rem;
-}
-
-.list-table-wrapper {
-  flex: 1 1 auto;
-  overflow-y: auto;
-}
-
+// /* Responsive */
+// @media (max-width: 768px) {
+//   .app-main-container {
+//     width: 100%;
+//     height: 100%;
+//     max-width: none;
+//     max-height: none;
+//     border-radius: 0;
+//     box-shadow: none;
+//   }
+//   .list-actions {
+//     flex-direction: column;
+//     gap: 0.5rem;
+//   }
+// }
