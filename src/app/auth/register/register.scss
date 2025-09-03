@@ -1,12 +1,10 @@
-/* register.component.css */
-
 /* Hintergrund mit animiertem Farbverlauf */
 .register-container {
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(-45deg, #00c6ff, #0072ff, #6a11cb, #2575fc);
+  background: linear-gradient(-45deg, #1e3c72, #2a5298, #6dd5ed, #2193b0);
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
 }
@@ -32,7 +30,25 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Button Effekte */
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ccc;
+}
+.divider:not(:empty)::before {
+  margin-right: .75em;
+}
+.divider:not(:empty)::after {
+  margin-left: .75em;
+}
+
+/* Buttons */
 button {
   transition: all 0.2s ease;
   cursor: pointer;
@@ -40,4 +56,42 @@ button {
 button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ✅ Mobile Optimierung */
+@media (max-width: 576px) {
+  .register-container {
+    padding: 1rem;
+    align-items: flex-start;
+  }
+
+  .register-card {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0.75rem;
+    margin-top: 3rem;
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  h3.card-title {
+    font-size: 1.5rem;
+  }
+
+  button {
+    font-size: 0.95rem;
+    padding: 0.65rem;
+  }
+}
+
+/* ✅ Tablet Optimierung */
+@media (min-width: 577px) and (max-width: 768px) {
+  .register-card {
+    max-width: 360px;
+  }
+  h3.card-title {
+    font-size: 1.6rem;
+  }
+  button {
+    font-size: 1rem;
+  }
 }

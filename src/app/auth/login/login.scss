@@ -59,3 +59,41 @@ button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+
+/* Mobile Optimierung */
+@media (max-width: 576px) {
+  .login-container {
+    padding: 1rem;
+    align-items: flex-start; /* nicht komplett mittig, sondern etwas nach oben */
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0.75rem;
+    margin-top: 3rem; /* etwas Abstand nach oben */
+    background: rgba(255, 255, 255, 0.95); /* etwas kräftiger auf kleinen Screens */
+  }
+
+  h3.card-title {
+    font-size: 1.5rem;
+  }
+
+  button {
+    font-size: 0.95rem;
+    padding: 0.65rem;
+  }
+}
+
+/* Tablets (etwas größere Schrift und Buttons) */
+@media (min-width: 577px) and (max-width: 768px) {
+  .login-card {
+    max-width: 360px;
+  }
+  h3.card-title {
+    font-size: 1.6rem;
+  }
+  button {
+    font-size: 1rem;
+  }
+}
