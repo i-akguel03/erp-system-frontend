@@ -1,23 +1,30 @@
 <div class="container mt-3">
+
   <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
-    <input type="text" class="form-control flex-grow-1" placeholder="Abo suchen..." [(ngModel)]="searchTerm">
-    <button class="btn btn-primary" (click)="filterSubscriptions()">Suchen</button>
-    <button class="btn btn-secondary" (click)="loadSubscriptions()">Alle Anzeigen</button>
-    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neues Abo erstellen</button>
+  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
+    <input type="text" class="form-control flex-grow-1" placeholder="Abo suchen..."
+           [(ngModel)]="searchTerm" (ngModelChange)="filterSubscriptions()">
+
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+      <button class="btn btn-primary flex-grow-1 flex-md-grow-0" (click)="filterSubscriptions()">Suchen</button>
+      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadSubscriptions()">Alle Anzeigen</button>
+      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">Neues Abo erstellen</button>
+    </div>
   </div>
 
+  <!-- Lade Spinner -->
   <div *ngIf="loading" class="text-center my-3">
     <div class="spinner-border text-primary"></div>
   </div>
 
-  <div *ngIf="error" class="alert alert-danger">
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
     {{ error }}
     <button type="button" class="btn-close" (click)="clearError()"></button>
   </div>
 
-  <!-- Tabelle responsive -->
-  <div class="table-responsive" *ngIf="filteredSubscriptions.length > 0">
+  <!-- Desktop Tabelle -->
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredSubscriptions.length > 0">
     <table class="table table-hover table-bordered">
       <thead class="table-light">
         <tr>
@@ -57,6 +64,37 @@
     </table>
   </div>
 
+  <!-- Mobile Cards -->
+  <div class="d-block d-md-none">
+    <div *ngFor="let subscription of filteredSubscriptions" class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">{{ subscription.productName }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">
+          Abo Nr.: {{ subscription.subscriptionNumber }}
+        </h6>
+        <p class="card-text">
+          <strong>Vertrag:</strong> {{ getContractById(subscription.contractId)?.contractTitle }}
+          ({{ getContractById(subscription.contractId)?.contractNumber }})<br>
+          <strong>Status:</strong>
+          <span class="badge" [ngClass]="getStatusBadgeClass(subscription.subscriptionStatus)">
+            {{ subscription.subscriptionStatus }}
+          </span><br>
+          <strong>Start:</strong> {{ subscription.startDate | date:'shortDate' }}<br>
+          <strong>Ende:</strong> {{ subscription.endDate | date:'shortDate' }}
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(subscription)">Bearbeiten</button>
+          <button class="btn btn-sm btn-danger flex-grow-1" (click)="deleteSubscription(subscription.id!)">Löschen</button>
+          <button *ngIf="canActivate(subscription)" class="btn btn-sm btn-success flex-grow-1" (click)="activateSubscription(subscription.id!)">Aktivieren</button>
+          <button *ngIf="canPause(subscription)" class="btn btn-sm btn-warning flex-grow-1" (click)="pauseSubscription(subscription.id!)">Pausieren</button>
+          <button *ngIf="canCancel(subscription)" class="btn btn-sm btn-outline-danger flex-grow-1"
+                  (click)="subscriptionToPause = subscription; showPauseModal = true">Kündigen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keine Abos Hinweis -->
   <div *ngIf="filteredSubscriptions.length === 0 && !loading" class="text-center mt-3">
     Keine Abos gefunden.
   </div>
@@ -74,7 +112,6 @@
             <label class="form-label">Produktname</label>
             <input type="text" class="form-control" [(ngModel)]="newSubscription.productName">
           </div>
-
           <div class="mb-3">
             <label class="form-label">Vertrag *</label>
             <select class="form-select" [(ngModel)]="newSubscription.contractId" required>
@@ -85,12 +122,10 @@
             </select>
             <div class="form-text">{{ contracts.length }} Verträge verfügbar</div>
           </div>
-
           <div class="mb-3">
             <label class="form-label">Monatlicher Preis</label>
             <input type="number" class="form-control" [(ngModel)]="newSubscription.monthlyPrice">
           </div>
-
           <div class="mb-3">
             <label class="form-label">Status</label>
             <select class="form-select" [(ngModel)]="newSubscription.subscriptionStatus">
@@ -99,12 +134,10 @@
               <option value="CANCELLED">CANCELLED</option>
             </select>
           </div>
-
           <div class="mb-3">
             <label class="form-label">Startdatum</label>
             <input type="date" class="form-control" [(ngModel)]="newStartDateString">
           </div>
-
           <div class="mb-3">
             <label class="form-label">Enddatum (optional)</label>
             <input type="date" class="form-control" [(ngModel)]="newEndDateString">
@@ -131,7 +164,6 @@
             <label class="form-label">Produktname</label>
             <input type="text" class="form-control" [(ngModel)]="editSubscription.productName">
           </div>
-
           <div class="mb-3">
             <label class="form-label">Vertrag *</label>
             <select class="form-select" [(ngModel)]="editSubscription.contractId" required>
@@ -142,12 +174,10 @@
             </select>
             <div class="form-text">Aktuell: {{ getContractById(editSubscription.contractId)?.contractTitle }}</div>
           </div>
-
           <div class="mb-3">
             <label class="form-label">Monatlicher Preis</label>
             <input type="number" class="form-control" [(ngModel)]="editSubscription.monthlyPrice">
           </div>
-
           <div class="mb-3">
             <label class="form-label">Status</label>
             <select class="form-select" [(ngModel)]="editSubscription.subscriptionStatus">
@@ -156,12 +186,10 @@
               <option value="CANCELLED">CANCELLED</option>
             </select>
           </div>
-
           <div class="mb-3">
             <label class="form-label">Startdatum</label>
             <input type="date" class="form-control" [(ngModel)]="editStartDateString">
           </div>
-
           <div class="mb-3">
             <label class="form-label">Enddatum (optional)</label>
             <input type="date" class="form-control" [(ngModel)]="editEndDateString">
@@ -195,4 +223,5 @@
       </div>
     </div>
   </div>
+
 </div>

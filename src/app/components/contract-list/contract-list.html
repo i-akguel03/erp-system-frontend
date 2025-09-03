@@ -1,23 +1,31 @@
 <div class="container mt-3">
+
   <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
+  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
+    <!-- Suchfeld -->
     <input type="text" class="form-control flex-grow-1" placeholder="Vertrag suchen..." [(ngModel)]="searchTerm">
-    <button class="btn btn-primary" (click)="filterContracts()">Suchen</button>
-    <button class="btn btn-secondary" (click)="loadContracts()">Alle Anzeigen</button>
-    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neuen Vertrag erstellen</button>
+
+    <!-- Buttons -->
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+      <button class="btn btn-primary flex-grow-1 flex-md-grow-0" (click)="filterContracts()">Suchen</button>
+      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadContracts()">Alle Anzeigen</button>
+      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">Neuen Vertrag erstellen</button>
+    </div>
   </div>
 
+  <!-- Lade Spinner -->
   <div *ngIf="loading" class="text-center my-3">
     <div class="spinner-border text-primary"></div>
   </div>
 
-  <div *ngIf="error" class="alert alert-danger">
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
     {{ error }}
     <button type="button" class="btn-close" (click)="clearError()"></button>
   </div>
 
-  <!-- Tabelle responsive -->
-  <div class="table-responsive" *ngIf="filteredContracts.length > 0">
+  <!-- Desktop Tabelle (ab md) -->
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredContracts.length > 0">
     <table class="table table-hover table-bordered">
       <thead class="table-light">
         <tr>
@@ -34,10 +42,7 @@
         <tr *ngFor="let contract of filteredContracts">
           <td>{{ contract.contractNumber }}</td>
           <td>{{ contract.contractTitle }}</td>
-          <td>
-            {{ getCustomerById(contract.customerId)?.firstName }} {{ getCustomerById(contract.customerId)?.lastName }}
-            <small class="text-muted">({{ getCustomerById(contract.customerId)?.customerNumber }})</small>
-          </td>
+          <td>{{ getCustomerById(contract.customerId)?.firstName }} {{ getCustomerById(contract.customerId)?.lastName }}</td>
           <td>
             <span class="badge" [ngClass]="getStatusBadgeClass(contract.contractStatus)">
               {{ contract.contractStatus }}
@@ -46,18 +51,40 @@
           <td>{{ contract.startDate | date:'shortDate' }}</td>
           <td>{{ contract.endDate | date:'shortDate' }}</td>
           <td class="d-flex flex-wrap gap-1">
-            <button class="btn btn-sm btn-primary" (click)="openEditModal(contract)" [disabled]="!canEdit(contract)">Bearbeiten</button>
+            <button class="btn btn-sm btn-primary" (click)="openEditModal(contract)">Bearbeiten</button>
             <button class="btn btn-sm btn-danger" (click)="deleteContract(contract.id!)">Löschen</button>
-            <!-- KORRIGIERT: Übergabe nur der ID, nicht des ganzen Objekts -->
-            <button *ngIf="canActivate(contract)" class="btn btn-sm btn-success" (click)="activateContract(contract.id!)">Aktivieren</button>
-            <button *ngIf="canSuspend(contract)" class="btn btn-sm btn-warning" (click)="suspendContract(contract.id!)">Suspendieren</button>
-            <button *ngIf="canTerminate(contract)" class="btn btn-sm btn-outline-danger" (click)="openTerminateModal(contract)">Kündigen</button>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
+  <!-- Mobile Cards (unter md) -->
+  <div class="d-block d-md-none">
+    <div *ngFor="let contract of filteredContracts" class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">{{ contract.contractTitle }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">
+          {{ getCustomerById(contract.customerId)?.firstName }} {{ getCustomerById(contract.customerId)?.lastName }}
+          <small>({{ getCustomerById(contract.customerId)?.customerNumber }})</small>
+        </h6>
+        <p class="card-text">
+          <strong>Status:</strong>
+          <span class="badge" [ngClass]="getStatusBadgeClass(contract.contractStatus)">
+            {{ contract.contractStatus }}
+          </span><br>
+          <strong>Start:</strong> {{ contract.startDate | date:'shortDate' }}<br>
+          <strong>Ende:</strong> {{ contract.endDate | date:'shortDate' }}
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(contract)">Bearbeiten</button>
+          <button class="btn btn-sm btn-danger flex-grow-1" (click)="deleteContract(contract.id!)">Löschen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keine Verträge Hinweis -->
   <div *ngIf="filteredContracts.length === 0 && !loading" class="text-center mt-3">
     Keine Verträge gefunden.
   </div>

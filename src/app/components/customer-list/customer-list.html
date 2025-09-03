@@ -1,20 +1,31 @@
 <div class="container mt-3">
 
   <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
-    <input type="text" class="form-control flex-grow-1" placeholder="Kunden suchen..." [(ngModel)]="searchTerm" (ngModelChange)="filterCustomers()">
-    <button class="btn btn-primary" (click)="loadCustomers()">Alle Anzeigen</button>
-    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neuer Kunde</button>
+  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
+    <!-- Suchfeld -->
+    <input type="text" class="form-control flex-grow-1" placeholder="Kunden suchen..."
+           [(ngModel)]="searchTerm" (ngModelChange)="filterCustomers()">
+
+    <!-- Buttons -->
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+      <button class="btn btn-primary flex-grow-1 flex-md-grow-0" (click)="loadCustomers()">Alle Anzeigen</button>
+      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">Neuer Kunde</button>
+    </div>
   </div>
 
+  <!-- Lade Spinner -->
   <div *ngIf="loading" class="text-center my-3">
     <div class="spinner-border text-primary"></div>
   </div>
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
 
-  <!-- Tabelle responsive -->
-  <div class="table-responsive" *ngIf="filteredCustomers.length > 0">
+  <!-- Desktop Tabelle (ab md) -->
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredCustomers.length > 0">
     <table class="table table-hover table-bordered">
       <thead class="table-light">
         <tr>
@@ -37,7 +48,7 @@
             {{ customer.residentialAddress?.postalCode || '' }}
             {{ customer.residentialAddress?.city || '' }}
           </td>
-          <td class="d-flex gap-1">
+          <td class="d-flex gap-1 flex-wrap">
             <button class="btn btn-sm btn-primary" (click)="openEditModal(customer)">Bearbeiten</button>
             <button class="btn btn-sm btn-danger" (click)="deleteCustomer(customer.id)">Löschen</button>
           </td>
@@ -46,6 +57,30 @@
     </table>
   </div>
 
+  <!-- Mobile Cards (unter md) -->
+  <div class="d-block d-md-none">
+    <div *ngFor="let customer of filteredCustomers" class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">{{ customer.firstName }} {{ customer.lastName }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">
+          Kundennummer: {{ customer.customerNumber }}
+        </h6>
+        <p class="card-text">
+          <strong>Telefon:</strong> {{ customer.tel }}<br>
+          <strong>Adresse:</strong>
+          {{ customer.residentialAddress?.street || '-' }},
+          {{ customer.residentialAddress?.postalCode || '' }}
+          {{ customer.residentialAddress?.city || '' }}
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(customer)">Bearbeiten</button>
+          <button class="btn btn-sm btn-danger flex-grow-1" (click)="deleteCustomer(customer.id)">Löschen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keine Kunden Hinweis -->
   <div *ngIf="filteredCustomers.length === 0 && !loading" class="text-center mt-3">
     Keine Kunden gefunden.
   </div>

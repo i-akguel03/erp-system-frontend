@@ -1,20 +1,27 @@
-<div class="container mt-3">
+<div class="container mt-3 address-container">
+
   <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
-    <input type="text" class="form-control flex-grow-1" placeholder="Adresse suchen..." [(ngModel)]="searchTerm">
-    <button class="btn btn-primary" (click)="filterAddresses()">Suchen</button>
-    <button class="btn btn-secondary" (click)="loadAddresses()">Alle Anzeigen</button>
-    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neue Adresse erstellen</button>
+  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
+    <input type="text" class="form-control flex-grow-1" placeholder="Adresse suchen..."
+           [(ngModel)]="searchTerm" (ngModelChange)="filterAddresses()">
+
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadAddresses()">Alle Anzeigen</button>
+      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">Neue Adresse</button>
+    </div>
   </div>
 
+  <!-- Ladeanzeige & Fehlermeldung -->
   <div *ngIf="loading" class="text-center my-3">
     <div class="spinner-border text-primary"></div>
   </div>
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-
-  <!-- Tabelle responsive -->
-  <div class="table-responsive" *ngIf="filteredAddresses.length > 0">
+  <!-- Desktop Tabelle -->
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredAddresses.length > 0">
     <table class="table table-hover table-bordered">
       <thead class="table-light">
         <tr>
@@ -33,13 +40,32 @@
           <td>{{ address.postalCode }}</td>
           <td>{{ address.city }}</td>
           <td>{{ address.country }}</td>
-          <td class="d-flex gap-1">
+          <td class="d-flex gap-1 flex-wrap">
             <button class="btn btn-sm btn-primary" (click)="openEditModal(address)">Bearbeiten</button>
             <button class="btn btn-sm btn-danger" (click)="deleteAddress(address.id)">Löschen</button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="d-block d-md-none">
+    <div *ngFor="let address of filteredAddresses" class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Adresse ID: {{ address.id }}</h5>
+        <p class="card-text">
+          <strong>Straße:</strong> {{ address.street }}<br>
+          <strong>PLZ:</strong> {{ address.postalCode }}<br>
+          <strong>Stadt:</strong> {{ address.city }}<br>
+          <strong>Land:</strong> {{ address.country }}
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(address)">Bearbeiten</button>
+          <button class="btn btn-sm btn-danger flex-grow-1" (click)="deleteAddress(address.id)">Löschen</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="filteredAddresses.length === 0 && !loading" class="text-center mt-3">
@@ -88,3 +114,6 @@
         </div>
       </div>
     </div>
+  </div>
+
+</div>
