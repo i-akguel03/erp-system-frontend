@@ -5,7 +5,7 @@
 <div *ngIf="backendReady()" class="app-root-container">
   
   <!-- Navbar oben -->
-  <app-navbar></app-navbar>
+  <app-navbar *ngIf="isLoggedIn()"></app-navbar>
 
   <!-- Main Content Bereich -->
   <div class="app-main-wrapper">

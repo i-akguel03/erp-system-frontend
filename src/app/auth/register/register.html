@@ -1,71 +1,69 @@
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h3 class="card-title text-center mb-4">Registrieren</h3>
-          
-          <!-- Registrierungsformular -->
-          <form (ngSubmit)="register()">
-            <div class="mb-3">
-              <label for="username" class="form-label">Username</label>
-              <input 
-                type="text" 
-                id="username" 
-                class="form-control" 
-                [(ngModel)]="username" 
-                name="username" 
-                required>
-            </div>
-            
-            <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
-              <input 
-                type="password" 
-                id="password" 
-                class="form-control" 
-                [(ngModel)]="password" 
-                name="password" 
-                required>
-            </div>
-            
-            <!-- Button mit Loading-State -->
-            <button 
-              type="submit" 
-              class="btn btn-primary w-100"
-              [disabled]="isLoading || !username || !password">
-              <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              {{ isLoading ? 'Registrieren...' : 'Registrieren' }}
-            </button>
-          </form>
-          
-          <!-- Fehlermeldung -->
-          <div *ngIf="error" class="alert alert-danger mt-3">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            {{ error }}
-          </div>
-
-          <!-- Erfolgsmeldung -->
-          <div *ngIf="isRegistered" class="text-center mt-3">
-            <div class="mb-4">
-              <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
-            </div>
-            <h3 class="card-title text-success mb-3">Registrierung erfolgreich!</h3>
-            <div class="alert alert-success mb-4">
-              Ihr Account wurde erfolgreich erstellt. Sie können sich jetzt anmelden.
-            </div>
-            <button type="button" class="btn btn-primary w-100" (click)="goToLogin()">
-              Zum Anmelden
-            </button>
-          </div>
-
-          <!-- Link zum Login -->
-          <div *ngIf="!isRegistered"  class="text-center mt-3">
-            <p class="text-muted">Bereits ein Account vorhanden?</p>
-            <a routerLink="/login" class="btn btn-outline-primary w-100">Zum Anmelden</a>
-          </div>
-
+<!-- register.component.html -->
+<div class="register-container">
+  <div class="register-card shadow-lg">
+    <div class="card-body p-4">
+      <h3 class="card-title text-center mb-4">Registrieren</h3>
+      
+      <!-- Registrierungsformular -->
+      <form (ngSubmit)="register()" *ngIf="!isRegistered">
+        <div class="mb-3">
+          <label for="username" class="form-label">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            class="form-control form-control-lg" 
+            [(ngModel)]="username" 
+            name="username" 
+            required
+            [disabled]="isLoading">
         </div>
+        
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            class="form-control form-control-lg" 
+            [(ngModel)]="password" 
+            name="password" 
+            required
+            [disabled]="isLoading">
+        </div>
+        
+        <!-- Button mit Loading-State -->
+        <button 
+          type="submit" 
+          class="btn btn-primary w-100 btn-lg"
+          [disabled]="isLoading || !username || !password">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ isLoading ? 'Registrieren...' : 'Registrieren' }}
+        </button>
+      </form>
+      
+      <!-- Fehlermeldung -->
+      <div *ngIf="error && !isRegistered" class="alert alert-danger mt-3">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ error }}
+      </div>
+
+      <!-- Erfolgsmeldung -->
+      <div *ngIf="isRegistered" class="text-center mt-3">
+        <div class="mb-4">
+          <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+        </div>
+        <h3 class="card-title text-success mb-3">Registrierung erfolgreich!</h3>
+        <div class="alert alert-success mb-4">
+          Ihr Account wurde erfolgreich erstellt. Sie können sich jetzt anmelden.
+        </div>
+        <button type="button" class="btn btn-primary w-100 btn-lg" (click)="goToLogin()">
+          Zum Anmelden
+        </button>
+      </div>
+
+      <!-- Link zum Login -->
+      <div *ngIf="!isRegistered" class="text-center mt-4">
+        <p class="text-muted">Bereits ein Account vorhanden?</p>
+        <a routerLink="/login" class="btn btn-outline-primary w-100 btn-lg">Zum Anmelden</a>
       </div>
     </div>
   </div>
