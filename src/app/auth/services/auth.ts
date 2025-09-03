@@ -1,96 +1,136 @@
-// auth.service.ts
+// src/app/auth/services/auth.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, timer, of } from 'rxjs';
 import { tap, catchError, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
+/**
+ * Schnittstelle für Login-Request
+ */
 export interface AuthRequest {
   username: string;
   password: string;
 }
 
+/**
+ * Schnittstelle für Login-Response
+ */
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root' // Service wird global verfügbar gemacht
 })
 export class AuthService {
-  
+
+  // Basis-URLs aus environment
   private baseUrl = environment.apiBaseUrl;
   private apiUrl = `${this.baseUrl}/auth`;
+
+  // Keys für localStorage
   private readonly ACCESS_TOKEN_KEY = 'accessToken';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
 
-  // BehaviorSubjects für reaktive Token-Updates
-  private tokenSubject = new BehaviorSubject<string | null>(null);
-  private refreshTokenSubject = new BehaviorSubject<string | null>(null);
-  private isRefreshing = false;
+  /**
+   * BehaviorSubjects sind Observables, die einen aktuellen Wert halten.
+   * Wir nutzen sie, um Token und Auth-Status reaktiv zu verwalten.
+   */
+  private tokenSubject = new BehaviorSubject<string | null>(null);           // Access Token
+  private refreshTokenSubject = new BehaviorSubject<string | null>(null);    // Refresh Token
+  private isRefreshing = false;                                              // Flag für laufenden Token-Refresh
 
+  // Auth-Status Observable, z.B. für Navbar oder Guards
+  private authStatusSubject = new BehaviorSubject<boolean>(this.isAuthenticated());
+  public authStatus$ = this.authStatusSubject.asObservable();
+
+  // Observable für Access Token
   public token$ = this.tokenSubject.asObservable();
 
   constructor(private http: HttpClient) { 
-    this.loadTokensFromStorage();
-    this.startTokenRefreshTimer();
+    this.loadTokensFromStorage();     // Lade Tokens beim Service-Start
+    this.startTokenRefreshTimer();    // Start Timer für automatischen Token-Refresh
   }
 
-  // Tokens aus localStorage laden beim Service-Start
+  /**
+   * Lade Tokens aus localStorage beim Start.
+   * Wenn Tokens vorhanden, werden sie in die BehaviorSubjects gesetzt.
+   */
   private loadTokensFromStorage(): void {
     const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    
+
     if (accessToken) this.tokenSubject.next(accessToken);
     if (refreshToken) this.refreshTokenSubject.next(refreshToken);
+
+    // Auth-Status aktualisieren
+    this.authStatusSubject.next(this.isAuthenticated());
   }
 
-  // Login Request
+  /**
+   * Login Request an Backend
+   * @param data AuthRequest (username + password)
+   */
   login(data: AuthRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data).pipe(
       tap((response) => {
+        // Wenn Tokens vorhanden, speichere sie und aktualisiere den Auth-Status
         if (response.accessToken && response.refreshToken) {
           this.saveTokens(response);
         }
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('Login fehlgeschlagen:', error);
-        throw error;
+        throw error; // Fehler weitergeben
       })
     );
   }
 
-  // Register Request
+  /**
+   * Registrierung eines neuen Nutzers
+   */
   register(data: AuthRequest): Observable<string> {
     return this.http.post(`${this.apiUrl}/register`, data, { responseType: 'text' });
   }
 
-  // Tokens speichern (privat, wird nur intern verwendet)
+  /**
+   * Speichere Tokens und aktualisiere den Auth-Status
+   */
   saveTokens(tokens: AuthResponse): void {
     localStorage.setItem(this.ACCESS_TOKEN_KEY, tokens.accessToken);
     localStorage.setItem(this.REFRESH_TOKEN_KEY, tokens.refreshToken);
-    
+
     this.tokenSubject.next(tokens.accessToken);
     this.refreshTokenSubject.next(tokens.refreshToken);
-    
+
+    // Auth-Status auf true setzen → Navbar reagiert sofort
+    this.authStatusSubject.next(true);
     console.log('Tokens erfolgreich gespeichert');
   }
 
-  // Access Token abrufen
+  /**
+   * Access Token abrufen
+   */
   getAccessToken(): string | null {
     return this.tokenSubject.value || localStorage.getItem(this.ACCESS_TOKEN_KEY);
   }
 
-  // Refresh Token abrufen
+  /**
+   * Refresh Token abrufen
+   */
   getRefreshToken(): string | null {
     return this.refreshTokenSubject.value || localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
 
-  // Token Refresh mit verbesserter Fehlerbehandlung
+  /**
+   * Token Refresh Funktion
+   * Prüft, ob schon ein Refresh läuft → sonst neue Anfrage
+   */
   refreshToken(): Observable<AuthResponse | null> {
     if (this.isRefreshing) {
-      // Warte auf bereits laufenden Refresh
+      // Wenn schon refresh läuft, auf bestehendes Token warten
       return this.token$.pipe(
         switchMap(token => token ? of({ accessToken: token, refreshToken: this.getRefreshToken()! }) : of(null))
       );
@@ -105,28 +145,27 @@ export class AuthService {
 
     this.isRefreshing = true;
 
-    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, {
-      refreshToken: refreshToken
-    }).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, { refreshToken }).pipe(
       tap((response) => {
         if (response.accessToken && response.refreshToken) {
-          this.saveTokens(response);
+          this.saveTokens(response); // Tokens speichern + Auth-Status setzen
         }
         this.isRefreshing = false;
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('Token refresh fehlgeschlagen:', error);
         this.isRefreshing = false;
-        this.logout(); // Bei Refresh-Fehler ausloggen
+        this.logout(); // Bei Fehler ausloggen
         return of(null);
       })
     );
   }
 
-  // Automatischer Token-Refresh Timer
+  /**
+   * Automatischer Timer, um Token regelmäßig zu erneuern
+   */
   private startTokenRefreshTimer(): void {
-    // Prüfe alle 2 Minuten, ob Token erneuert werden muss
-    timer(0, 2 * 60 * 1000).pipe(
+    timer(0, 2 * 60 * 1000).pipe( // alle 2 Minuten prüfen
       switchMap(() => {
         if (this.shouldRefreshToken() && !this.isRefreshing) {
           console.log('Token wird automatisch erneuert...');
@@ -136,56 +175,52 @@ export class AuthService {
       })
     ).subscribe({
       next: (result) => {
-        if (result) {
-          console.log('Token automatisch erneuert');
-        }
+        if (result) console.log('Token automatisch erneuert');
       },
-      error: (error) => {
-        console.error('Automatischer Token-Refresh fehlgeschlagen:', error);
-      }
+      error: (error) => console.error('Automatischer Token-Refresh fehlgeschlagen:', error)
     });
   }
 
-  // Prüfen ob Token erneuert werden sollte
+  /**
+   * Prüfen, ob Token bald abläuft (<3 Minuten)
+   */
   private shouldRefreshToken(): boolean {
     const token = this.getAccessToken();
-    if (!token || !this.isAuthenticated()) {
-      return false;
-    }
+    if (!token || !this.isAuthenticated()) return false;
 
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const payload = JSON.parse(atob(token.split('.')[1])); // JWT Payload
       const now = Math.floor(Date.now() / 1000);
       const timeUntilExpiry = payload.exp - now;
-      
-      // Refresh wenn weniger als 3 Minuten bis Ablauf (bei 15min Gültigkeit)
-      return timeUntilExpiry < 180;
+      return timeUntilExpiry < 180; // weniger als 3 Minuten
     } catch {
       return false;
     }
   }
 
-  // Logout mit verbesserter Cleanup
+  /**
+   * Logout → Tokens löschen + Auth-Status setzen
+   */
   logout(): void {
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     this.tokenSubject.next(null);
     this.refreshTokenSubject.next(null);
+    this.authStatusSubject.next(false); // Navbar reagiert sofort
     this.isRefreshing = false;
     console.log('Logout erfolgreich - Alle Tokens entfernt');
   }
 
-  // Alternative: Alle Tokens löschen (Alias für logout)
   clearTokens(): void {
     this.logout();
   }
 
-  // Prüfen ob User authentifiziert ist
+  /**
+   * Prüfen ob User authentifiziert ist
+   */
   isAuthenticated(): boolean {
     const token = this.getAccessToken();
-    if (!token) {
-      return false;
-    }
+    if (!token) return false;
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -197,13 +232,13 @@ export class AuthService {
     }
   }
 
-  // Username aus Token extrahieren
+  /**
+   * Username aus Token extrahieren
+   */
   getCurrentUser(): string | null {
     try {
       const token = this.getAccessToken();
-      if (!token) {
-        return null;
-      }
+      if (!token) return null;
 
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.sub || payload.username || payload.user || null;
@@ -213,19 +248,21 @@ export class AuthService {
     }
   }
 
-  // Authorization Header für HTTP Requests
+  /**
+   * Authorization Header für HTTP Requests
+   */
   getAuthorizationHeader(): string | null {
     const token = this.getAccessToken();
     return token ? `Bearer ${token}` : null;
   }
 
-  // Token-Gültigkeitsdauer abrufen
+  /**
+   * Token-Ablaufzeit als Date abrufen
+   */
   getTokenExpirationTime(): Date | null {
     try {
       const token = this.getAccessToken();
-      if (!token) {
-        return null;
-      }
+      if (!token) return null;
 
       const payload = JSON.parse(atob(token.split('.')[1]));
       return new Date(payload.exp * 1000);
@@ -235,29 +272,26 @@ export class AuthService {
     }
   }
 
-  // Prüfen ob Token bald abläuft
+  /**
+   * Prüfen, ob Token bald abläuft
+   */
   isTokenExpiringSoon(minutesThreshold: number = 5): boolean {
     const expirationTime = this.getTokenExpirationTime();
-    if (!expirationTime) {
-      return false;
-    }
+    if (!expirationTime) return false;
 
     const now = new Date();
     const threshold = new Date(now.getTime() + (minutesThreshold * 60 * 1000));
-    
     return expirationTime <= threshold;
   }
 
-  // Backend Logout (falls Backend einen Logout-Endpoint hat)
+  /**
+   * Backend Logout (falls Backend Endpoint hat)
+   */
   logoutFromBackend(): Observable<any> {
     const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return of(null);
-    }
+    if (!refreshToken) return of(null);
 
-    return this.http.post(`${this.apiUrl}/logout`, {
-      refreshToken: refreshToken
-    }).pipe(
+    return this.http.post(`${this.apiUrl}/logout`, { refreshToken }).pipe(
       catchError((error) => {
         console.warn('Backend-Logout fehlgeschlagen:', error);
         return of(null);
@@ -265,7 +299,9 @@ export class AuthService {
     );
   }
 
-  // Vollständiger Logout mit Backend-Call
+  /**
+   * Vollständiger Logout inkl. Backend
+   */
   logoutComplete(): Observable<any> {
     return new Observable(observer => {
       this.logoutFromBackend().subscribe({
@@ -284,17 +320,17 @@ export class AuthService {
     });
   }
 
-  // Debug-Funktion: Token-Info anzeigen
+  /**
+   * Debugging: Alle Token-Infos
+   */
   getTokenInfo(): any {
     try {
       const token = this.getAccessToken();
-      if (!token) {
-        return null;
-      }
+      if (!token) return null;
 
       const payload = JSON.parse(atob(token.split('.')[1]));
       const now = Math.floor(Date.now() / 1000);
-      
+
       return {
         username: payload.sub || payload.username,
         roles: payload.roles || [],
@@ -310,9 +346,18 @@ export class AuthService {
     }
   }
 
-  // Hilfsmethode für manuelle Token-Erneuerung (für Debugging)
+  /**
+   * Manuelle Token-Erneuerung (z.B. Debug)
+   */
   forceTokenRefresh(): Observable<AuthResponse | null> {
     console.log('Manuelle Token-Erneuerung ausgelöst');
     return this.refreshToken();
+  }
+
+  /**
+   * Synchrone Methode für Template oder Guards
+   */
+  public isLoggedIn(): boolean {
+    return this.authStatusSubject.value;
   }
 }

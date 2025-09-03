@@ -5,7 +5,7 @@
 <div *ngIf="backendReady()" class="app-root-container">
   
   <!-- Navbar oben -->
-  <app-navbar *ngIf="isLoggedIn()"></app-navbar>
+<app-navbar *ngIf="auth.authStatus$ | async"></app-navbar>
 
   <!-- Main Content Bereich -->
   <div class="app-main-wrapper">

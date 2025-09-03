@@ -23,7 +23,7 @@ export class App {
   protected readonly title = signal('erp-system-frontend');
   protected backendReady = signal(false);
 
-  constructor(private auth: AuthService) {}
+  constructor(private : AuthService) {}
 
   // Computed Signal: ist User eingeloggt?
   protected readonly isLoggedIn = computed(() => this.auth.isAuthenticated());
