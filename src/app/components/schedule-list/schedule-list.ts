@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DueScheduleService } from '../../services/due-schedule-service';
@@ -21,6 +21,10 @@ export class DueScheduleListComponent implements OnInit {
   newPaymentAmount: number = 0;
   selectedSchedule?: DueSchedule;
 
+  // Modal für neue Fälligkeit
+  showNewScheduleModal = false;
+  newSchedule: Partial<DueSchedule> = {};
+
   constructor(private scheduleService: DueScheduleService) {}
 
   ngOnInit(): void {
@@ -33,7 +37,6 @@ export class DueScheduleListComponent implements OnInit {
     this.error = null;
     this.scheduleService.getAllDueSchedules().subscribe({
       next: data => {
-        console.log(data)
         this.schedules = data;
         this.filteredSchedules = [...this.schedules];
         this.loading = false;
@@ -42,22 +45,26 @@ export class DueScheduleListComponent implements OnInit {
     });
   }
 
+  // --- Filter ---
   filterSchedules(): void {
     const term = this.searchTerm.toLowerCase();
     this.filteredSchedules = this.schedules.filter(s =>
-      s.dueNumber.toLowerCase().includes(term) ||
-      s.subscriptionId.toLowerCase().includes(term) ||
-      s.status.toLowerCase().includes(term)
+      s.dueNumber?.toLowerCase().includes(term) ||
+      s.subscriptionId?.toLowerCase().includes(term) ||
+      s.status?.toLowerCase().includes(term)
     );
+  }
+
+  resetFilter(): void {
+    this.searchTerm = '';
+    this.filteredSchedules = [...this.schedules];
   }
 
   // --- CRUD-like Actions ---
   markAsPaid(schedule: DueSchedule): void {
     if (!schedule.id) return;
     this.scheduleService.markAsPaid(schedule.id).subscribe({
-      next: updated => {
-        this.updateLocalSchedule(updated);
-      },
+      next: updated => this.updateLocalSchedule(updated),
       error: err => this.handleApiError(err, 'Fehler beim Markieren als bezahlt')
     });
   }
@@ -84,6 +91,28 @@ export class DueScheduleListComponent implements OnInit {
     this.scheduleService.recordPayment(schedule.id, payment).subscribe({
       next: updated => this.updateLocalSchedule(updated),
       error: err => this.handleApiError(err, 'Fehler beim Verbuchen der Zahlung')
+    });
+  }
+
+  // --- Neue Fälligkeit Modal ---
+  openNewScheduleModal(): void {
+    this.newSchedule = {};
+    this.showNewScheduleModal = true;
+  }
+
+  closeNewScheduleModal(): void {
+    this.showNewScheduleModal = false;
+  }
+
+  createSchedule(): void {
+    if (!this.newSchedule.dueDate || !this.newSchedule.amount || !this.newSchedule.subscriptionId) return;
+    this.scheduleService.createDueSchedule(this.newSchedule as DueSchedule).subscribe({
+      next: created => {
+        this.schedules.push(created);
+        this.filteredSchedules = [...this.schedules];
+        this.closeNewScheduleModal();
+      },
+      error: err => this.handleApiError(err, 'Fehler beim Erstellen der Fälligkeit')
     });
   }
 

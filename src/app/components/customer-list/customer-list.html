@@ -1,28 +1,26 @@
-<div class="container mt-3 customer-container d-flex flex-column" style="height: 100%;">
+<div class="container mt-3">
 
-  <!-- Suchfeld & Aktionen -->
-  <div class="d-flex flex-wrap mb-3 align-items-center gap-2 customer-actions">
+  <!-- Suchleiste & Aktionen -->
+  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
     <input type="text" class="form-control flex-grow-1" placeholder="Kunden suchen..." [(ngModel)]="searchTerm" (ngModelChange)="filterCustomers()">
-    <button class="btn btn-secondary btn-sm" (click)="generateTestData()">Testdaten erzeugen</button>
-    <button class="btn btn-primary btn-sm ms-auto" (click)="openNewModal()">➕ Neuer Kunde</button>
+    <button class="btn btn-primary" (click)="loadCustomers()">Alle Anzeigen</button>
+    <button class="btn btn-success ms-auto" (click)="openNewModal()">Neuer Kunde</button>
   </div>
 
-  <!-- Spinner & Fehlermeldung -->
-  <div *ngIf="loading" class="d-flex justify-content-center my-3">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary"></div>
   </div>
+
   <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
-  <!-- Scrollbarer Tabellenbereich -->
-  <div class="customer-table-wrapper flex-grow-1" style="overflow-y:auto; max-height:60vh;">
-    <table class="table table-striped table-hover mb-0">
-      <thead>
+  <!-- Tabelle responsive -->
+  <div class="table-responsive" *ngIf="filteredCustomers.length > 0">
+    <table class="table table-hover table-bordered">
+      <thead class="table-light">
         <tr>
           <th>Kundennummer</th>
           <th>Vorname</th>
-          <th>Name</th>
+          <th>Nachname</th>
           <th>Telefon</th>
           <th>Wohnadresse</th>
           <th>Aktionen</th>
@@ -35,122 +33,73 @@
           <td>{{ customer.lastName }}</td>
           <td>{{ customer.tel }}</td>
           <td>
-            {{ customer.residentialAddress?.street || '-' }}, 
-            {{ customer.residentialAddress?.postalCode || '' }} 
+            {{ customer.residentialAddress?.street || '-' }},
+            {{ customer.residentialAddress?.postalCode || '' }}
             {{ customer.residentialAddress?.city || '' }}
           </td>
-          <td>
-            <button class="btn btn-warning btn-sm me-2" (click)="openEditModal(customer)">Bearbeiten</button>
-            <button class="btn btn-danger btn-sm" (click)="deleteCustomer(customer.id)">Löschen</button>
+          <td class="d-flex gap-1">
+            <button class="btn btn-sm btn-primary" (click)="openEditModal(customer)">Bearbeiten</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteCustomer(customer.id)">Löschen</button>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
+  <div *ngIf="filteredCustomers.length === 0 && !loading" class="text-center mt-3">
+    Keine Kunden gefunden.
+  </div>
+
   <!-- Neuer Kunde Modal -->
-  <div *ngIf="showNewModal">
-    <div class="modal-backdrop fade show"></div>
-    <div class="modal d-block">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form (ngSubmit)="createCustomer()" #newForm="ngForm">
-            <div class="modal-header">
-              <h5 class="modal-title">Neuer Kunde</h5>
-              <button type="button" class="btn-close" (click)="closeNewModal()"></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Kundennummer</label>
-                <input type="text" class="form-control" [(ngModel)]="newCustomer.customerNumber" name="customerNumber" readonly>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Vorname</label>
-                <input type="text" class="form-control" [(ngModel)]="newCustomer.firstName" name="firstName" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Nachname</label>
-                <input type="text" class="form-control" [(ngModel)]="newCustomer.lastName" name="lastName" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">E-Mail</label>
-                <input type="email" class="form-control" [(ngModel)]="newCustomer.email" name="email">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Telefon</label>
-                <input type="text" class="form-control" [(ngModel)]="newCustomer.tel" name="tel">
-              </div>
-
-              <!-- Adressen -->
-              <div class="mb-3">
-                <label class="form-label">Wohnadresse</label>
-                <input type="text" class="form-control" [(ngModel)]="newCustomer.residentialAddress.street" name="resStreet" placeholder="Straße">
-                <input type="text" class="form-control mt-1" [(ngModel)]="newCustomer.residentialAddress.postalCode" name="resPostalCode" placeholder="PLZ">
-                <input type="text" class="form-control mt-1" [(ngModel)]="newCustomer.residentialAddress.city" name="resCity" placeholder="Stadt">
-                <input type="text" class="form-control mt-1" [(ngModel)]="newCustomer.residentialAddress.country" name="resCountry" placeholder="Land">
-              </div>
-
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-              <button type="submit" class="btn btn-success" [disabled]="!newForm.form.valid">Speichern</button>
-            </div>
-          </form>
+  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Neuer Kunde</h5>
+          <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="newCustomer.firstName">
+          <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="newCustomer.lastName">
+          <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="newCustomer.tel">
+          <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="newCustomer.email">
+          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newCustomer.residentialAddress.street">
+          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newCustomer.residentialAddress.postalCode">
+          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newCustomer.residentialAddress.city">
+          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newCustomer.residentialAddress.country">
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="createCustomer()">Erstellen</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Bearbeiten Kunde Modal -->
-  <div *ngIf="showEditModal">
-    <div class="modal-backdrop fade show"></div>
-    <div class="modal d-block">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form (ngSubmit)="updateCustomer()" #editForm="ngForm">
-            <div class="modal-header">
-              <h5 class="modal-title">Kunde bearbeiten</h5>
-              <button type="button" class="btn-close" (click)="closeEditModal()"></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Kundennummer</label>
-                <input type="text" class="form-control" [(ngModel)]="editCustomer.customerNumber" name="editCustomerNumber" readonly>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Vorname</label>
-                <input type="text" class="form-control" [(ngModel)]="editCustomer.firstName" name="editFirstName" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Nachname</label>
-                <input type="text" class="form-control" [(ngModel)]="editCustomer.lastName" name="editLastName" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">E-Mail</label>
-                <input type="email" class="form-control" [(ngModel)]="editCustomer.email" name="editEmail">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Telefon</label>
-                <input type="text" class="form-control" [(ngModel)]="editCustomer.tel" name="editTel">
-              </div>
-
-              <!-- Adressen bearbeiten -->
-              <div class="mb-3">
-                <label class="form-label">Wohnadresse</label>
-                <input type="text" class="form-control" [(ngModel)]="editCustomer.residentialAddress.street" name="editResStreet" placeholder="Straße">
-                <input type="text" class="form-control mt-1" [(ngModel)]="editCustomer.residentialAddress.postalCode" name="editResPostalCode" placeholder="PLZ">
-                <input type="text" class="form-control mt-1" [(ngModel)]="editCustomer.residentialAddress.city" name="editResCity" placeholder="Stadt">
-                <input type="text" class="form-control mt-1" [(ngModel)]="editCustomer.residentialAddress.country" name="editResCountry" placeholder="Land">
-              </div>
-
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-              <button type="submit" class="btn btn-success" [disabled]="!editForm.form.valid">Speichern</button>
-            </div>
-          </form>
+  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Kunde bearbeiten</h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="editCustomer.firstName">
+          <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="editCustomer.lastName">
+          <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="editCustomer.tel">
+          <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="editCustomer.email">
+          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editCustomer.residentialAddress.street">
+          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editCustomer.residentialAddress.postalCode">
+          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editCustomer.residentialAddress.city">
+          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editCustomer.residentialAddress.country">
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="updateCustomer()">Speichern</button>
         </div>
       </div>
     </div>
   </div>
+
 </div>

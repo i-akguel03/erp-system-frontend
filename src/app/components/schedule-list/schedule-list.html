@@ -1,9 +1,11 @@
 <div class="container mt-3 schedule-container">
-  <!-- Aktionen -->
-  <div class="d-flex flex-wrap mb-3 align-items-center gap-2 schedule-actions">
+
+  <!-- Suchleiste & Aktionen -->
+  <div class="d-flex flex-wrap mb-3 align-items-center gap-2">
     <input type="text" class="form-control flex-grow-1" placeholder="Fälligkeit suchen..." [(ngModel)]="searchTerm">
     <button class="btn btn-primary" (click)="filterSchedules()">Suchen</button>
     <button class="btn btn-secondary" (click)="loadSchedules()">Alle Anzeigen</button>
+    <button class="btn btn-success ms-auto" (click)="openNewScheduleModal()">Neue Fälligkeit erstellen</button>
   </div>
 
   <!-- Ladeanzeige & Fehlermeldung -->
@@ -13,7 +15,7 @@
   <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
   <!-- Scrollbarer Tabellenbereich -->
-  <div class="schedule-table-wrapper flex-grow-1" *ngIf="filteredSchedules.length > 0" style="overflow-y:auto; max-height:60vh;">
+  <div class="table-responsive" *ngIf="filteredSchedules.length > 0">
     <table class="table table-hover table-bordered">
       <thead class="table-light">
         <tr>
@@ -59,4 +61,28 @@
   <div *ngIf="filteredSchedules.length === 0 && !loading" class="text-center mt-3">
     Keine Fälligkeiten gefunden.
   </div>
+
+  <!-- Modal für neue Fälligkeit -->
+  <div *ngIf="showNewScheduleModal" class="modal show d-block" tabindex="-1" (click)="closeNewScheduleModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Neue Fälligkeit erstellen</h5>
+          <button type="button" class="btn-close" (click)="closeNewScheduleModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="date" class="form-control mb-2" placeholder="Fälligkeitsdatum" [(ngModel)]="newSchedule.dueDate">
+          <input type="number" class="form-control mb-2" placeholder="Betrag" [(ngModel)]="newSchedule.amount">
+          <select class="form-select mb-2" [(ngModel)]="newSchedule.subscriptionId">
+            <option *ngFor="let sub of subscriptions" [value]="sub.id">{{ sub.productName }} – {{ sub.subscriptionNumber }}</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewScheduleModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="createSchedule()">Erstellen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
