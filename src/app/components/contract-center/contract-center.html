@@ -1,43 +1,65 @@
 <div class="contract-center-container">
 
-  <!-- Obere Vertragsliste als Tabelle -->
+  <!-- Obere Vertragsliste -->
   <div class="contracts-top">
-    <input type="text" placeholder="Vertrag suchen..." [(ngModel)]="searchTerm" (input)="filterContracts()"
-      class="form-control mb-2">
 
-    <div class="table-responsive">
+    <!-- Suchleiste -->
+    <input type="text" placeholder="Vertrag suchen..." [(ngModel)]="searchTerm"
+      (input)="filterContracts()" class="form-control mb-2">
+
+    <!-- Desktop-Tabelle -->
+    <div class="table-responsive d-none d-md-block">
       <table class="table table-hover table-sm">
         <thead class="table-light">
           <tr>
-            <th scope="col">Vertragsnummer</th>
-            <th scope="col">Vertragsbeginn</th>
-            <th scope="col">Vertragsende</th>
-            <th scope="col">Kunde</th>
+            <th scope="col">Nr.</th>
             <th scope="col">Titel</th>
+            <th scope="col">Kunde</th>
+            <th scope="col">Start</th>
+            <th scope="col">Ende</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let contract of filteredContracts" (click)="selectContract(contract)"
             [class.table-active]="isSelectedContract(contract)" (contextmenu)="onContractRightClick($event, contract)">
             <td>{{ contract.contractNumber }}</td>
+            <td>{{ contract.contractTitle }}</td>
+            <td>{{ customers[contract.customerId]?.firstName }} {{ customers[contract.customerId]?.lastName }}</td>
             <td>{{ contract.startDate | date:'dd.MM.yyyy' }}</td>
             <td>{{ contract.endDate | date:'dd.MM.yyyy' }}</td>
-            <td>{{ customers[contract.customerId]?.firstName }} {{ customers[contract.customerId]?.lastName }}</td>
-            <td>{{ contract.contractTitle }}</td>
           </tr>
         </tbody>
-
-        <!-- Kontextmenü -->
-        <div *ngIf="contextMenuVisible" [style.top.px]="contextMenuPosition.y" [style.left.px]="contextMenuPosition.x"
-          class="context-menu card shadow-sm">
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item list-group-item-action" (click)="onContractAction('neu')">Neu</li>
-            <li class="list-group-item list-group-item-action" (click)="onContractAction('kündigen')">Kündigen</li>
-            <li class="list-group-item list-group-item-action" (click)="onContractAction('stornieren')">Stornieren</li>
-          </ul>
-        </div>
       </table>
     </div>
+
+    <!-- Mobile Cards -->
+    <div class="d-block d-md-none mobile-contracts">
+      <div *ngFor="let contract of filteredContracts" class="card mb-2 contract-card"
+          (click)="selectContract(contract)">
+        <div class="card-body">
+          <h6 class="card-title">{{ contract.contractTitle }}</h6>
+          <p class="card-text mb-1">
+            <strong>Nr:</strong> {{ contract.contractNumber }}<br>
+            <strong>Kunde:</strong> {{ customers[contract.customerId]?.firstName }}
+            {{ customers[contract.customerId]?.lastName }}<br>
+            <strong>Start:</strong> {{ contract.startDate | date:'dd.MM.yyyy' }}<br>
+            <strong>Ende:</strong> {{ contract.endDate | date:'dd.MM.yyyy' }}
+          </p>
+          <small class="text-muted">Tippen für Details</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kontextmenü -->
+    <div *ngIf="contextMenuVisible" [style.top.px]="contextMenuPosition.y"
+      [style.left.px]="contextMenuPosition.x" class="context-menu card shadow-sm">
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item list-group-item-action" (click)="onContractAction('neu')">Neu</li>
+        <li class="list-group-item list-group-item-action" (click)="onContractAction('kündigen')">Kündigen</li>
+        <li class="list-group-item list-group-item-action" (click)="onContractAction('stornieren')">Stornieren</li>
+      </ul>
+    </div>
+
   </div>
 
   <!-- Untere Panels -->
@@ -48,8 +70,14 @@
       <h5>Abonnements von {{ selectedContract?.contractTitle || '...' }}</h5>
       <ul class="list-group">
         <li *ngFor="let sub of subscriptions" (click)="selectSubscription(sub)"
-          [class.selected]="isSelectedSubscription(sub)" class="list-group-item list-group-item-action">
+          [class.selected]="isSelectedSubscription(sub)"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
           {{ sub.productName }} – {{ sub.subscriptionNumber }}
+          <span class="badge ms-1" [ngClass]="{
+            'bg-success': sub.subscriptionStatus==='ACTIVE',
+            'bg-warning': sub.subscriptionStatus==='PAUSED',
+            'bg-danger': sub.subscriptionStatus==='CANCELLED'
+          }">{{ sub.subscriptionStatus }}</span>
         </li>
         <li *ngIf="subscriptions.length === 0" class="list-group-item text-muted">
           Keine Abonnements vorhanden
@@ -67,13 +95,14 @@
       </h5>
 
       <ul class="list-group" *ngIf="selectedSubscription">
-        <li *ngFor="let ds of dueSchedules" class="list-group-item py-1">
-          📅 {{ ds.dueDate | date:'dd.MM.yyyy' }} –
-          {{ ds.amount | number:'1.2-2' }} €
-          <span *ngIf="ds.paidDate" class="text-success">
-            (bezahlt am {{ ds.paidDate | date:'dd.MM.yyyy' }})
+        <li *ngFor="let ds of dueSchedules" class="list-group-item py-1 d-flex justify-content-between align-items-center">
+          <span>📅 {{ ds.dueDate | date:'dd.MM.yyyy' }} – {{ ds.amount | number:'1.2-2' }} €</span>
+          <span [ngClass]="{
+            'text-success': ds.paidDate,
+            'text-danger': !ds.paidDate
+          }">
+            {{ ds.paidDate ? 'bezahlt am ' + (ds.paidDate | date:'dd.MM.yyyy') : 'offen' }}
           </span>
-          <span *ngIf="!ds.paidDate" class="text-danger">(offen)</span>
         </li>
         <li *ngIf="dueSchedules.length === 0" class="list-group-item text-muted">
           Keine Fälligkeiten vorhanden
@@ -88,3 +117,202 @@
     </div>
   </div>
 </div>
+
+<style>
+/* Grundlayout */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', 'Roboto', sans-serif;
+  background-color: #f0f2f5;
+}
+
+/* Hauptcontainer */
+.contract-center-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+/* Vertragsliste Desktop */
+.contracts-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.contracts-top input {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #ced4da;
+  outline: none;
+}
+
+.contracts-top input:focus {
+  border-color: #495057;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.contracts-top .table-responsive {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.contracts-top table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.contracts-top th, .contracts-top td {
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+}
+
+.contracts-top th {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Hover / Auswahl */
+.contracts-top tbody tr:hover {
+  background-color: #e3f2fd;
+}
+
+.contracts-top tbody tr.table-active {
+  background-color: #bbdefb;
+}
+
+/* Mobile Cards */
+.mobile-contracts {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.contract-card {
+  cursor: pointer;
+  border-left: 4px solid #0d6efd;
+  margin-bottom: 0.5rem;
+  transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+  background-color: #ffffff;
+}
+
+.contract-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Untere Panels */
+.contracts-bottom {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.subscriptions-panel,
+.details-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.5rem;
+  background-color: #f8f9fa;
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+.subscriptions-panel h5,
+.details-panel h5 {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* Listen scroll */
+.subscriptions-panel ul,
+.details-panel ul {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+}
+
+.list-group-item-action:hover {
+  background-color: #e2e6ea;
+}
+
+.selected {
+  background-color: #cfe2ff;
+  font-weight: 500;
+}
+
+/* Fälligkeiten */
+.details-panel .list-group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.details-panel .text-success {
+  color: #28a745;
+}
+
+.details-panel .text-danger {
+  color: #dc3545;
+}
+
+/* Kontextmenü */
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background-color: #fff;
+  border-radius: 0.375rem;
+  min-width: 150px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.context-menu .list-group-item-action:hover {
+  background-color: #e3f2fd;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .contracts-bottom {
+    flex-direction: column;
+  }
+
+  .subscriptions-panel,
+  .details-panel {
+    max-height: 200px;
+  }
+
+  .contracts-top .table-responsive {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-body {
+    padding: 0.5rem;
+  }
+  .card-title {
+    font-size: 0.95rem;
+  }
+  .card-text {
+    font-size: 0.85rem;
+  }
+}
+</style>
