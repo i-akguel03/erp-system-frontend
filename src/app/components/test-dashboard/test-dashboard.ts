@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { forkJoin, Subscription } from 'rxjs';
 
-import { Product, Invoice, InvoiceItem, ErpService } from '../../services/testservice';
+import { Invoice, InvoiceItem, ErpService } from '../../services/testservice';
 import { Address } from '../../models/Address';
 import { Contract } from '../../models/Contract';
 import { Customer } from '../../models/Customer';
+import { Product } from '../../models/Product';
 
 @Component({
   selector: 'app-dashboard',

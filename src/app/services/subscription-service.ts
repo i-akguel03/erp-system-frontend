@@ -15,7 +15,8 @@ export class SubscriptionService extends BaseApiService {
       ...dto,
       startDate: dto.startDate ? new Date(dto.startDate) : null,
       endDate: dto.endDate ? new Date(dto.endDate) : null,
-      monthlyPrice: dto.monthlyPrice != null ? Number(dto.monthlyPrice) : 0
+      monthlyPrice: dto.monthlyPrice != null ? Number(dto.monthlyPrice) : 0,
+      productName: dto.productName // optional vom Backend
     } as Subscription;
   }
 
@@ -54,12 +55,35 @@ export class SubscriptionService extends BaseApiService {
   }
 
   createSubscription(subscription: Subscription): Observable<Subscription> {
-    return this.http.post<Subscription>(this.apiUrl, subscription, { headers: this.getAuthHeaders() })
+    if (!subscription.productId) {
+      throw new Error('productId is required to create a subscription');
+    }
+    if (!subscription.contractId) {
+      throw new Error('contractId is required to create a subscription');
+    }
+
+    const payload = {
+      ...subscription,
+      startDate: subscription.startDate?.toISOString(),
+      endDate: subscription.endDate?.toISOString()
+    };
+
+    return this.http.post<Subscription>(this.apiUrl, payload, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToSubscription(dto)));
   }
 
   updateSubscription(id: string, subscription: Subscription): Observable<Subscription> {
-    return this.http.put<Subscription>(`${this.apiUrl}/${id}`, subscription, { headers: this.getAuthHeaders() })
+    if (!subscription.productId) {
+      throw new Error('productId is required to update a subscription');
+    }
+
+    const payload = {
+      ...subscription,
+      startDate: subscription.startDate?.toISOString(),
+      endDate: subscription.endDate?.toISOString()
+    };
+
+    return this.http.put<Subscription>(`${this.apiUrl}/${id}`, payload, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToSubscription(dto)));
   }
 

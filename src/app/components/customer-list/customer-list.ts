@@ -100,17 +100,25 @@ editCustomer: Customer = {
   }
 
   deleteCustomer(id?: string): void {
-    if (!id) return;
-    if (confirm('Möchten Sie diesen Kunden wirklich löschen?')) {
-      this.customerService.deleteCustomer(id).subscribe({
-        next: () => {
-          this.customers = this.customers.filter(c => c.id !== id);
-          this.filterCustomers();
-        },
-        error: (err) => this.handleApiError(err, 'Fehler beim Löschen des Kunden')
-      });
-    }
+  if (!id) return;
+  if (confirm('Möchten Sie diesen Kunden wirklich löschen?')) {
+    this.customerService.deleteCustomer(id).subscribe({
+      next: () => {
+        this.customers = this.customers.filter(c => c.id !== id);
+        this.filterCustomers();
+      },
+      error: (err) => {
+        if (err.status === 404) {
+          alert('Der Kunde wurde nicht gefunden (evtl. bereits gelöscht).');
+        } else if (err.status === 409) {
+          alert('Der Kunde kann nicht gelöscht werden, da aktive Verträge existieren.');
+        } else {
+          this.handleApiError(err, 'Fehler beim Löschen des Kunden');
+        }
+      }
+    });
   }
+}
 
   initTestData() {
     this.loading = true;

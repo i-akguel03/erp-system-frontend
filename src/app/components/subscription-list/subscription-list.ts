@@ -5,6 +5,8 @@ import { Subscription, SubscriptionStatus, BillingCycle } from '../../models/Sub
 import { SubscriptionService } from '../../services/subscription-service';
 import { Contract } from '../../models/Contract';
 import { ContractService } from '../../services/contract-service';
+import { ProductService } from '../../services/product-service';
+import { Product } from '../../models/Product';
 
 @Component({
   selector: 'app-subscription-list',
@@ -21,6 +23,7 @@ export class SubscriptionListComponent implements OnInit {
   searchTerm: string = '';
 
   contracts: Contract[] = [];
+  products: Product[] = [];
 
   newSubscription: Subscription = this.createEmptySubscription();
   editSubscription: Subscription = this.createEmptySubscription();
@@ -36,11 +39,15 @@ export class SubscriptionListComponent implements OnInit {
 
   subscriptionToPause: Subscription | null = null;
 
-  constructor(private subscriptionService: SubscriptionService,
-              private contractService: ContractService) {}
+  constructor(
+    private subscriptionService: SubscriptionService,
+    private contractService: ContractService,
+    private productService: ProductService
+  ) {}
 
   ngOnInit(): void {
     this.loadContracts();
+    this.loadProducts();
     this.loadSubscriptions();
   }
 
@@ -65,14 +72,21 @@ export class SubscriptionListComponent implements OnInit {
     });
   }
 
+  loadProducts(): void {
+    this.productService.getProducts().subscribe({
+      next: data => this.products = data,
+      error: err => this.handleApiError(err, 'Fehler beim Laden der Produkte')
+    });
+  }
+
   filterSubscriptions(): void {
     const term = this.searchTerm.toLowerCase();
     this.filteredSubscriptions = this.subscriptions.filter(s => {
       const contract = this.getContractById(s.contractId);
       const contractString = contract ? `${contract.contractNumber} ${contract.contractTitle}` : '';
-      return s.subscriptionNumber.toLowerCase().includes(term) ||
+      return s.subscriptionNumber?.toLowerCase().includes(term) ||
              s.productName?.toLowerCase().includes(term) ||
-             s.subscriptionStatus.toLowerCase().includes(term) ||
+             s.subscriptionStatus?.toLowerCase().includes(term) ||
              contractString.toLowerCase().includes(term);
     });
   }
@@ -83,7 +97,7 @@ export class SubscriptionListComponent implements OnInit {
     this.error = null;
     this.newSubscription = this.createEmptySubscription();
     this.newStartDateString = this.formatDateForInput(this.newSubscription.startDate);
-    this.newEndDateString = this.newSubscription.endDate ? this.formatDateForInput(this.newSubscription.endDate) : '';
+    this.newEndDateString = '';
   }
 
   closeNewModal(): void { this.showNewModal = false; }
@@ -100,16 +114,27 @@ export class SubscriptionListComponent implements OnInit {
 
   // --- CRUD ---
   createSubscription(): void {
-    const subscriptionToSend = {
-      ...this.newSubscription,
-      startDate: new Date(this.newStartDateString),
-      endDate: this.newEndDateString ? new Date(this.newEndDateString) : undefined
-    };
-
-    if (!subscriptionToSend.contractId) {
+    if (!this.newSubscription.contractId) {
       this.error = 'Bitte wählen Sie einen Vertrag aus.';
       return;
     }
+    if (!this.newSubscription.productId) {
+      this.error = 'Bitte wählen Sie ein Produkt aus.';
+      return;
+    }
+
+    const selectedProduct = this.getProductById(this.newSubscription.productId);
+    if (!selectedProduct) {
+      this.error = 'Ausgewähltes Produkt existiert nicht.';
+      return;
+    }
+
+    const subscriptionToSend: Subscription = {
+      ...this.newSubscription,
+      productName: selectedProduct.name,
+      startDate: new Date(this.newStartDateString),
+      endDate: this.newEndDateString ? new Date(this.newEndDateString) : undefined,
+    };
 
     this.subscriptionService.createSubscription(subscriptionToSend).subscribe({
       next: created => {
@@ -123,9 +148,20 @@ export class SubscriptionListComponent implements OnInit {
 
   updateSubscription(): void {
     if (!this.editSubscription.id) return;
+    if (!this.editSubscription.productId) {
+      this.error = 'Bitte wählen Sie ein Produkt aus.';
+      return;
+    }
 
-    const subscriptionToUpdate = {
+    const selectedProduct = this.getProductById(this.editSubscription.productId);
+    if (!selectedProduct) {
+      this.error = 'Ausgewähltes Produkt existiert nicht.';
+      return;
+    }
+
+    const subscriptionToUpdate: Subscription = {
       ...this.editSubscription,
+      productName: selectedProduct.name,
       startDate: new Date(this.editStartDateString),
       endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
     };
@@ -161,15 +197,28 @@ export class SubscriptionListComponent implements OnInit {
   }
 
   deleteSubscription(id?: string): void {
-    if (!id || !confirm('Möchten Sie dieses Abo wirklich löschen?')) return;
-    this.subscriptionService.deleteSubscription(id).subscribe({
-      next: () => {
-        this.subscriptions = this.subscriptions.filter(s => s.id !== id);
-        this.filterSubscriptions();
-      },
-      error: err => this.handleApiError(err, 'Fehler beim Löschen des Abos')
-    });
-  }
+  if (!id || !confirm('Möchten Sie dieses Abo wirklich löschen?')) return;
+
+  this.subscriptionService.deleteSubscription(id).subscribe({
+    next: () => {
+      this.subscriptions = this.subscriptions.filter(s => s.id !== id);
+      this.filterSubscriptions();
+    },
+    error: (err) => {
+      if (err.status === 404) {
+        alert('Abonnement nicht gefunden (evtl. bereits gelöscht).');
+      } else if (err.status === 409) {
+        alert('Das Abonnement kann nicht gelöscht werden, da offene Fälligkeiten existieren.');
+      } else if (err.status === 401) {
+        this.error = 'Login abgelaufen. Bitte loggen Sie sich neu ein.';
+      } else if (err.status === 403) {
+        this.error = 'Zugriff verweigert. Sie haben keine Berechtigung für diese Aktion.';
+      } else {
+        this.handleApiError(err, 'Fehler beim Löschen des Abos');
+      }
+    }
+  });
+}
 
   // --- Helper Methods ---
   private updateLocalSubscription(updated: Subscription): void {
@@ -189,12 +238,13 @@ export class SubscriptionListComponent implements OnInit {
   private createEmptySubscription(): Subscription {
     return {
       subscriptionNumber: '',
+      productId: '',           // ✅ immer String
       productName: '',
-      monthlyPrice: 0,
       startDate: new Date(),
       subscriptionStatus: SubscriptionStatus.ACTIVE,
       billingCycle: BillingCycle.MONTHLY,
-      contractId: ''
+      contractId: '',          // ✅ immer String
+      autoRenewal: true
     };
   }
 
@@ -207,6 +257,10 @@ export class SubscriptionListComponent implements OnInit {
     return this.contracts.find(c => c.id === contractId);
   }
 
+  getProductById(productId?: string): Product | undefined {
+    return this.products.find(p => p.id === productId);
+  }
+
   getStatusBadgeClass(status: string): string {
     switch (status) {
       case 'ACTIVE': return 'bg-success';
@@ -217,15 +271,16 @@ export class SubscriptionListComponent implements OnInit {
   }
 
   canActivate(subscription: Subscription): boolean {
-    return subscription.subscriptionStatus === 'PAUSED';
+    return subscription.subscriptionStatus === SubscriptionStatus.PAUSED;
   }
 
   canPause(subscription: Subscription): boolean {
-    return subscription.subscriptionStatus === 'ACTIVE';
+    return subscription.subscriptionStatus === SubscriptionStatus.ACTIVE;
   }
 
   canCancel(subscription: Subscription): boolean {
-    return subscription.subscriptionStatus === 'ACTIVE' || subscription.subscriptionStatus === 'PAUSED';
+    return subscription.subscriptionStatus === SubscriptionStatus.ACTIVE ||
+           subscription.subscriptionStatus === SubscriptionStatus.PAUSED;
   }
 
   clearError(): void { this.error = null; }

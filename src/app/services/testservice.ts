@@ -6,19 +6,8 @@ import { AuthService } from '../auth/services/auth';
 import { Address } from '../models/Address';
 import { Contract } from '../models/Contract';
 import { Customer } from '../models/Customer';
+import { Product } from '../models/Product';
 
-
-export interface Product {
-  id?: string;               // UUID vom Backend
-  productNumber?: string;
-  name: string;
-  description?: string;
-  price?: number;
-  unit?: string;
-  taxRate?: number;
-  productType?: string;
-  active?: boolean;
-}
 
 export interface InvoiceItem {
   id: string;

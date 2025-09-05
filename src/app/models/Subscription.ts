@@ -1,15 +1,15 @@
 // src/app/models/Subscription.ts
 export interface Subscription {
   id?: string;
-  subscriptionNumber: string;
-  productName?: string; // <-- hinzufügen
-  monthlyPrice: number;
-  startDate: Date;    // <-- jetzt Date statt string
-  endDate?: Date;     // optional, ebenfalls Date
+  subscriptionNumber?: string; // optional beim Erstellen, Backend generiert
+  productId: string;           // Pflichtfeld beim Erstellen
+  productName?: string;        // optional, kann vom Backend gefüllt werden
+  startDate: Date;
+  endDate?: Date;
   billingCycle: BillingCycle;
-  subscriptionStatus: SubscriptionStatus;
+  subscriptionStatus?: SubscriptionStatus; // optional beim Erstellen, default ACTIVE
   autoRenewal?: boolean;
-  contractId?: string;
+  contractId: string;          // Pflichtfeld beim Erstellen
 }
 
 // --- Enums ---
@@ -23,5 +23,6 @@ export enum SubscriptionStatus {
 export enum BillingCycle {
   MONTHLY = 'MONTHLY',
   QUARTERLY = 'QUARTERLY',
-  YEARLY = 'YEARLY'
+  SEMI_ANNUALLY = 'SEMI_ANNUALLY',
+  ANNUALLY = 'ANNUALLY'
 }

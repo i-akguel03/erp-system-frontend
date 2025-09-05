@@ -109,8 +109,11 @@
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Produktname</label>
-            <input type="text" class="form-control" [(ngModel)]="newSubscription.productName">
+            <label class="form-label">Produkt *</label>
+            <select class="form-select" [(ngModel)]="newSubscription.productId" required>
+              <option value="">-- Produkt auswählen --</option>
+              <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
+            </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Vertrag *</label>
@@ -120,18 +123,11 @@
                 {{ contract.contractTitle }} ({{ contract.contractNumber }})
               </option>
             </select>
-            <div class="form-text">{{ contracts.length }} Verträge verfügbar</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Monatlicher Preis</label>
-            <input type="number" class="form-control" [(ngModel)]="newSubscription.monthlyPrice">
           </div>
           <div class="mb-3">
             <label class="form-label">Status</label>
             <select class="form-select" [(ngModel)]="newSubscription.subscriptionStatus">
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="PAUSED">PAUSED</option>
-              <option value="CANCELLED">CANCELLED</option>
+              <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
             </select>
           </div>
           <div class="mb-3">
@@ -145,7 +141,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="createSubscription()" [disabled]="!newSubscription.contractId">Erstellen</button>
+          <button class="btn btn-primary" (click)="createSubscription()" [disabled]="!newSubscription.contractId || !newSubscription.productId">Erstellen</button>
         </div>
       </div>
     </div>
@@ -161,8 +157,11 @@
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Produktname</label>
-            <input type="text" class="form-control" [(ngModel)]="editSubscription.productName">
+            <label class="form-label">Produkt *</label>
+            <select class="form-select" [(ngModel)]="editSubscription.productId" required>
+              <option value="">-- Produkt auswählen --</option>
+              <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
+            </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Vertrag *</label>
@@ -172,18 +171,11 @@
                 {{ contract.contractTitle }} ({{ contract.contractNumber }})
               </option>
             </select>
-            <div class="form-text">Aktuell: {{ getContractById(editSubscription.contractId)?.contractTitle }}</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Monatlicher Preis</label>
-            <input type="number" class="form-control" [(ngModel)]="editSubscription.monthlyPrice">
           </div>
           <div class="mb-3">
             <label class="form-label">Status</label>
             <select class="form-select" [(ngModel)]="editSubscription.subscriptionStatus">
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="PAUSED">PAUSED</option>
-              <option value="CANCELLED">CANCELLED</option>
+              <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
             </select>
           </div>
           <div class="mb-3">
@@ -197,7 +189,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="updateSubscription()" [disabled]="!editSubscription.contractId">Speichern</button>
+          <button class="btn btn-primary" (click)="updateSubscription()" [disabled]="!editSubscription.contractId || !editSubscription.productId">Speichern</button>
         </div>
       </div>
     </div>

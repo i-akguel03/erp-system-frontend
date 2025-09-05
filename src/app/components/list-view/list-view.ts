@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Address } from '../../models/Address';
 import { Contract } from '../../models/Contract';
 import { Customer } from '../../models/Customer';
-import { Product } from '../../services/testservice';
 import { Subscription } from '../../models/Subscription';
+import { Product } from '../../models/Product';
 
 type EntityType = 'customer' | 'address' | 'subscription' | 'product';
 
