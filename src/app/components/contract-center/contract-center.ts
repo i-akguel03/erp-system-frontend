@@ -244,41 +244,41 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  getPaymentStatusClass(dueSchedule: DueSchedule): string {
-    if (dueSchedule.paidDate) return 'payment-paid';
-    if (!dueSchedule.dueDate) return 'payment-unknown';
+  // getPaymentStatusClass(dueSchedule: DueSchedule): string {
+  //   if (dueSchedule.paidDate) return 'payment-paid';
+  //   if (!dueSchedule.dueDate) return 'payment-unknown';
 
-    const dueDate = this.safeDate(dueSchedule.dueDate);
-    if (!dueDate) return 'payment-unknown';
+  //   const dueDate = this.safeDate(dueSchedule.dueDate);
+  //   if (!dueDate) return 'payment-unknown';
 
-    return new Date() > dueDate ? 'payment-overdue' : 'payment-pending';
-  }
+  //   return new Date() > dueDate ? 'payment-overdue' : 'payment-pending';
+  // }
 
-  getPaymentStatusIcon(dueSchedule: DueSchedule): string {
-    if (dueSchedule.paidDate) return 'fas fa-check-circle';
-    if (!dueSchedule.dueDate) return 'fas fa-question-circle';
+  // getPaymentStatusIcon(dueSchedule: DueSchedule): string {
+  //   if (dueSchedule.paidDate) return 'fas fa-check-circle';
+  //   if (!dueSchedule.dueDate) return 'fas fa-question-circle';
 
-    const dueDate = this.safeDate(dueSchedule.dueDate);
-    if (!dueDate) return 'fas fa-question-circle';
+  //   const dueDate = this.safeDate(dueSchedule.dueDate);
+  //   if (!dueDate) return 'fas fa-question-circle';
 
-    return new Date() > dueDate ? 'fas fa-exclamation-triangle' : 'fas fa-clock';
-  }
+  //   return new Date() > dueDate ? 'fas fa-exclamation-triangle' : 'fas fa-clock';
+  // }
 
-  getPaymentStatusText(dueSchedule: DueSchedule): string {
-    if (dueSchedule.paidDate) {
-      const paidDateObj = this.safeDate(dueSchedule.paidDate);
-      return paidDateObj ? `Bezahlt am ${paidDateObj.toLocaleDateString('de-DE')}` : 'Bezahlt (Datum ungültig)';
-    }
+  // getPaymentStatusText(dueSchedule: DueSchedule): string {
+  //   if (dueSchedule.paidDate) {
+  //     const paidDateObj = this.safeDate(dueSchedule.paidDate);
+  //     return paidDateObj ? `Bezahlt am ${paidDateObj.toLocaleDateString('de-DE')}` : 'Bezahlt (Datum ungültig)';
+  //   }
 
-    const dueDate = this.safeDate(Date());
-    if (!dueDate) return 'Kein Fälligkeitsdatum';
+  //   const dueDate = this.safeDate(Date());
+  //   if (!dueDate) return 'Kein Fälligkeitsdatum';
 
-    const diffDays = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return `Überfällig seit ${Math.abs(diffDays)} Tag${Math.abs(diffDays) !== 1 ? 'en' : ''}`;
-    if (diffDays === 0) return 'Heute fällig';
-    if (diffDays === 1) return 'Morgen fällig';
-    return `Fällig in ${diffDays} Tag${diffDays !== 1 ? 'en' : ''}`;
-  }
+  //   const diffDays = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  //   if (diffDays < 0) return `Überfällig seit ${Math.abs(diffDays)} Tag${Math.abs(diffDays) !== 1 ? 'en' : ''}`;
+  //   if (diffDays === 0) return 'Heute fällig';
+  //   if (diffDays === 1) return 'Morgen fällig';
+  //   return `Fällig in ${diffDays} Tag${diffDays !== 1 ? 'en' : ''}`;
+  // }
 
   onContractRightClick(event: MouseEvent, contract: Contract): void {
     event.preventDefault();

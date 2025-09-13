@@ -14,20 +14,19 @@
     <!-- Scrollbarer Vertragsbereich -->
     <div class="scrollable-contracts">
       <div class="card h-100">
-        <div class="card-header"><i class="fas fa-list me-2"></i>Verträge ({{ filteredContracts.length }})</div>
         <div class="card-body p-0">
 
-          <!-- Desktop Tabelle -->
-          <div *ngIf="!loading && !error" class="table-responsive d-none d-md-block">
+          <!-- Tabelle für alle Größen (Desktop + Mobile) -->
+          <div *ngIf="!loading && !error" class="table-responsive">
             <table class="table table-hover mb-0">
               <thead class="table-light">
                 <tr>
                   <th>Nr.</th>
                   <th>Titel</th>
                   <th>Kunde</th>
-                  <th>Start</th>
-                  <th>Ende</th>
-                  <th>Status</th>
+                  <th class="d-none d-md-table-cell">Start</th>
+                  <th class="d-none d-md-table-cell">Ende</th>
+                  <th class="d-none d-md-table-cell">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -38,9 +37,9 @@
                   <td>{{ contract.contractNumber }}</td>
                   <td>{{ contract.contractTitle }}</td>
                   <td>{{ customers[contract.customerId]?.firstName }} {{ customers[contract.customerId]?.lastName }}</td>
-                  <td>{{ contract.startDate | date:'dd.MM.yyyy' }}</td>
-                  <td>{{ contract.endDate | date:'dd.MM.yyyy' }}</td>
-                  <td>
+                  <td class="d-none d-md-table-cell">{{ contract.startDate | date:'dd.MM.yyyy' }}</td>
+                  <td class="d-none d-md-table-cell">{{ contract.endDate | date:'dd.MM.yyyy' }}</td>
+                  <td class="d-none d-md-table-cell">
                     <span class="badge" [ngClass]="getContractStatusClass(contract)">
                       {{ getContractStatus(contract) }}
                     </span>
@@ -53,26 +52,6 @@
                 </tr>
               </tbody>
             </table>
-          </div>
-
-          <!-- Mobile Cards -->
-          <div class="d-block d-md-none">
-            <div *ngFor="let contract of filteredContracts" 
-                 class="card mb-2" 
-                 [class.border-primary]="isSelectedContract(contract)"
-                 (click)="selectContract(contract)"
-                 style="cursor: pointer;">
-              <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-file-alt me-1"></i>{{ contract.contractTitle }}</h5>
-                <p class="mb-1"><strong>Nr.:</strong> {{ contract.contractNumber }}</p>
-                <p class="mb-1"><strong>Kunde:</strong> {{ customers[contract.customerId]?.firstName }} {{ customers[contract.customerId]?.lastName }}</p>
-                <p class="mb-1"><strong>Start:</strong> {{ contract.startDate | date:'dd.MM.yyyy' }}</p>
-                <p class="mb-1"><strong>Ende:</strong> {{ contract.endDate | date:'dd.MM.yyyy' }}</p>
-                <span class="badge" [ngClass]="getContractStatusClass(contract)">
-                  {{ getContractStatus(contract) }}
-                </span>
-              </div>
-            </div>
           </div>
 
         </div>

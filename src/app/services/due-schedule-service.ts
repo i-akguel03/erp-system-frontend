@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { BaseApiService } from './base-api-service';
-import { DueSchedule, DueScheduleStatistics, PaymentDto } from '../models/DueSchedule';
+import { DueSchedule, DueScheduleStatistics } from '../models/DueSchedule';
 
 @Injectable({
   providedIn: 'root',
@@ -15,18 +15,17 @@ export class DueScheduleService extends BaseApiService {
     return {
       ...dto,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
-      paidDate: dto.paidDate ? new Date(dto.paidDate) : null,
-      amount: dto.amount != null ? Number(dto.amount) : 0
+      periodStart: dto.periodStart ? new Date(dto.periodStart) : null,
+      periodEnd: dto.periodEnd ? new Date(dto.periodEnd) : null
     } as DueSchedule;
   }
 
   // --- CRUD ---
-getAllDueSchedules(): Observable<DueSchedule[]> {
-  return this.http.get<any>(this.apiUrl, { headers: this.getAuthHeaders() })
-    .pipe(
-      map(res => (res.content || res).map((dto: any) => this.mapToDueSchedule(dto)))
-    );
-}
+  getAllDueSchedules(): Observable<DueSchedule[]> {
+    return this.http.get<any>(this.apiUrl, { headers: this.getAuthHeaders() })
+      .pipe(map(res => (res.content || res).map((dto: any) => this.mapToDueSchedule(dto))));
+  }
+
   getDueScheduleById(id: string): Observable<DueSchedule> {
     return this.http.get<DueSchedule>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToDueSchedule(dto)));
@@ -69,29 +68,10 @@ getAllDueSchedules(): Observable<DueSchedule[]> {
   }
 
   getUpcomingDueSchedules(days: number = 7): Observable<DueSchedule[]> {
-    return this.http.get<DueSchedule[]>(`${this.apiUrl}/upcoming`, { headers: this.getAuthHeaders(), params: { days: days.toString() } })
-      .pipe(map(arr => arr.map(dto => this.mapToDueSchedule(dto))));
-  }
-
-  // --- Payments ---
-  recordPayment(id: string, payment: PaymentDto): Observable<DueSchedule> {
-    return this.http.post<DueSchedule>(`${this.apiUrl}/${id}/payment`, payment, { headers: this.getAuthHeaders() })
-      .pipe(map(dto => this.mapToDueSchedule(dto)));
-  }
-
-  markAsPaid(id: string): Observable<DueSchedule> {
-    return this.http.put<DueSchedule>(`${this.apiUrl}/${id}/mark-paid`, {}, { headers: this.getAuthHeaders() })
-      .pipe(map(dto => this.mapToDueSchedule(dto)));
-  }
-
-  cancelDueSchedule(id: string): Observable<DueSchedule> {
-    return this.http.put<DueSchedule>(`${this.apiUrl}/${id}/cancel`, {}, { headers: this.getAuthHeaders() })
-      .pipe(map(dto => this.mapToDueSchedule(dto)));
-  }
-
-  sendReminder(id: string): Observable<DueSchedule> {
-    return this.http.post<DueSchedule>(`${this.apiUrl}/${id}/send-reminder`, {}, { headers: this.getAuthHeaders() })
-      .pipe(map(dto => this.mapToDueSchedule(dto)));
+    return this.http.get<DueSchedule[]>(`${this.apiUrl}/upcoming`, {
+      headers: this.getAuthHeaders(),
+      params: { days: days.toString() }
+    }).pipe(map(arr => arr.map(dto => this.mapToDueSchedule(dto))));
   }
 
   // --- Statistics / Dashboard ---

@@ -6,7 +6,7 @@
            [(ngModel)]="searchTerm" (ngModelChange)="filterSchedules()">
 
     <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
-      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadSchedules()">Alle Anzeigen</button>
+      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="resetFilter()">Alle Anzeigen</button>
       <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewScheduleModal()">Neue Fälligkeit</button>
     </div>
   </div>
@@ -26,7 +26,7 @@
       <thead class="table-light">
         <tr>
           <th>Nr.</th>
-          <th>Abonnement ID</th>
+          <th>Abonnement</th>
           <th>Fälligkeitsdatum</th>
           <th>Bezahlt am</th>
           <th>Betrag</th>
@@ -68,7 +68,7 @@
   <div class="d-block d-md-none">
     <div *ngFor="let schedule of filteredSchedules" class="card mb-3 shadow-sm">
       <div class="card-body">
-        <h5 class="card-title">Abonnement ID: {{ schedule.subscriptionId }}</h5>
+        <h5 class="card-title">Abonnement: {{ schedule.subscriptionId }}</h5>
         <p class="card-text">
           <strong>Fälligkeitsdatum:</strong> {{ schedule.dueDate | date:'shortDate' }}<br>
           <strong>Bezahlt am:</strong> {{ schedule.paidDate ? (schedule.paidDate | date:'shortDate') : '-' }}<br>
@@ -110,8 +110,13 @@
         <div class="modal-body">
           <input type="date" class="form-control mb-2" placeholder="Fälligkeitsdatum" [(ngModel)]="newSchedule.dueDate">
           <input type="number" class="form-control mb-2" placeholder="Betrag" [(ngModel)]="newSchedule.amount">
+
+          <!-- Dropdown für Subscriptions -->
           <select class="form-select mb-2" [(ngModel)]="newSchedule.subscriptionId">
-            <option *ngFor="let sub of subscriptions" [value]="sub.id">{{ sub.productName }} – {{ sub.subscriptionNumber }}</option>
+            <option value="" disabled selected>Abonnement auswählen...</option>
+            <option *ngFor="let sub of subscriptions" [value]="sub.id">
+              {{ sub.productName }} – {{ sub.subscriptionNumber }}
+            </option>
           </select>
         </div>
         <div class="modal-footer">

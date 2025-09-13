@@ -1,15 +1,13 @@
-<!-- Backend-Check Overlay nur anzeigen, solange Backend nicht bereit -->
 <app-backend-check *ngIf="!backendReady()" (backendStatus)="backendReady.set($event)"></app-backend-check>
 
-<!-- App-Inhalt erst anzeigen, wenn Backend bereit ist -->
-<div *ngIf="backendReady()" class="app-root-container">
-  
-  <!-- Navbar oben -->
-<app-navbar *ngIf="auth.authStatus$ | async"></app-navbar>
+<div *ngIf="backendReady()" class="app-root-container d-flex flex-column vh-100">
 
-  <!-- Main Content Bereich -->
-  <div class="app-main-wrapper">
-    <div class="app-main-container">
+  <!-- Navbar oben, sticky -->
+  <app-navbar *ngIf="auth.authStatus$ | async"></app-navbar>
+
+  <!-- Main Content Bereich: fill the rest of the viewport -->
+  <div class="app-main-wrapper flex-fill d-flex flex-column overflow-hidden">
+    <div class="app-main-container flex-fill overflow-auto">
       <router-outlet></router-outlet>
     </div>
   </div>

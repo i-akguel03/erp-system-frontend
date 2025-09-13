@@ -1,8 +1,8 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DueScheduleService } from '../../services/due-schedule-service';
-import { DueSchedule, PaymentDto } from '../../models/DueSchedule';
+import { DueSchedule } from '../../models/DueSchedule';
 
 @Component({
   selector: 'app-due-schedule-list',
@@ -18,9 +18,6 @@ export class DueScheduleListComponent implements OnInit {
   error: string | null = null;
   searchTerm: string = '';
 
-  newPaymentAmount: number = 0;
-  selectedSchedule?: DueSchedule;
-
   // Modal für neue Fälligkeit
   showNewScheduleModal = false;
   newSchedule: Partial<DueSchedule> = {};
@@ -29,6 +26,10 @@ export class DueScheduleListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSchedules();
+  }
+
+  clearError(): void {
+    this.error = null;
   }
 
   // --- Load ---
@@ -61,38 +62,15 @@ export class DueScheduleListComponent implements OnInit {
   }
 
   // --- CRUD-like Actions ---
-  markAsPaid(schedule: DueSchedule): void {
-    if (!schedule.id) return;
-    this.scheduleService.markAsPaid(schedule.id).subscribe({
-      next: updated => this.updateLocalSchedule(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Markieren als bezahlt')
-    });
-  }
+  // Hinweis: Payment- und Reminder-Funktionen sind im Backend noch nicht verfügbar.
+  // Wenn du sie implementierst, kannst du diese Methoden wieder aktivieren.
 
-  cancelSchedule(schedule: DueSchedule): void {
-    if (!schedule.id || !confirm('Möchten Sie diese Fälligkeit wirklich stornieren?')) return;
-    this.scheduleService.cancelDueSchedule(schedule.id).subscribe({
-      next: updated => this.updateLocalSchedule(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Stornieren der Fälligkeit')
-    });
-  }
-
-  sendReminder(schedule: DueSchedule): void {
-    if (!schedule.id) return;
-    this.scheduleService.sendReminder(schedule.id).subscribe({
-      next: updated => this.updateLocalSchedule(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Versenden der Mahnung')
-    });
-  }
-
-  recordPayment(schedule: DueSchedule, amount: number): void {
-    if (!schedule.id) return;
-    const payment: PaymentDto = { amount, paymentDate: new Date() };
-    this.scheduleService.recordPayment(schedule.id, payment).subscribe({
-      next: updated => this.updateLocalSchedule(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Verbuchen der Zahlung')
-    });
-  }
+  /*
+  markAsPaid(schedule: DueSchedule): void { ... }
+  cancelSchedule(schedule: DueSchedule): void { ... }
+  sendReminder(schedule: DueSchedule): void { ... }
+  recordPayment(schedule: DueSchedule, amount: number): void { ... }
+  */
 
   // --- Neue Fälligkeit Modal ---
   openNewScheduleModal(): void {
@@ -105,7 +83,7 @@ export class DueScheduleListComponent implements OnInit {
   }
 
   createSchedule(): void {
-    if (!this.newSchedule.dueDate || !this.newSchedule.amount || !this.newSchedule.subscriptionId) return;
+    if (!this.newSchedule.dueDate || !this.newSchedule.subscriptionId) return;
     this.scheduleService.createDueSchedule(this.newSchedule as DueSchedule).subscribe({
       next: created => {
         this.schedules.push(created);
