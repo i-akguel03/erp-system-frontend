@@ -12,6 +12,7 @@ import { ProductListComponent } from './components/product-list/product-list';
 import { SubscriptionListComponent } from './components/subscription-list/subscription-list';
 import { ContractCenterComponent } from './components/contract-center/contract-center';
 import { DueScheduleListComponent } from './components/schedule-list/schedule-list';
+import { InvoiceListComponent } from './components/invoice-list/invoice-list';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -27,6 +28,7 @@ export const routes: Routes = [
   { path: 'product', component: ProductListComponent, canActivate: [AuthGuard] },
   { path: 'contract-center', component: ContractCenterComponent, canActivate: [AuthGuard] },
   { path: 'due-schedule', component: DueScheduleListComponent, canActivate: [AuthGuard] },
+  { path: 'invoice', component: InvoiceListComponent, canActivate: [AuthGuard] },
 
 
   // Weiterleitungen

@@ -1,0 +1,396 @@
+<div class="container mt-3">
+
+  <!-- Suchleiste & Aktionen -->
+  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
+    <!-- Suchfeld -->
+    <input type="text" class="form-control flex-grow-1" placeholder="Rechnungen suchen..."
+           [(ngModel)]="searchTerm" (ngModelChange)="filterInvoices()">
+
+    <!-- Buttons -->
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+      <button class="btn btn-info flex-grow-1 flex-md-grow-0" (click)="viewAllOpenItems()">
+        <i class="fas fa-list"></i> Open Items
+      </button>
+      <button class="btn btn-warning flex-grow-1 flex-md-grow-0" (click)="generateInvoiceRun()" [disabled]="loading">
+        <i class="fas fa-play"></i> Rechnungslauf
+      </button>
+      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadInvoices()">
+        <i class="fas fa-refresh"></i> Aktualisieren
+      </button>
+      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">
+        <i class="fas fa-plus"></i> Neue Rechnung
+      </button>
+    </div>
+  </div>
+
+  <!-- Lade Spinner -->
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
+
+  <!-- Desktop Tabelle (ab md) -->
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredInvoices.length > 0">
+    <table class="table table-hover table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Nummer</th>
+          <th>Kunde</th>
+          <th>Rechnungsdatum</th>
+          <th>Fällig</th>
+          <th>Status</th>
+          <th>Betrag</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let invoice of filteredInvoices" style="cursor: pointer;">
+          <td (click)="openDetailsModal(invoice)" class="fw-bold text-primary">{{ invoice.invoiceNumber }}</td>
+          <td (click)="openDetailsModal(invoice)">{{ getCustomerById(invoice.customerId)?.firstName }} {{ getCustomerById(invoice.customerId)?.lastName }}</td>
+          <td (click)="openDetailsModal(invoice)">{{ invoice.invoiceDate | date:'dd.MM.yyyy' }}</td>
+          <td (click)="openDetailsModal(invoice)">{{ invoice.dueDate | date:'dd.MM.yyyy' }}</td>
+          <td (click)="openDetailsModal(invoice)">
+            <span [ngClass]="getStatusBadgeClass(invoice.status)" class="badge">{{ invoice.status }}</span>
+          </td>
+          <td (click)="openDetailsModal(invoice)">{{ invoice.totalAmount | currency:'EUR' }}</td>
+          <td>
+            <div class="btn-group" role="group">
+              <button class="btn btn-outline-info" (click)="openDetailsModal(invoice)" title="Details anzeigen">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-primary" (click)="openEditModal(invoice)" [disabled]="!canEdit(invoice)" title="Bearbeiten">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-success" (click)="sendInvoice(invoice.id)" [disabled]="!canSend(invoice)" title="Senden">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+              <button *ngIf="canViewOpenItems(invoice)" class="btn btn-outline-warning" (click)="viewOpenItems(invoice)" title="Open Items">
+                <i class="fas fa-file-invoice-dollar"></i>
+              </button>
+              <button class="btn btn-danger" (click)="cancelInvoice(invoice.id)" [disabled]="!canCancel(invoice)" title="Stornieren">
+                <i class="fas fa-ban"></i>
+              </button>
+              <button class="btn btn-outline-danger" (click)="deleteInvoice(invoice.id)" title="Löschen">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards (unter md) -->
+  <div class="d-block d-md-none">
+    <div *ngFor="let invoice of filteredInvoices" class="card mb-3 shadow-sm" style="cursor: pointer;" (click)="openDetailsModal(invoice)">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="card-title text-primary mb-0">{{ invoice.invoiceNumber }}</h5>
+          <span [ngClass]="getStatusBadgeClass(invoice.status)" class="badge">{{ invoice.status }}</span>
+        </div>
+        <h6 class="card-subtitle mb-2 text-muted">
+          {{ getCustomerById(invoice.customerId)?.firstName }} {{ getCustomerById(invoice.customerId)?.lastName }}
+        </h6>
+        <div class="row">
+          <div class="col-6">
+            <small class="text-muted">Rechnungsdatum:</small><br>
+            <strong>{{ invoice.invoiceDate | date:'dd.MM.yyyy' }}</strong>
+          </div>
+          <div class="col-6">
+            <small class="text-muted">Fällig:</small><br>
+            <strong>{{ invoice.dueDate | date:'dd.MM.yyyy' }}</strong>
+          </div>
+        </div>
+        <div class="mt-2">
+          <small class="text-muted">Betrag:</small><br>
+          <strong class="h6 text-success">{{ invoice.totalAmount | currency:'EUR' }}</strong>
+        </div>
+        
+        <!-- Mobile Action Buttons -->
+        <div class="d-flex flex-wrap gap-2 mt-3" (click)="$event.stopPropagation()">
+          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(invoice)" [disabled]="!canEdit(invoice)">
+            <i class="fas fa-edit"></i> Bearbeiten
+          </button>
+          <button class="btn btn-sm btn-success flex-grow-1" (click)="sendInvoice(invoice.id)" [disabled]="!canSend(invoice)">
+            <i class="fas fa-paper-plane"></i> Senden
+          </button>
+          <button *ngIf="canViewOpenItems(invoice)" class="btn btn-sm btn-warning flex-grow-1" (click)="viewOpenItems(invoice)">
+            <i class="fas fa-file-invoice-dollar"></i> Open Items
+          </button>
+          <button class="btn btn-sm btn-danger flex-grow-1" (click)="cancelInvoice(invoice.id)" [disabled]="!canCancel(invoice)">
+            <i class="fas fa-ban"></i> Stornieren
+          </button>
+          <button class="btn btn-sm btn-outline-danger flex-grow-1" (click)="deleteInvoice(invoice.id)">
+            <i class="fas fa-trash"></i> Löschen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keine Rechnungen Hinweis -->
+  <div *ngIf="filteredInvoices.length === 0 && !loading" class="text-center mt-5">
+    <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+    <h5 class="text-muted">Keine Rechnungen gefunden</h5>
+    <p class="text-muted">Erstellen Sie Ihre erste Rechnung oder passen Sie die Suchkriterien an.</p>
+  </div>
+
+  <!-- Details Modal -->
+  <div *ngIf="showDetailsModal" class="modal show d-block" tabindex="-1" (click)="closeDetailsModal()">
+    <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-file-invoice me-2"></i>
+            Rechnung {{ selectedInvoice?.invoiceNumber }}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeDetailsModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="selectedInvoice" class="row">
+            <!-- Rechnungsinformationen -->
+            <div class="col-md-6 mb-4">
+              <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2"></i>Rechnungsinformationen</h6>
+              <div class="row">
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Rechnungsnummer:</small>
+                  <div class="fw-bold">{{ selectedInvoice.invoiceNumber }}</div>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Status:</small>
+                  <div><span [ngClass]="getStatusBadgeClass(selectedInvoice.status)" class="badge">{{ selectedInvoice.status }}</span></div>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Rechnungsdatum:</small>
+                  <div>{{ selectedInvoice.invoiceDate | date:'dd.MM.yyyy' }}</div>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Fälligkeitsdatum:</small>
+                  <div>{{ selectedInvoice.dueDate | date:'dd.MM.yyyy' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kundeninformationen -->
+            <div class="col-md-6 mb-4">
+              <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-user me-2"></i>Kundeninformationen</h6>
+              <div *ngIf="getCustomerById(selectedInvoice.customerId); let customer">
+                <div class="mb-2">
+                  <small class="text-muted">Name:</small>
+                  <div class="fw-bold">{{ customer.firstName }} {{ customer.lastName }}</div>
+                </div>
+                <div class="mb-2">
+                  <small class="text-muted">Kundennummer:</small>
+                  <div>{{ customer.customerNumber }}</div>
+                </div>
+                <div class="mb-2" *ngIf="customer.email">
+                  <small class="text-muted">E-Mail:</small>
+                  <div>{{ customer.email }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rechnungspositionen -->
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3">
+                <i class="fas fa-list me-2"></i>Rechnungspositionen 
+                <span class="badge bg-secondary ms-2">{{ selectedInvoice.invoiceItems?.length || 0 }}</span>
+              </h6>
+              
+              <div *ngIf="selectedInvoice.invoiceItems && selectedInvoice.invoiceItems.length > 0; else noItems">
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Pos.</th>
+                        <th>Beschreibung</th>
+                        <th>Typ</th>
+                        <th class="text-end">Menge</th>
+                        <th class="text-end">Einzelpreis</th>
+                        <th class="text-end">Rabatt</th>
+                        <th class="text-end">Netto</th>
+                        <th class="text-end">MwSt</th>
+                        <th class="text-end">Gesamt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of selectedInvoice.invoiceItems; let i = index">
+                        <td class="fw-bold">{{ i + 1 }}</td>
+                        <td>
+                          <div class="fw-bold">{{ item.productName || item.description }}</div>
+                          <small class="text-muted" *ngIf="item.productCode">Code: {{ item.productCode }}</small>
+                          <div *ngIf="item.description && item.productName && item.description !== item.productName" class="small text-muted">
+                            {{ item.description }}
+                          </div>
+                          <div *ngIf="item.periodStart && item.periodEnd" class="small text-info">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ item.periodStart | date:'dd.MM.yyyy' }} - {{ item.periodEnd | date:'dd.MM.yyyy' }}
+                          </div>
+                        </td>
+                        <td>
+                          <span *ngIf="item.itemType" class="badge badge-sm" [ngClass]="getItemTypeBadgeClass(item.itemType)">
+                            {{ getItemTypeLabel(item.itemType) }}
+                          </span>
+                        </td>
+                        <td class="text-end">{{ item.quantity | number:'1.0-2' }}</td>
+                        <td class="text-end">{{ item.unitPrice | currency:'EUR' }}</td>
+                        <td class="text-end">
+                          <span *ngIf="item.discountAmount && item.discountAmount > 0" class="text-danger">
+                            -{{ item.discountAmount | currency:'EUR' }}
+                          </span>
+                          <span *ngIf="!item.discountAmount || item.discountAmount === 0" class="text-muted">-</span>
+                        </td>
+                        <td class="text-end">{{ getNetAmount(item) | currency:'EUR' }}</td>
+                        <td class="text-end">
+                          <span *ngIf="item.taxAmount && item.taxAmount > 0">
+                            {{ item.taxAmount | currency:'EUR' }}
+                            <small class="text-muted" *ngIf="item.taxRate">({{ item.taxRate }}%)</small>
+                          </span>
+                          <span *ngIf="!item.taxAmount || item.taxAmount === 0" class="text-muted">-</span>
+                        </td>
+                        <td class="text-end fw-bold">{{ item.lineTotal | currency:'EUR' }}</td>
+                      </tr>
+                    </tbody>
+                    <tfoot class="table-light">
+                      <tr class="border-top">
+                        <th colspan="6" class="text-end">Zwischensumme:</th>
+                        <th class="text-end">{{ selectedInvoice.subtotal | currency:'EUR' }}</th>
+                        <th class="text-end">{{ selectedInvoice.taxAmount | currency:'EUR' }}</th>
+                        <th class="text-end">-</th>
+                      </tr>
+                      <tr *ngIf="selectedInvoice.discountAmount && selectedInvoice.discountAmount > 0">
+                        <th colspan="8" class="text-end text-danger">Gesamtrabatt:</th>
+                        <th class="text-end text-danger">-{{ selectedInvoice.discountAmount | currency:'EUR' }}</th>
+                      </tr>
+                      <tr class="border-top-2">
+                        <th colspan="8" class="text-end">Gesamtsumme:</th>
+                        <th class="text-end h6 text-success">{{ selectedInvoice.totalAmount | currency:'EUR' }}</th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+              
+              <ng-template #noItems>
+                <div class="text-center py-4 text-muted">
+                  <i class="fas fa-inbox fa-2x mb-2"></i>
+                  <div>Keine Rechnungspositionen vorhanden</div>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="d-flex gap-2 w-100 flex-wrap">
+            <button class="btn btn-outline-secondary" (click)="closeDetailsModal()">Schließen</button>
+            <button class="btn btn-primary" (click)="openEditModal(selectedInvoice!); closeDetailsModal()" [disabled]="!canEdit(selectedInvoice!)">
+              <i class="fas fa-edit me-1"></i>Bearbeiten
+            </button>
+            <button class="btn btn-success" (click)="sendInvoice(selectedInvoice!.id); closeDetailsModal()" [disabled]="!canSend(selectedInvoice!)">
+              <i class="fas fa-paper-plane me-1"></i>Senden
+            </button>
+            <button *ngIf="canViewOpenItems(selectedInvoice!)" class="btn btn-warning" (click)="viewOpenItems(selectedInvoice!); closeDetailsModal()">
+              <i class="fas fa-file-invoice-dollar me-1"></i>Open Items
+            </button>
+            <div class="ms-auto d-flex gap-2">
+              <button class="btn btn-outline-danger" (click)="cancelInvoice(selectedInvoice!.id); closeDetailsModal()" [disabled]="!canCancel(selectedInvoice!)">
+                <i class="fas fa-ban me-1"></i>Stornieren
+              </button>
+              <button class="btn btn-danger" (click)="deleteInvoice(selectedInvoice!.id); closeDetailsModal()">
+                <i class="fas fa-trash me-1"></i>Löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Neuer Rechnung Modal -->
+  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-plus me-2"></i>Neue Rechnung
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeNewModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Kunde *</label>
+            <select [(ngModel)]="newInvoice.customerId" class="form-select">
+              <option value="">-- Kunde auswählen --</option>
+              <option *ngFor="let c of customers" [value]="c.id">{{ c.firstName }} {{ c.lastName }} ({{ c.customerNumber }})</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Rechnungsdatum</label>
+              <input type="date" class="form-control" [(ngModel)]="newInvoiceDateString">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fälligkeitsdatum</label>
+              <input type="date" class="form-control" [(ngModel)]="newDueDateString">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewModal()">
+            <i class="fas fa-times me-1"></i>Abbrechen
+          </button>
+          <button class="btn btn-success" (click)="createInvoice()">
+            <i class="fas fa-check me-1"></i>Erstellen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bearbeiten Rechnung Modal -->
+  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-edit me-2"></i>Rechnung bearbeiten
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeEditModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Kunde *</label>
+            <select [(ngModel)]="editInvoice.customerId" class="form-select">
+              <option value="">-- Kunde auswählen --</option>
+              <option *ngFor="let c of customers" [value]="c.id">{{ c.firstName }} {{ c.lastName }} ({{ c.customerNumber }})</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Rechnungsdatum</label>
+              <input type="date" class="form-control" [(ngModel)]="editInvoiceDateString">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fälligkeitsdatum</label>
+              <input type="date" class="form-control" [(ngModel)]="editDueDateString">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()">
+            <i class="fas fa-times me-1"></i>Abbrechen
+          </button>
+          <button class="btn btn-primary" (click)="updateInvoice()">
+            <i class="fas fa-save me-1"></i>Speichern
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
