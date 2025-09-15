@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DueScheduleService } from '../../services/due-schedule-service';
-import { DueSchedule } from '../../models/DueSchedule';
+import { DueSchedule, ScheduleStatus } from '../../models/DueSchedule';
 
 @Component({
   selector: 'app-due-schedule-list',
@@ -61,17 +61,6 @@ export class DueScheduleListComponent implements OnInit {
     this.filteredSchedules = [...this.schedules];
   }
 
-  // --- CRUD-like Actions ---
-  // Hinweis: Payment- und Reminder-Funktionen sind im Backend noch nicht verfügbar.
-  // Wenn du sie implementierst, kannst du diese Methoden wieder aktivieren.
-
-  /*
-  markAsPaid(schedule: DueSchedule): void { ... }
-  cancelSchedule(schedule: DueSchedule): void { ... }
-  sendReminder(schedule: DueSchedule): void { ... }
-  recordPayment(schedule: DueSchedule, amount: number): void { ... }
-  */
-
   // --- Neue Fälligkeit Modal ---
   openNewScheduleModal(): void {
     this.newSchedule = {};
@@ -95,10 +84,26 @@ export class DueScheduleListComponent implements OnInit {
   }
 
   // --- Helpers ---
-  private updateLocalSchedule(updated: DueSchedule): void {
-    const index = this.schedules.findIndex(s => s.id === updated.id);
-    if (index >= 0) this.schedules[index] = updated;
-    this.filteredSchedules = [...this.schedules];
+  getStatusLabel(status: ScheduleStatus, overdue: boolean): string {
+    if (overdue) return 'ÜBERFÄLLIG';
+    switch (status) {
+      case 'ACTIVE': return 'Aktiv';
+      case 'PAUSED': return 'Pausiert';
+      case 'SUSPENDED': return 'Ausgesetzt';
+      case 'COMPLETED': return 'Abgeschlossen';
+      default: return status;
+    }
+  }
+
+  getStatusClass(status: ScheduleStatus, overdue: boolean): string {
+    if (overdue) return 'status-overdue';
+    switch (status) {
+      case 'ACTIVE': return 'status-active';
+      case 'PAUSED': return 'status-paused';
+      case 'SUSPENDED': return 'status-suspended';
+      case 'COMPLETED': return 'status-completed';
+      default: return '';
+    }
   }
 
   private handleApiError(err: any, defaultMessage: string): void {

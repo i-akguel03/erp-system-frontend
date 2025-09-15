@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { BaseApiService } from './base-api-service';
-import { DueSchedule, DueScheduleStatistics } from '../models/DueSchedule';
+import { DueSchedule } from '../models/DueSchedule';
 
 @Injectable({
   providedIn: 'root',
@@ -14,9 +14,10 @@ export class DueScheduleService extends BaseApiService {
   private mapToDueSchedule(dto: any): DueSchedule {
     return {
       ...dto,
-      dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
-      periodStart: dto.periodStart ? new Date(dto.periodStart) : null,
-      periodEnd: dto.periodEnd ? new Date(dto.periodEnd) : null
+      dueDate: dto.dueDate ? new Date(dto.dueDate).toISOString().split('T')[0] : null,
+      periodStart: dto.periodStart ? new Date(dto.periodStart).toISOString().split('T')[0] : null,
+      periodEnd: dto.periodEnd ? new Date(dto.periodEnd).toISOString().split('T')[0] : null,
+      overdue: dto.overdue || false,
     } as DueSchedule;
   }
 
@@ -27,17 +28,17 @@ export class DueScheduleService extends BaseApiService {
   }
 
   getDueScheduleById(id: string): Observable<DueSchedule> {
-    return this.http.get<DueSchedule>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() })
+    return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToDueSchedule(dto)));
   }
 
-  createDueSchedule(dueSchedule: DueSchedule): Observable<DueSchedule> {
-    return this.http.post<DueSchedule>(this.apiUrl, dueSchedule, { headers: this.getAuthHeaders() })
+  createDueSchedule(schedule: Partial<DueSchedule>): Observable<DueSchedule> {
+    return this.http.post<any>(this.apiUrl, schedule, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToDueSchedule(dto)));
   }
 
-  updateDueSchedule(id: string, dueSchedule: DueSchedule): Observable<DueSchedule> {
-    return this.http.put<DueSchedule>(`${this.apiUrl}/${id}`, dueSchedule, { headers: this.getAuthHeaders() })
+  updateDueSchedule(id: string, schedule: Partial<DueSchedule>): Observable<DueSchedule> {
+    return this.http.put<any>(`${this.apiUrl}/${id}`, schedule, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToDueSchedule(dto)));
   }
 
@@ -45,57 +46,25 @@ export class DueScheduleService extends BaseApiService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
   }
 
-  // --- Subscription Queries ---
-  getDueSchedulesBySubscription(subscriptionId: string): Observable<DueSchedule[]> {
-    return this.http.get<DueSchedule[]>(`${this.apiUrl}/subscription/${subscriptionId}`, { headers: this.getAuthHeaders() })
-      .pipe(map(arr => arr.map(dto => this.mapToDueSchedule(dto))));
-  }
+// --- Spezielle Endpunkte ---
+getDueSchedulesBySubscription(subscriptionId: string): Observable<DueSchedule[]> {
+  return this.http.get<DueSchedule[]>(`${this.apiUrl}/subscription/${subscriptionId}`, { headers: this.getAuthHeaders() })
+    .pipe(map(res => res.map(dto => this.mapToDueSchedule(dto))));
+}
 
-  getNextDueScheduleBySubscription(subscriptionId: string): Observable<DueSchedule> {
-    return this.http.get<DueSchedule>(`${this.apiUrl}/subscription/${subscriptionId}/next-due`, { headers: this.getAuthHeaders() })
-      .pipe(map(dto => this.mapToDueSchedule(dto)));
-  }
+getOverdueDueSchedules(): Observable<DueSchedule[]> {
+  return this.http.get<DueSchedule[]>(`${this.apiUrl}/overdue`, { headers: this.getAuthHeaders() })
+    .pipe(map(res => res.map(dto => this.mapToDueSchedule(dto))));
+}
 
-  // --- Status & Filtering ---
-  getDueSchedulesByStatus(status: string): Observable<DueSchedule[]> {
-    return this.http.get<DueSchedule[]>(`${this.apiUrl}/status/${status}`, { headers: this.getAuthHeaders() })
-      .pipe(map(arr => arr.map(dto => this.mapToDueSchedule(dto))));
-  }
+getDueTodaySchedules(): Observable<DueSchedule[]> {
+  return this.http.get<DueSchedule[]>(`${this.apiUrl}/due-today`, { headers: this.getAuthHeaders() })
+    .pipe(map(res => res.map(dto => this.mapToDueSchedule(dto))));
+}
 
-  getOverdueDueSchedules(): Observable<DueSchedule[]> {
-    return this.http.get<DueSchedule[]>(`${this.apiUrl}/overdue`, { headers: this.getAuthHeaders() })
-      .pipe(map(arr => arr.map(dto => this.mapToDueSchedule(dto))));
-  }
+generateDueSchedulesForSubscription(subscriptionId: string, months: number): Observable<DueSchedule[]> {
+  return this.http.post<DueSchedule[]>(`${this.apiUrl}/subscription/${subscriptionId}/generate?months=${months}`, {}, { headers: this.getAuthHeaders() })
+    .pipe(map(res => res.map(dto => this.mapToDueSchedule(dto))));
+}
 
-  getUpcomingDueSchedules(days: number = 7): Observable<DueSchedule[]> {
-    return this.http.get<DueSchedule[]>(`${this.apiUrl}/upcoming`, {
-      headers: this.getAuthHeaders(),
-      params: { days: days.toString() }
-    }).pipe(map(arr => arr.map(dto => this.mapToDueSchedule(dto))));
-  }
-
-  // --- Statistics / Dashboard ---
-  getDueScheduleStatistics(): Observable<DueScheduleStatistics> {
-    return this.http.get<DueScheduleStatistics>(`${this.apiUrl}/statistics`, { headers: this.getAuthHeaders() });
-  }
-
-  getTotalPendingAmount(): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/sum/pending`, { headers: this.getAuthHeaders() });
-  }
-
-  getTotalPaidAmount(): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/sum/paid`, { headers: this.getAuthHeaders() });
-  }
-
-  getTotalOverdueAmount(): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/sum/overdue`, { headers: this.getAuthHeaders() });
-  }
-
-  // --- Generate / Processes ---
-  generateDueSchedulesForSubscription(subscriptionId: string, months: number): Observable<DueSchedule[]> {
-    return this.http.post<DueSchedule[]>(`${this.apiUrl}/subscription/${subscriptionId}/generate`, {}, {
-      headers: this.getAuthHeaders(),
-      params: { months: months.toString() }
-    }).pipe(map(arr => arr.map(dto => this.mapToDueSchedule(dto))));
-  }
 }

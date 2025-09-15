@@ -1,28 +1,33 @@
 export enum DueStatus {
-  PENDING = 'PENDING',        // noch offen
-  PARTIAL_PAID = 'PARTIAL_PAID', // teilweise bezahlt (Backend noch nicht aktiv)
-  PAID = 'PAID',              // vollständig bezahlt
-  CANCELLED = 'CANCELLED',    // storniert
-  OVERDUE = 'OVERDUE'         // überfällig
+  ACTIVE = 'ACTIVE',        // noch offen
+  PAUSED = 'PAUSED', // teilweise bezahlt (Backend noch nicht aktiv)
+  SUSPENDED = 'SUSPENDED',              // vollständig bezahlt
+  COMPLETED = 'COMPLETED',    // storniert
+
 }
 
+// Status wie im Backend
+export type ScheduleStatus = 'ACTIVE' | 'PAUSED' | 'SUSPENDED' | 'COMPLETED';
+
 export interface DueSchedule {
+  paidDate: any;
   id: string;                   // UUID
   dueNumber: string;            // Fälligkeitsnummer
   subscriptionId: string;       // Zugehöriges Abonnement
-  subscriptionNumber?: string;  // optional, Subscription-Nummer
+  subscriptionNumber?: string;  // optional
 
   dueDate: string | null;       // Fälligkeitsdatum
   periodStart: string | null;   // Start des Abrechnungszeitraums
   periodEnd: string | null;     // Ende des Abrechnungszeitraums
 
-  status: DueStatus;            // Status
-  notes?: string;               // optional Notizen
+  status: ScheduleStatus;       // Backend-Status
+  overdue: boolean;             // abgeleitet
+  notes?: string;               // optional
 
-  // erweiterte Infos fürs UI (über Contract → Customer/Product)
-  customerName?: string;
-  productName?: string;
+  customerName?: string;        // über Subscription → Customer
+  productName?: string;         // über Subscription → Product
 }
+
 
 export interface DueScheduleStatistics {
   totalDue: number;

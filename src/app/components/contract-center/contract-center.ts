@@ -10,6 +10,9 @@ import { FormsModule } from '@angular/forms';
 import { CustomerService } from '../../services/customer-service';
 import { Customer } from '../../models/Customer';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Invoice } from '../../models/Invoice';
+import { InvoiceService } from '../../services/invoice-service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-contract-center',
@@ -41,14 +44,177 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   contextMenuPosition = { x: 0, y: 0 };
   contextMenuContract: Contract | null = null;
 
+  // Neue Properties zu ContractCenterComponent hinzufügen:
+  invoices: Invoice[] = [];
+  openItems: any[] = [];
+  showInvoiceDetailsModal = false;
+  selectedInvoice: Invoice | null = null;
+
+  // Services importieren (falls nicht vorhanden):
   constructor(
     private contractService: ContractService,
     private subscriptionService: SubscriptionService,
     private dueScheduleService: DueScheduleService,
-    private customerService: CustomerService
+    private customerService: CustomerService,
+    private invoiceService: InvoiceService, // Hinzufügen
+    private router: Router // Hinzufügen falls Navigation gewünscht
   ) {
-    this.initializeTheme();
-    this.setupSearch();
+    // Bestehender Constructor Code
+  }
+
+  getDueScheduleStatusBadgeClass(ds: DueSchedule): string {
+  switch (ds.status) {
+    case 'ACTIVE': return 'bg-warning text-dark';    // noch offen
+    case 'PAUSED': return 'bg-primary text-white';  // teilweise bezahlt
+    case 'SUSPENDED': return 'bg-success';          // vollständig bezahlt
+    case 'COMPLETED': return 'bg-secondary';        // storniert
+    default: return 'bg-light text-dark';
+  }
+}
+
+getDueScheduleStatusLabel(ds: DueSchedule): string {
+  switch (ds.status) {
+    case 'ACTIVE': return 'Offen';
+    case 'PAUSED': return 'Teilweise bezahlt';
+    case 'SUSPENDED': return 'Bezahlt';
+    case 'COMPLETED': return 'Storniert';
+    default: return 'Unbekannt';
+  }
+}
+
+
+// Neue Methoden für Rechnungsmanagement:
+private loadInvoices(contractId: string): void {
+  this.invoiceService.getInvoicesBySubscriptionIds([contractId])
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: invoices => {
+        this.invoices = invoices;
+        console.log('Geladene Rechnungen für Vertrag:', this.invoices);
+      },
+      error: err => {
+        console.error('Fehler beim Laden der Rechnungen:', err);
+        this.invoices = [];
+      }
+    });
+}
+
+private loadInvoicesBySubscription(subscriptionId: string): void {
+  this.invoiceService.getInvoicesBySubscriptionIds([subscriptionId])
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: invoices => this.invoices = invoices,
+      error: err => {
+        console.error('Fehler beim Laden der Rechnungen:', err);
+        this.invoices = [];
+      }
+    });
+}
+
+  // Invoice Status Methods (aus InvoiceListComponent übernommen):
+  getInvoiceStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'DRAFT': return 'bg-secondary';
+      case 'SENT': return 'bg-primary';
+      case 'PAID': return 'bg-success';
+      case 'OVERDUE': return 'bg-danger';
+      case 'CANCELLED': return 'bg-dark';
+      default: return 'bg-light';
+    }
+  }
+
+  getInvoiceStatusLabel(status: string): string {
+    switch (status) {
+      case 'DRAFT': return 'Entwurf';
+      case 'SENT': return 'Versendet';
+      case 'PAID': return 'Bezahlt';
+      case 'OVERDUE': return 'Überfällig';
+      case 'CANCELLED': return 'Storniert';
+      default: return status;
+    }
+  }
+
+  canEditInvoice(invoice: Invoice): boolean {
+    return invoice.status !== 'CANCELLED' && invoice.status !== 'SENT';
+  }
+
+  canSendInvoice(invoice: Invoice): boolean {
+    return invoice.status === 'DRAFT';
+  }
+
+  // Invoice Action Methods:
+  openInvoiceDetails(invoice: Invoice): void {
+    this.selectedInvoice = { ...invoice };
+    this.showInvoiceDetailsModal = true;
+  }
+
+  closeInvoiceDetailsModal(): void {
+    this.showInvoiceDetailsModal = false;
+    this.selectedInvoice = null;
+  }
+
+  editInvoice(invoice: Invoice): void {
+    // Navigation zur Rechnungsbearbeitung oder Modal öffnen
+    this.router.navigate(['/invoices', invoice.id, 'edit']);
+    // Oder Modal-basierte Bearbeitung implementieren
+  }
+
+  sendInvoice(invoice: Invoice): void {
+    if (!invoice.id) return;
+
+    this.invoiceService.sendInvoice(invoice.id).subscribe({
+      next: (updatedInvoice) => {
+        // Update local invoice in array
+        const index = this.invoices.findIndex(i => i.id === invoice.id);
+        if (index >= 0) {
+          this.invoices[index] = updatedInvoice;
+        }
+      },
+      error: err => {
+        console.error('Error sending invoice:', err);
+        // Fehlerbehandlung
+      }
+    });
+  }
+
+  // Open Items Methods:
+  getDaysOverdue(dueDate: Date | string): number {
+    const due = new Date(dueDate);
+    const now = new Date();
+    const diffTime = now.getTime() - due.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  private loadOpenItems(contractId: string): void {
+    // Falls Sie einen Service für offene Posten haben:
+    // this.openItemsService.getOpenItemsByContract(contractId)
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe({
+    //     next: items => this.openItems = items,
+    //     error: err => {
+    //       console.error('Error loading open items:', err);
+    //       this.openItems = [];
+    //     }
+    //   });
+
+    // Placeholder - später durch echten Service ersetzen:
+    this.openItems = [];
+  }
+
+  // Erweitern Sie die selectContract Methode:
+  selectContract(contract: Contract): void {
+    if (this.selectedContract?.id === contract.id) return;
+
+    this.selectedContract = contract;
+    this.subscriptions = [];
+    this.selectedSubscription = null;
+    this.dueSchedules = [];
+    this.invoices = []; // Hinzufügen
+    this.openItems = []; // Hinzufügen
+
+    this.loadSubscriptions(contract.id!);
+    this.loadInvoices(contract.id!); // Hinzufügen
+    this.loadOpenItems(contract.id!); // Hinzufügen
   }
 
   ngOnInit(): void {
@@ -142,9 +308,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       const customer = this.getCustomerById(c.customerId);
       const customerStr = customer ? `${customer.firstName} ${customer.lastName} ${customer.customerNumber}` : '';
       return (c.contractNumber?.toLowerCase().includes(searchTerm)) ||
-             (c.contractTitle?.toLowerCase().includes(searchTerm)) ||
-             (c.contractStatus?.toLowerCase().includes(searchTerm)) ||
-             customerStr.toLowerCase().includes(searchTerm);
+        (c.contractTitle?.toLowerCase().includes(searchTerm)) ||
+        (c.contractStatus?.toLowerCase().includes(searchTerm)) ||
+        customerStr.toLowerCase().includes(searchTerm);
     });
   }
 
@@ -157,16 +323,6 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     return this.customers[customerId];
   }
 
-  selectContract(contract: Contract): void {
-    if (this.selectedContract?.id === contract.id) return;
-
-    this.selectedContract = contract;
-    this.subscriptions = [];
-    this.selectedSubscription = null;
-    this.dueSchedules = [];
-    this.loadSubscriptions(contract.id!);
-  }
-
   private loadSubscriptions(contractId: string): void {
     this.subscriptionService.getSubscriptionsByContract(contractId)
       .pipe(takeUntil(this.destroy$))
@@ -177,12 +333,16 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   }
 
   selectSubscription(subscription: Subscription): void {
-    if (this.selectedSubscription?.id === subscription.id) return;
+  if (this.selectedSubscription?.id === subscription.id) return;
 
-    this.selectedSubscription = subscription;
-    this.dueSchedules = [];
-    this.loadDueSchedules(subscription.id!);
-  }
+  this.selectedSubscription = subscription;
+  this.dueSchedules = [];
+  this.loadDueSchedules(subscription.id!);
+
+  this.invoices = [];
+  this.loadInvoicesBySubscription(subscription.id!); // ✅ richtige ID
+}
+
 
   private loadDueSchedules(subscriptionId: string): void {
     this.dueScheduleService.getDueSchedulesBySubscription(subscriptionId)

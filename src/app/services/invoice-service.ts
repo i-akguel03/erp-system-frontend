@@ -105,4 +105,19 @@ export class InvoiceService extends BaseApiService {
     return this.http.post<Invoice>(`${this.apiUrl}/${invoiceId}/credit-note`, {}, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToInvoice(dto)));
   }
+
+  // --- Abfrage nach Subscription-IDs ---
+  getInvoicesBySubscriptionIds(subscriptionIds: string[]): Observable<Invoice[]> {
+    const params = subscriptionIds.map(id => `subscriptionIds=${id}`).join('&');
+    return this.http.get<any>(`${this.apiUrl}/by-subscriptions?${params}`, {
+      headers: this.getAuthHeaders(),
+    })
+    .pipe(
+      map(res => {
+        // Response ist entweder Array oder PageResponse (mit "content")
+        const invoices = Array.isArray(res) ? res : res.content;
+        return (invoices || []).map((dto: any) => this.mapToInvoice(dto));
+      })
+    );
+  }
 }

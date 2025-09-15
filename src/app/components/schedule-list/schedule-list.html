@@ -28,36 +28,18 @@
           <th>Nr.</th>
           <th>Abonnement</th>
           <th>Fälligkeitsdatum</th>
-          <th>Bezahlt am</th>
-          <th>Betrag</th>
           <th>Status</th>
-          <th>Aktionen</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let schedule of filteredSchedules">
           <td>{{ schedule.dueNumber }}</td>
-          <td>{{ schedule.subscriptionId }}</td>
+          <td>{{ schedule.subscriptionNumber || schedule.subscriptionId }}</td>
           <td>{{ schedule.dueDate | date:'shortDate' }}</td>
-          <td>{{ schedule.paidDate ? (schedule.paidDate | date:'shortDate') : '-' }}</td>
-          <td>{{ schedule.amount | currency }}</td>
           <td>
-            <span class="badge"
-                  [ngClass]="{
-                    'bg-success': schedule.status === 'PAID',
-                    'bg-warning': schedule.status === 'OPEN',
-                    'bg-danger': schedule.status === 'OVERDUE',
-                    'bg-secondary': schedule.status === 'CANCELLED'
-                  }">
-              {{ schedule.status }}
+            <span class="badge" [ngClass]="getStatusClass(schedule.status, schedule.overdue)">
+              {{ getStatusLabel(schedule.status, schedule.overdue) }}
             </span>
-          </td>
-          <td class="d-flex gap-1 flex-wrap">
-            <button class="btn btn-sm btn-success" (click)="markAsPaid(schedule)" [disabled]="schedule.status === 'PAID'">Bezahlt</button>
-            <button class="btn btn-sm btn-danger" (click)="cancelSchedule(schedule)" [disabled]="schedule.status === 'CANCELLED'">Stornieren</button>
-            <button class="btn btn-sm btn-warning" (click)="sendReminder(schedule)">Mahnung</button>
-            <input type="number" class="form-control form-control-sm" placeholder="Betrag" [(ngModel)]="newPaymentAmount">
-            <button class="btn btn-sm btn-primary" (click)="recordPayment(schedule, newPaymentAmount)">Zahlung buchen</button>
           </td>
         </tr>
       </tbody>
@@ -68,29 +50,14 @@
   <div class="d-block d-md-none">
     <div *ngFor="let schedule of filteredSchedules" class="card mb-3 shadow-sm">
       <div class="card-body">
-        <h5 class="card-title">Abonnement: {{ schedule.subscriptionId }}</h5>
+        <h5 class="card-title">Abonnement: {{ schedule.subscriptionNumber || schedule.subscriptionId }}</h5>
         <p class="card-text">
           <strong>Fälligkeitsdatum:</strong> {{ schedule.dueDate | date:'shortDate' }}<br>
-          <strong>Bezahlt am:</strong> {{ schedule.paidDate ? (schedule.paidDate | date:'shortDate') : '-' }}<br>
-          <strong>Betrag:</strong> {{ schedule.amount | currency }}<br>
           <strong>Status:</strong>
-          <span class="badge"
-                [ngClass]="{
-                  'bg-success': schedule.status === 'PAID',
-                  'bg-warning': schedule.status === 'OPEN',
-                  'bg-danger': schedule.status === 'OVERDUE',
-                  'bg-secondary': schedule.status === 'CANCELLED'
-                }">
-            {{ schedule.status }}
+          <span class="badge" [ngClass]="getStatusClass(schedule.status, schedule.overdue)">
+            {{ getStatusLabel(schedule.status, schedule.overdue) }}
           </span>
         </p>
-        <div class="d-flex flex-wrap gap-2">
-          <button class="btn btn-sm btn-success flex-grow-1" (click)="markAsPaid(schedule)" [disabled]="schedule.status === 'PAID'">Bezahlt</button>
-          <button class="btn btn-sm btn-danger flex-grow-1" (click)="cancelSchedule(schedule)" [disabled]="schedule.status === 'CANCELLED'">Stornieren</button>
-          <button class="btn btn-sm btn-warning flex-grow-1" (click)="sendReminder(schedule)">Mahnung</button>
-          <input type="number" class="form-control form-control-sm flex-grow-1" placeholder="Betrag" [(ngModel)]="newPaymentAmount">
-          <button class="btn btn-sm btn-primary flex-grow-1" (click)="recordPayment(schedule, newPaymentAmount)">Zahlung buchen</button>
-        </div>
       </div>
     </div>
   </div>
@@ -109,7 +76,6 @@
         </div>
         <div class="modal-body">
           <input type="date" class="form-control mb-2" placeholder="Fälligkeitsdatum" [(ngModel)]="newSchedule.dueDate">
-          <input type="number" class="form-control mb-2" placeholder="Betrag" [(ngModel)]="newSchedule.amount">
 
           <!-- Dropdown für Subscriptions -->
           <select class="form-select mb-2" [(ngModel)]="newSchedule.subscriptionId">
