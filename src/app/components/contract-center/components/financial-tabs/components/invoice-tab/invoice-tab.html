@@ -1,0 +1,156 @@
+<div class="scrollable h-100 p-2">
+  
+  <!-- Zusammenfassung -->
+  <div *ngIf="invoices.length > 0" class="summary-cards mb-3">
+    <div class="row g-2">
+      <div class="col-4">
+        <div class="card text-center">
+          <div class="card-body py-2">
+            <div class="fw-bold text-success">{{ getPaidInvoiceAmount() | currency:'EUR':'symbol':'1.0-2' }}</div>
+            <small class="text-muted">Bezahlt</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center">
+          <div class="card-body py-2">
+            <div class="fw-bold text-danger">{{ getOverdueInvoiceAmount() | currency:'EUR':'symbol':'1.0-2' }}</div>
+            <small class="text-muted">Überfällig</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center">
+          <div class="card-body py-2">
+            <div class="fw-bold text-primary">{{ getTotalInvoiceAmount() | currency:'EUR':'symbol':'1.0-2' }}</div>
+            <small class="text-muted">Gesamt</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="invoices.length > 0; else noInvoices">
+    
+    <!-- Desktop Tabelle (ab md) -->
+    <div class="table-responsive d-none d-md-block">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nummer</th>
+            <th>Datum</th>
+            <th>Fällig</th>
+            <th>Status</th>
+            <th>Betrag</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let invoice of invoices" 
+              style="cursor: pointer;"
+              (click)="openInvoiceDetails(invoice)">
+            <td class="fw-bold text-primary">{{ invoice.invoiceNumber }}</td>
+            <td>{{ invoice.invoiceDate | date:'dd.MM.yyyy' }}</td>
+            <td>
+              {{ invoice.dueDate | date:'dd.MM.yyyy' }}
+              <small *ngIf="invoice.status === 'OVERDUE'" class="text-danger d-block">
+                ({{ getDaysOverdue(invoice.dueDate!) }} Tage überfällig)
+              </small>
+            </td>
+            <td>
+              <span [ngClass]="getInvoiceStatusBadgeClass(invoice.status!)" class="badge">
+                {{ getInvoiceStatusLabel(invoice.status!) }}
+              </span>
+            </td>
+            <td class="fw-bold">{{ invoice.totalAmount | currency:'EUR' }}</td>
+            <td>
+              <div class="btn-group btn-group-sm" role="group" (click)="$event.stopPropagation()">
+                <button class="btn btn-outline-info btn-sm" 
+                        (click)="openInvoiceDetails(invoice)" 
+                        title="Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-outline-primary btn-sm" 
+                        (click)="editInvoice(invoice)" 
+                        [disabled]="!canEditInvoice(invoice)"
+                        title="Bearbeiten">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-outline-success btn-sm" 
+                        (click)="sendInvoice(invoice)" 
+                        [disabled]="!canSendInvoice(invoice)"
+                        title="Senden">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Cards (unter md) -->
+    <div class="d-block d-md-none">
+      <div *ngFor="let invoice of invoices" 
+           class="card mb-2 shadow-sm invoice-card" 
+           (click)="openInvoiceDetails(invoice)">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="card-title text-primary mb-0">{{ invoice.invoiceNumber }}</h6>
+            <span [ngClass]="getInvoiceStatusBadgeClass(invoice.status!)" class="badge">
+              {{ getInvoiceStatusLabel(invoice.status!) }}
+            </span>
+          </div>
+          
+          <!-- Kundenname -->
+          <div *ngIf="getCustomerById(invoice.customerId); let customer" class="mb-2">
+            <small class="text-muted">Kunde:</small><br>
+            <small class="fw-bold">{{ customer.firstName }} {{ customer.lastName }}</small>
+          </div>
+          
+          <div class="row">
+            <div class="col-6">
+              <small class="text-muted">Datum:</small><br>
+              <small class="fw-bold">{{ invoice.invoiceDate | date:'dd.MM.yyyy' }}</small>
+            </div>
+            <div class="col-6">
+              <small class="text-muted">Fällig:</small><br>
+              <small class="fw-bold">{{ invoice.dueDate | date:'dd.MM.yyyy' }}</small>
+              <small *ngIf="invoice.status === 'OVERDUE'" class="text-danger d-block">
+                ({{ getDaysOverdue(invoice.dueDate!) }} Tage überfällig)
+              </small>
+            </div>
+          </div>
+          <div class="mt-2 d-flex justify-content-between align-items-center">
+            <strong class="text-success">{{ invoice.totalAmount | currency:'EUR' }}</strong>
+            <div class="btn-group btn-group-sm" (click)="$event.stopPropagation()">
+              <button class="btn btn-outline-primary btn-sm" 
+                      (click)="editInvoice(invoice)" 
+                      [disabled]="!canEditInvoice(invoice)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-outline-success btn-sm" 
+                      (click)="sendInvoice(invoice)" 
+                      [disabled]="!canSendInvoice(invoice)">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Keine Rechnungen -->
+  <ng-template #noInvoices>
+    <div class="text-center py-5 text-muted">
+      <i class="fas fa-file-invoice fa-3x mb-3"></i>
+      <div class="h5">Keine Rechnungen vorhanden</div>
+      <small>
+        Für das ausgewählte Abonnement sind noch keine Rechnungen erstellt worden.
+      </small>
+    </div>
+  </ng-template>
+
+</div>

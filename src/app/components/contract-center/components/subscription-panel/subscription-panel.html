@@ -1,0 +1,89 @@
+<div class="card flex-fill d-flex flex-column h-100">
+  <div class="card-header">
+    <i class="fas fa-sync-alt me-2"></i> 
+    Abonnements {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+    <span class="badge bg-secondary float-end">{{ subscriptions.length }}</span>
+  </div>
+  
+  <div class="card-body scrollable flex-fill p-0">
+    <!-- Abonnements-Liste -->
+    <div *ngIf="subscriptions.length > 0; else noSubscriptions">
+      <div *ngFor="let subscription of subscriptions" 
+           class="subscription-item"
+           [class.selected]="isSelectedSubscription(subscription)"
+           (click)="selectSubscription(subscription)">
+        
+        <div class="subscription-header">
+          <div class="subscription-title">
+            <strong>{{ subscription.productName || 'Unbenanntes Produkt' }}</strong>
+            <span [ngClass]="getSubscriptionStatusClass(subscription)" class="ms-2">
+              {{ getSubscriptionStatusText(subscription) }}
+            </span>
+          </div>
+          <div class="subscription-number text-muted small">
+            {{ subscription.subscriptionNumber }}
+          </div>
+        </div>
+
+        <div class="subscription-details">
+          <div class="row">
+            <div class="col-sm-6">
+              <small class="text-muted">Laufzeit:</small><br>
+              <span class="fw-bold">
+                <span *ngIf="subscription.startDate">{{ subscription.startDate | date:'dd.MM.yyyy' }}</span>
+                <span *ngIf="!subscription.startDate" class="text-muted">Nicht definiert</span>
+                 - 
+                <span *ngIf="subscription.endDate">{{ subscription.endDate | date:'dd.MM.yyyy' }}</span>
+                <span *ngIf="!subscription.endDate" class="text-muted">Unbegrenzt</span>
+              </span>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted">Verbleibendes Zeit:</small><br>
+              <span [ngClass]="getExpiryWarningClass(getDaysUntilExpiry(subscription))">
+                <ng-container *ngIf="getDaysUntilExpiry(subscription) as days; else unlimited">
+                  <span *ngIf="days > 0">{{ days }} Tage</span>
+                  <span *ngIf="days === 0">Läuft heute ab</span>
+                  <span *ngIf="days < 0">Abgelaufen vor {{ Math.abs(days) }} Tagen</span>
+                </ng-container>
+                <ng-template #unlimited>
+                  <span class="text-success">Unbegrenzt</span>
+                </ng-template>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zusätzliche Produktinformationen -->
+        <div *ngIf="subscription.productCode || subscription.subscriptionType" 
+             class="subscription-meta">
+          <div class="row">
+            <div class="col-sm-6" *ngIf="subscription.productCode">
+              <small class="text-muted">Produktcode:</small><br>
+              <code class="small">{{ subscription.productCode }}</code>
+            </div>
+            <div class="col-sm-6" *ngIf="subscription.subscriptionType">
+              <small class="text-muted">Typ:</small><br>
+              <span class="small">{{ subscription.subscriptionType }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Keine Abonnements -->
+    <ng-template #noSubscriptions>
+      <div class="text-center py-4 text-muted">
+        <i class="fas fa-sync-alt fa-2x mb-3 text-muted"></i>
+        <div class="h6">Keine Abonnements vorhanden</div>
+        <small *ngIf="selectedContract">
+          Für den ausgewählten Vertrag "{{ selectedContract.contractTitle }}" sind keine Abonnements hinterlegt.
+        </small>
+        <small *ngIf="!selectedContract">
+          Wählen Sie einen Vertrag aus, um die zugehörigen Abonnements anzuzeigen.
+        </small>
+      </div>
+    </ng-template>
+
+  </div>
+</div>

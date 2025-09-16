@@ -1,0 +1,467 @@
+<div class="container mt-3">
+
+  <!-- Suchleiste & Aktionen -->
+  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
+    <!-- Suchfeld -->
+    <input type="text" class="form-control flex-grow-1" placeholder="Offene Posten suchen..."
+           [(ngModel)]="searchTerm" (ngModelChange)="filterOpenItems()">
+
+    <!-- Buttons -->
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+      <button class="btn btn-info flex-grow-1 flex-md-grow-0" (click)="showOverdueOnly()">
+        <i class="fas fa-exclamation-triangle"></i> Überfällig
+      </button>
+      <button class="btn btn-warning flex-grow-1 flex-md-grow-0" (click)="showOpenOnly()">
+        <i class="fas fa-clock"></i> Offen
+      </button>
+      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadOpenItems()">
+        <i class="fas fa-refresh"></i> Aktualisieren
+      </button>
+      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">
+        <i class="fas fa-plus"></i> Neuer Posten
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistik Cards -->
+  <div class="row mb-3" *ngIf="statistics">
+    <div class="col-md-3">
+      <div class="card bg-danger text-white">
+        <div class="card-body text-center">
+          <div class="h4">{{ statistics.totalOutstanding | currency:'EUR' }}</div>
+          <small>Ausstehend</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <div class="h4">{{ statistics.totalPaid | currency:'EUR' }}</div>
+          <small>Bezahlt</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <div class="h4">{{ statistics.overdueCount }}</div>
+          <small>Überfällig</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <div class="h4">{{ statistics.openCount }}</div>
+          <small>Offen</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lade Spinner -->
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
+
+  <!-- Desktop Tabelle (ab md) -->
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredOpenItems.length > 0">
+    <table class="table table-hover table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Rechnung</th>
+          <th>Kunde</th>
+          <th>Beschreibung</th>
+          <th>Fällig</th>
+          <th>Betrag</th>
+          <th>Bezahlt</th>
+          <th>Offen</th>
+          <th>Status</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredOpenItems" style="cursor: pointer;" 
+            [class.table-danger]="item.overdue" 
+            [class.table-warning]="isNearDue(item)">
+          <td (click)="openDetailsModal(item)" class="fw-bold text-primary">{{ item.invoiceNumber }}</td>
+          <td (click)="openDetailsModal(item)">{{ item.customerName }}</td>
+          <td (click)="openDetailsModal(item)">{{ item.description }}</td>
+          <td (click)="openDetailsModal(item)">
+            {{ item.dueDate | date:'dd.MM.yyyy' }}
+            <small *ngIf="item.overdue" class="text-danger ms-1">
+              ({{ getDaysOverdue(item) }} Tage)
+            </small>
+          </td>
+          <td (click)="openDetailsModal(item)">{{ item.amount | currency:'EUR' }}</td>
+          <td (click)="openDetailsModal(item)">{{ item.paidAmount | currency:'EUR' }}</td>
+          <td (click)="openDetailsModal(item)" class="fw-bold">{{ item.outstandingAmount | currency:'EUR' }}</td>
+          <td (click)="openDetailsModal(item)">
+            <span [ngClass]="getStatusBadgeClass(item.status!)" class="badge">{{ getStatusLabel(item.status!) }}</span>
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <button class="btn btn-outline-info" (click)="openDetailsModal(item)" title="Details anzeigen">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-success" (click)="openPaymentModal(item)" [disabled]="!canReceivePayment(item)" title="Zahlung buchen">
+                <i class="fas fa-euro-sign"></i>
+              </button>
+              <button class="btn btn-primary" (click)="openEditModal(item)" [disabled]="!canEdit(item)" title="Bearbeiten">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-outline-warning" (click)="addReminder(item.id!)" [disabled]="!canAddReminder(item)" title="Mahnung">
+                <i class="fas fa-bell"></i>
+              </button>
+              <button class="btn btn-danger" (click)="cancelOpenItem(item.id!)" [disabled]="!canCancel(item)" title="Stornieren">
+                <i class="fas fa-ban"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards (unter md) -->
+  <div class="d-block d-md-none">
+    <div *ngFor="let item of filteredOpenItems" 
+         class="card mb-3 shadow-sm" 
+         style="cursor: pointer;" 
+         [class.border-danger]="item.overdue"
+         [class.border-warning]="isNearDue(item)"
+         (click)="openDetailsModal(item)">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="card-title text-primary mb-0">{{ item.invoiceNumber }}</h5>
+          <span [ngClass]="getStatusBadgeClass(item.status!)" class="badge">{{ getStatusLabel(item.status!) }}</span>
+        </div>
+        <h6 class="card-subtitle mb-2 text-muted">{{ item.customerName }}</h6>
+        <p class="card-text">{{ item.description }}</p>
+        
+        <div class="row">
+          <div class="col-6">
+            <small class="text-muted">Fällig:</small><br>
+            <strong [class]="item.overdue ? 'text-danger' : ''">
+              {{ item.dueDate | date:'dd.MM.yyyy' }}
+              <span *ngIf="item.overdue" class="small">({{ getDaysOverdue(item) }} Tage)</span>
+            </strong>
+          </div>
+          <div class="col-6">
+            <small class="text-muted">Offen:</small><br>
+            <strong class="h6 text-danger">{{ item.outstandingAmount | currency:'EUR' }}</strong>
+          </div>
+        </div>
+        
+        <div class="row mt-2">
+          <div class="col-6">
+            <small class="text-muted">Betrag:</small><br>
+            <span>{{ item.amount | currency:'EUR' }}</span>
+          </div>
+          <div class="col-6">
+            <small class="text-muted">Bezahlt:</small><br>
+            <span class="text-success">{{ item.paidAmount | currency:'EUR' }}</span>
+          </div>
+        </div>
+        
+        <!-- Mobile Action Buttons -->
+        <div class="d-flex flex-wrap gap-2 mt-3" (click)="$event.stopPropagation()">
+          <button class="btn btn-sm btn-success flex-grow-1" (click)="openPaymentModal(item)" [disabled]="!canReceivePayment(item)">
+            <i class="fas fa-euro-sign"></i> Zahlung
+          </button>
+          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(item)" [disabled]="!canEdit(item)">
+            <i class="fas fa-edit"></i> Bearbeiten
+          </button>
+          <button class="btn btn-sm btn-warning flex-grow-1" (click)="addReminder(item.id!)" [disabled]="!canAddReminder(item)">
+            <i class="fas fa-bell"></i> Mahnung
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keine Posten Hinweis -->
+  <div *ngIf="filteredOpenItems.length === 0 && !loading" class="text-center mt-5">
+    <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+    <h5 class="text-muted">Keine offenen Posten gefunden</h5>
+    <p class="text-muted">Erstellen Sie einen neuen Posten oder passen Sie die Suchkriterien an.</p>
+  </div>
+
+  <!-- Details Modal -->
+  <div *ngIf="showDetailsModal" class="modal show d-block" tabindex="-1" (click)="closeDetailsModal()">
+    <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-file-invoice-dollar me-2"></i>
+            Offener Posten {{ selectedOpenItem?.invoiceNumber }}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeDetailsModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="selectedOpenItem" class="row">
+            <!-- Grundinformationen -->
+            <div class="col-md-6 mb-4">
+              <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2"></i>Grundinformationen</h6>
+              <div class="row">
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Rechnungsnummer:</small>
+                  <div class="fw-bold">{{ selectedOpenItem.invoiceNumber }}</div>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Status:</small>
+                  <div><span [ngClass]="getStatusBadgeClass(selectedOpenItem.status!)" class="badge">{{ getStatusLabel(selectedOpenItem.status!) }}</span></div>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Fälligkeitsdatum:</small>
+                  <div [class]="selectedOpenItem.overdue ? 'text-danger fw-bold' : ''">
+                    {{ selectedOpenItem.dueDate | date:'dd.MM.yyyy' }}
+                    <span *ngIf="selectedOpenItem.overdue" class="small">({{ getDaysOverdue(selectedOpenItem) }} Tage überfällig)</span>
+                  </div>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Kunde:</small>
+                  <div class="fw-bold">{{ selectedOpenItem.customerName }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Betragsinformationen -->
+            <div class="col-md-6 mb-4">
+              <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-euro-sign me-2"></i>Betragsinformationen</h6>
+              <div class="row">
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Ursprungsbetrag:</small>
+                  <div class="fw-bold">{{ selectedOpenItem.amount | currency:'EUR' }}</div>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Bereits bezahlt:</small>
+                  <div class="text-success fw-bold">{{ selectedOpenItem.paidAmount | currency:'EUR' }}</div>
+                </div>
+                <div class="col-12 mb-2">
+                  <small class="text-muted">Ausstehender Betrag:</small>
+                  <div class="h5 text-danger">{{ selectedOpenItem.outstandingAmount | currency:'EUR' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Zahlungsinformationen -->
+            <div class="col-md-6 mb-4" *ngIf="selectedOpenItem.paidAmount && selectedOpenItem.paidAmount > 0">
+              <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-credit-card me-2"></i>Zahlungsinformationen</h6>
+              <div class="row">
+                <div class="col-sm-6 mb-2" *ngIf="selectedOpenItem.paidDate">
+                  <small class="text-muted">Zahlungsdatum:</small>
+                  <div>{{ selectedOpenItem.paidDate | date:'dd.MM.yyyy' }}</div>
+                </div>
+                <div class="col-sm-6 mb-2" *ngIf="selectedOpenItem.paymentMethod">
+                  <small class="text-muted">Zahlungsart:</small>
+                  <div>{{ selectedOpenItem.paymentMethod }}</div>
+                </div>
+                <div class="col-12 mb-2" *ngIf="selectedOpenItem.paymentReference">
+                  <small class="text-muted">Zahlungsreferenz:</small>
+                  <div>{{ selectedOpenItem.paymentReference }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mahninformationen -->
+            <div class="col-md-6 mb-4" *ngIf="selectedOpenItem.reminderCount && selectedOpenItem.reminderCount > 0">
+              <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-bell me-2"></i>Mahninformationen</h6>
+              <div class="row">
+                <div class="col-sm-6 mb-2">
+                  <small class="text-muted">Anzahl Mahnungen:</small>
+                  <div class="fw-bold">{{ selectedOpenItem.reminderCount }}</div>
+                </div>
+                <div class="col-sm-6 mb-2" *ngIf="selectedOpenItem.lastReminderDate">
+                  <small class="text-muted">Letzte Mahnung:</small>
+                  <div>{{ selectedOpenItem.lastReminderDate | date:'dd.MM.yyyy' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Beschreibung/Notizen -->
+            <div class="col-12" *ngIf="selectedOpenItem.description || selectedOpenItem.notes">
+              <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-sticky-note me-2"></i>Beschreibung & Notizen</h6>
+              <div class="mb-2" *ngIf="selectedOpenItem.description">
+                <small class="text-muted">Beschreibung:</small>
+                <div>{{ selectedOpenItem.description }}</div>
+              </div>
+              <div class="mb-2" *ngIf="selectedOpenItem.notes">
+                <small class="text-muted">Notizen:</small>
+                <div>{{ selectedOpenItem.notes }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="d-flex gap-2 w-100 flex-wrap">
+            <button class="btn btn-outline-secondary" (click)="closeDetailsModal()">Schließen</button>
+            <button class="btn btn-success" (click)="openPaymentModal(selectedOpenItem!); closeDetailsModal()" [disabled]="!canReceivePayment(selectedOpenItem!)">
+              <i class="fas fa-euro-sign me-1"></i>Zahlung buchen
+            </button>
+            <button class="btn btn-primary" (click)="openEditModal(selectedOpenItem!); closeDetailsModal()" [disabled]="!canEdit(selectedOpenItem!)">
+              <i class="fas fa-edit me-1"></i>Bearbeiten
+            </button>
+            <div class="ms-auto d-flex gap-2">
+              <button class="btn btn-warning" (click)="addReminder(selectedOpenItem!.id!); closeDetailsModal()" [disabled]="!canAddReminder(selectedOpenItem!)">
+                <i class="fas fa-bell me-1"></i>Mahnung
+              </button>
+              <button class="btn btn-danger" (click)="cancelOpenItem(selectedOpenItem!.id!); closeDetailsModal()" [disabled]="!canCancel(selectedOpenItem!)">
+                <i class="fas fa-ban me-1"></i>Stornieren
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zahlung Modal -->
+  <div *ngIf="showPaymentModal" class="modal show d-block" tabindex="-1" (click)="closePaymentModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-euro-sign me-2"></i>Zahlung buchen
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closePaymentModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Ausstehender Betrag</label>
+            <input type="text" class="form-control" [value]="(paymentOpenItem?.outstandingAmount | currency:'EUR')" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Zahlungsbetrag *</label>
+            <input type="number" step="0.01" class="form-control" [(ngModel)]="paymentAmount" placeholder="0,00">
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Zahlungsart</label>
+              <select class="form-select" [(ngModel)]="paymentMethod">
+                <option value="">-- Auswählen --</option>
+                <option value="BANK_TRANSFER">Überweisung</option>
+                <option value="DIRECT_DEBIT">Lastschrift</option>
+                <option value="CASH">Bar</option>
+                <option value="CREDIT_CARD">Kreditkarte</option>
+                <option value="PAYPAL">PayPal</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Zahlungsreferenz</label>
+              <input type="text" class="form-control" [(ngModel)]="paymentReference" placeholder="z.B. Überweisungsreferenz">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closePaymentModal()">
+            <i class="fas fa-times me-1"></i>Abbrechen
+          </button>
+          <button class="btn btn-success" (click)="recordPayment()" [disabled]="!paymentAmount || paymentAmount <= 0">
+            <i class="fas fa-check me-1"></i>Zahlung buchen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Neuer Posten Modal -->
+  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-plus me-2"></i>Neuer offener Posten
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeNewModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Rechnung *</label>
+            <select [(ngModel)]="newOpenItem.invoiceId" class="form-select">
+              <option value="">-- Rechnung auswählen --</option>
+              <option *ngFor="let invoice of availableInvoices" [value]="invoice.id">
+                {{ invoice.invoiceNumber }} - {{ invoice.customerName }} ({{ invoice.totalAmount | currency:'EUR' }})
+              </option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Beschreibung *</label>
+            <input type="text" class="form-control" [(ngModel)]="newOpenItem.description" placeholder="Beschreibung des offenen Postens">
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Betrag *</label>
+              <input type="number" step="0.01" class="form-control" [(ngModel)]="newOpenItem.amount" placeholder="0,00">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fälligkeitsdatum *</label>
+              <input type="date" class="form-control" [(ngModel)]="newDueDateString">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notizen</label>
+            <textarea class="form-control" [(ngModel)]="newOpenItem.notes" rows="3" placeholder="Optionale Notizen..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewModal()">
+            <i class="fas fa-times me-1"></i>Abbrechen
+          </button>
+          <button class="btn btn-primary" (click)="createOpenItem()">
+            <i class="fas fa-check me-1"></i>Erstellen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bearbeiten Modal -->
+  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title">
+            <i class="fas fa-edit me-2"></i>Offenen Posten bearbeiten
+          </h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Beschreibung *</label>
+            <input type="text" class="form-control" [(ngModel)]="editOpenItem.description" placeholder="Beschreibung des offenen Postens">
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Betrag *</label>
+              <input type="number" step="0.01" class="form-control" [(ngModel)]="editOpenItem.amount" placeholder="0,00">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fälligkeitsdatum *</label>
+              <input type="date" class="form-control" [(ngModel)]="editDueDateString">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notizen</label>
+            <textarea class="form-control" [(ngModel)]="editOpenItem.notes" rows="3" placeholder="Optionale Notizen..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()">
+            <i class="fas fa-times me-1"></i>Abbrechen
+          </button>
+          <button class="btn btn-warning" (click)="updateOpenItem()">
+            <i class="fas fa-save me-1"></i>Speichern
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

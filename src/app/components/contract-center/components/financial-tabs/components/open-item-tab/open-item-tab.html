@@ -1,0 +1,182 @@
+<div class="h-100 p-3" style="overflow-y: auto; overflow-x: hidden;">
+  
+  <!-- Zusammenfassung -->
+  <div *ngIf="filteredOpenItems.length > 0" class="summary-cards mb-3">
+    <div class="row g-2">
+      <div class="col-4">
+        <div class="card text-center">
+          <div class="card-body py-2">
+            <div class="fw-bold text-danger">{{ getTotalOpenAmount() | currency:'EUR':'symbol':'1.0-2' }}</div>
+            <small class="text-muted">Offen</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center">
+          <div class="card-body py-2">
+            <div class="fw-bold text-warning">{{ getOverdueAmount() | currency:'EUR':'symbol':'1.0-2' }}</div>
+            <small class="text-muted">Überfällig</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center">
+          <div class="card-body py-2">
+            <div class="fw-bold text-success">{{ getPaidAmount() | currency:'EUR':'symbol':'1.0-2' }}</div>
+            <small class="text-muted">Bezahlt</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Offene Posten Liste -->
+  <div *ngIf="filteredOpenItems.length > 0; else noOpenItems">
+    <ul class="list-group list-group-flush">
+      <li *ngFor="let item of filteredOpenItems" 
+          class="list-group-item open-item"
+          [class.border-danger]="item.overdue"
+          [class.border-warning]="isNearDue(item)">
+        
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="open-item-info flex-grow-1">
+            <!-- Header mit Rechnung und Status -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="open-item-header">
+                <i [class]="getDueDateIcon(item)" class="me-2"></i>
+                <strong class="text-primary">{{ item.invoiceNumber || 'Ohne Referenz' }}</strong>
+                <span class="badge bg-light text-dark ms-2 small">
+                  Rechnung
+                </span>
+              </div>
+              <span [ngClass]="getOpenItemStatusBadgeClass(item.status!)" class="badge">
+                {{ getOpenItemStatusLabel(item.status!) }}
+              </span>
+            </div>
+            
+            <!-- Kunde -->
+            <div *ngIf="item.customerName" class="text-muted small mb-1">
+              <i class="fas fa-user me-1"></i>
+              {{ item.customerName }}
+            </div>
+            
+            <!-- Beschreibung -->
+            <div *ngIf="item.description" class="text-muted small mb-2">
+              {{ item.description }}
+            </div>
+            
+            <!-- Beträge -->
+            <div class="row g-2 mb-2">
+              <div class="col-4">
+                <small class="text-muted">Betrag:</small><br>
+                <span class="fw-bold">{{ item.amount | currency:'EUR':'symbol':'1.0-2' }}</span>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">Bezahlt:</small><br>
+                <span class="text-success">{{ item.paidAmount | currency:'EUR':'symbol':'1.0-2' }}</span>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">Offen:</small><br>
+                <span class="fw-bold text-danger">{{ item.outstandingAmount | currency:'EUR':'symbol':'1.0-2' }}</span>
+              </div>
+            </div>
+            
+            <!-- Fälligkeitsdatum -->
+            <div class="open-item-dates">
+              <div *ngIf="item.dueDate" class="small">
+                <i class="fas fa-calendar me-1"></i>
+                <strong>Fällig:</strong> 
+                <span [class]="getDueDateWarningClass(item)">
+                  {{ item.dueDate | date:'dd.MM.yyyy' }}
+                </span>
+                
+                <span *ngIf="item.overdue" 
+                      [class]="getOverdueWarningClass(getDaysOverdue(item))" 
+                      class="ms-2">
+                  <i class="fas fa-exclamation-triangle me-1"></i>
+                  <strong>{{ getDaysOverdue(item) }} Tage überfällig</strong>
+                </span>
+
+                <span *ngIf="!item.overdue && isNearDue(item)" class="text-warning ms-2">
+                  <i class="fas fa-clock me-1"></i>
+                  <small>Bald fällig</small>
+                </span>
+              </div>
+            </div>
+
+            <!-- Zahlungsinformationen (falls vorhanden) -->
+            <div *ngIf="item.paidAmount && item.paidAmount > 0 && item.paidDate" class="mt-2 p-2 bg-light rounded">
+              <small class="text-muted">
+                <i class="fas fa-credit-card me-1"></i>
+                Zuletzt bezahlt: {{ item.paidDate | date:'dd.MM.yyyy' }}
+                <span *ngIf="item.paymentMethod" class="ms-2">({{ item.paymentMethod }})</span>
+              </small>
+            </div>
+
+            <!-- Mahninformationen (falls vorhanden) -->
+            <div *ngIf="item.reminderCount && item.reminderCount > 0" class="mt-2">
+              <small class="text-warning">
+                <i class="fas fa-bell me-1"></i>
+                {{ item.reminderCount }} Mahnung(en)
+                <span *ngIf="item.lastReminderDate">
+                  - Letzte: {{ item.lastReminderDate | date:'dd.MM.yyyy' }}
+                </span>
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aktionsbuttons -->
+        <div class="open-item-actions mt-3">
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-info" 
+                    (click)="onDetails(item)" 
+                    title="Details anzeigen">
+              <i class="fas fa-eye me-1"></i>Details
+            </button>
+            
+            <button class="btn btn-sm btn-success" 
+                    (click)="onPayment(item)"
+                    [disabled]="!canReceivePayment(item)"
+                    title="Zahlung buchen">
+              <i class="fas fa-euro-sign me-1"></i>Zahlung
+            </button>
+            
+            <button class="btn btn-sm btn-primary" 
+                    (click)="onEdit(item)"
+                    [disabled]="!canEdit(item)"
+                    title="Bearbeiten">
+              <i class="fas fa-edit me-1"></i>Bearbeiten
+            </button>
+            
+            <button class="btn btn-sm btn-outline-warning" 
+                    (click)="onReminder(item)"
+                    [disabled]="!canAddReminder(item)"
+                    title="Mahnung senden">
+              <i class="fas fa-bell me-1"></i>Mahnung
+            </button>
+            
+            <button class="btn btn-sm btn-outline-danger" 
+                    (click)="onCancel(item)"
+                    [disabled]="!canCancel(item)"
+                    title="Stornieren">
+              <i class="fas fa-ban me-1"></i>Stornieren
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Keine offenen Posten -->
+  <ng-template #noOpenItems>
+    <div class="text-center py-5 text-muted">
+      <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+      <div class="h5">Keine offenen Posten vorhanden</div>
+      <small class="text-success">
+        Alle Rechnungen sind bezahlt. Es gibt keine ausstehenden Beträge.
+      </small>
+    </div>
+  </ng-template>
+
+</div>

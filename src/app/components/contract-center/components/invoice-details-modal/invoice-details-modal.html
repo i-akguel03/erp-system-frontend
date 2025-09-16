@@ -1,0 +1,95 @@
+<!-- invoice-details-modal.component.html -->
+<div class="modal show d-block" tabindex="-1" (click)="onBackdropClick($event)">
+  <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      
+      <!-- Modal Header -->
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-file-invoice me-2"></i>
+          Rechnung {{ invoice?.invoiceNumber }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="onClose()"></button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body" *ngIf="invoice">
+        <div class="row">
+          
+          <!-- Rechnungsinformationen -->
+          <div class="col-md-6 mb-4">
+            <h6 class="border-bottom pb-2 mb-3">
+              <i class="fas fa-info-circle me-2"></i>Rechnungsinformationen
+            </h6>
+            <div class="row">
+              <div class="col-sm-6 mb-2">
+                <small class="text-muted">Rechnungsnummer:</small>
+                <div class="fw-bold">{{ invoice.invoiceNumber }}</div>
+              </div>
+              <div class="col-sm-6 mb-2">
+                <small class="text-muted">Status:</small>
+                <div>
+                  <span [ngClass]="getInvoiceStatusBadgeClass(invoice.status)" class="badge">
+                    {{ getInvoiceStatusLabel(invoice.status) }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-sm-6 mb-2">
+                <small class="text-muted">Rechnungsdatum:</small>
+                <div>{{ formatDate(invoice.invoiceDate) }}</div>
+              </div>
+              <div class="col-sm-6 mb-2">
+                <small class="text-muted">Fälligkeitsdatum:</small>
+                <div>{{ formatDate(invoice.dueDate) }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kundeninformationen -->
+          <div class="col-md-6 mb-4">
+            <h6 class="border-bottom pb-2 mb-3">
+              <i class="fas fa-user me-2"></i>Kundeninformationen
+            </h6>
+            <div *ngIf="customer; else noCustomer">
+              <div class="mb-2">
+                <small class="text-muted">Name:</small>
+                <div class="fw-bold">{{ customer.firstName }} {{ customer.lastName }}</div>
+              </div>
+              <div class="mb-2">
+                <small class="text-muted">Kundennummer:</small>
+                <div>{{ customer.customerNumber }}</div>
+              </div>
+              <div class="mb-2" *ngIf="customer.email">
+                <small class="text-muted">E-Mail:</small>
+                <div>{{ customer.email }}</div>
+              </div>
+            </div>
+            <ng-template #noCustomer>
+              <div class="text-muted">Kundeninformationen nicht verfügbar</div>
+            </ng-template>
+          </div>
+
+          <!-- Rechnungspositionen -->
+          <div class="col-12">
+            <h6 class="border-bottom pb-2 mb-3">
+              <i class="fas fa-list me-2"></i>Rechnungspositionen 
+              <span class="badge bg-secondary ms-2">{{ invoice.invoiceItems?.length || 0 }}</span>
+            </h6>
+            
+            <div *ngIf="invoice.invoiceItems && invoice.invoiceItems.length > 0; else noItems">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Pos.</th>
+                      <th>Beschreibung</th>
+                      <th class="text-end">Menge</th>
+                      <th class="text-end">Einzelpreis</th>
+                      <th class="text-end">Gesamt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of invoice.invoiceItems; let i = index">
+                      <td class="fw-bold">{{ i + 1 }}</td>
+                      <td>
+                        <div class="fw-bold">{{ item.productName || item.description }}</div>

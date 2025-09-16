@@ -1,0 +1,112 @@
+<!-- Sticky Suchbereich -->
+<div class="sticky-header">
+  <div class="input-group mb-2">
+    <input type="text" 
+           class="form-control" 
+           placeholder="Vertrag, Kunde oder Nummer suchen..." 
+           [(ngModel)]="searchTerm" 
+           (input)="filterContracts()">
+    <span class="input-group-text"><i class="fas fa-search"></i></span>
+  </div>
+</div>
+
+<!-- Scrollbarer Vertragsbereich -->
+<div class="scrollable-contracts">
+  <div class="card h-100">
+    <div class="card-body p-0">
+
+      <!-- Loading-Anzeige -->
+      <div *ngIf="loading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Wird geladen...</span>
+        </div>
+        <div class="mt-2">Verträge werden geladen...</div>
+      </div>
+
+      <!-- Fehler-Anzeige -->
+      <div *ngIf="error && !loading" class="alert alert-danger m-3" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ error }}
+      </div>
+
+      <!-- Tabelle für alle Größen -->
+      <div *ngIf="!loading && !error" class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Nr.</th>
+              <th>Titel</th>
+              <th>Kunde</th>
+              <th class="d-none d-md-table-cell">Start</th>
+              <th class="d-none d-md-table-cell">Ende</th>
+              <th class="d-none d-md-table-cell">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let contract of filteredContracts" 
+                (click)="selectContract(contract)"
+                (contextmenu)="onContractRightClick($event, contract)"
+                [class.table-active]="isSelectedContract(contract)"
+                style="cursor: pointer;">
+              <td class="fw-bold">{{ contract.contractNumber }}</td>
+              <td>{{ contract.contractTitle }}</td>
+              <td>
+                <div *ngIf="getCustomerById(contract.customerId); let customer">
+                  {{ customer.firstName }} {{ customer.lastName }}
+                  <small class="text-muted d-block">{{ customer.customerNumber }}</small>
+                </div>
+                <small *ngIf="!getCustomerById(contract.customerId)" class="text-muted">
+                  Kunde nicht gefunden
+                </small>
+              </td>
+              <td class="d-none d-md-table-cell">
+                {{ contract.startDate | date:'dd.MM.yyyy' }}
+              </td>
+              <td class="d-none d-md-table-cell">
+                {{ contract.endDate | date:'dd.MM.yyyy' }}
+              </td>
+              <td class="d-none d-md-table-cell">
+                <span [ngClass]="getContractStatusClass(contract)">
+                  {{ getContractStatus(contract) }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="filteredContracts.length === 0">
+              <td colspan="6" class="text-center p-3 text-muted">
+                <i class="fas fa-search fa-2x mb-2 d-block"></i>
+                Keine Verträge gefunden
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Kontextmenü -->
+<div *ngIf="contextMenuVisible" 
+     class="context-menu"
+     [style.left.px]="contextMenuPosition.x"
+     [style.top.px]="contextMenuPosition.y">
+  <ul class="list-unstyled mb-0">
+    <li><button class="dropdown-item" (click)="onContractAction('neu')">
+      <i class="fas fa-plus me-2"></i>Neuer Vertrag
+    </button></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><button class="dropdown-item" (click)="onContractAction('edit')">
+      <i class="fas fa-edit me-2"></i>Bearbeiten
+    </button></li>
+    <li><button class="dropdown-item" (click)="onContractAction('duplicate')">
+      <i class="fas fa-copy me-2"></i>Duplizieren
+    </button></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><button class="dropdown-item text-warning" (click)="onContractAction('kündigen')">
+      <i class="fas fa-ban me-2"></i>Kündigen
+    </button></li>
+    <li><button class="dropdown-item text-danger" (click)="onContractAction('stornieren')">
+      <i class="fas fa-times me-2"></i>Stornieren
+    </button></li>
+  </ul>
+</div>
