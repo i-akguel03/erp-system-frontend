@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { Invoice } from '../../../../../../models/Invoice';
 import { Customer } from '../../../../../../models/Customer';
 
-
-
 interface InvoiceActionEvent {
   action: string;
   invoice: Invoice;
@@ -22,6 +20,22 @@ export class InvoiceTabComponent {
   @Input() customers: { [id: string]: Customer } = {};
 
   @Output() invoiceAction = new EventEmitter<InvoiceActionEvent>();
+
+  // Modal State
+  showDetailsModal = false;
+  selectedInvoice: Invoice | null = null;
+
+  // Modal Management
+  openDetailsModal(invoice: Invoice): void {
+    this.selectedInvoice = { ...invoice };
+    this.showDetailsModal = true;
+  }
+
+  closeDetailsModal(): void {
+    console.log('Schließe Details Modal. selectedInvoice vor dem Löschen:', this.selectedInvoice);
+    this.showDetailsModal = false;
+    this.selectedInvoice = null;
+  }
 
   // Invoice Status Methods
   getInvoiceStatusBadgeClass(status: string): string {
@@ -46,6 +60,10 @@ export class InvoiceTabComponent {
     }
   }
 
+  getStatusBadgeClass(status: string): string {
+    return this.getInvoiceStatusBadgeClass(status);
+  }
+
   canEditInvoice(invoice: Invoice): boolean {
     return invoice.status !== 'CANCELLED' && invoice.status !== 'SENT';
   }
@@ -54,17 +72,43 @@ export class InvoiceTabComponent {
     return invoice.status === 'DRAFT';
   }
 
+  canEdit(invoice: Invoice): boolean {
+    return invoice.status !== 'CANCELLED';
+  }
+
+  canSend(invoice: Invoice): boolean {
+    return invoice.status === 'DRAFT';
+  }
+
+  canCancel(invoice: Invoice): boolean {
+    return invoice.status === 'DRAFT' || invoice.status === 'SENT';
+  }
+
+  canViewOpenItems(invoice: Invoice): boolean {
+    return invoice.status === 'SENT';
+  }
+
   // Event Handlers
   openInvoiceDetails(invoice: Invoice): void {
-    this.invoiceAction.emit({ action: 'details', invoice });
+    this.openDetailsModal(invoice);
   }
 
   editInvoice(invoice: Invoice): void {
-    this.invoiceAction.emit({ action: 'edit', invoice });
+    console.log('editInvoice aufgerufen mit:', invoice);
+    if (!invoice) {
+      console.error('Keine Invoice für editInvoice erhalten');
+      return;
+    }
+    this.invoiceAction.emit({ action: 'edit', invoice: invoice });
   }
 
   sendInvoice(invoice: Invoice): void {
-    this.invoiceAction.emit({ action: 'send', invoice });
+    console.log('sendInvoice aufgerufen mit:', invoice);
+    if (!invoice) {
+      console.error('Keine Invoice für sendInvoice erhalten');
+      return;
+    }
+    this.invoiceAction.emit({ action: 'send', invoice: invoice });
   }
 
   // Utility Methods
@@ -94,5 +138,75 @@ export class InvoiceTabComponent {
     return this.invoices
       .filter(invoice => invoice.status === 'DRAFT')
       .reduce((total, invoice) => total + (invoice.totalAmount || 0), 0);
+  }
+
+  // Helper Methods für Modal
+  getItemTypeLabel(type: string): string {
+    switch (type) {
+      case 'SERVICE': return 'Dienstleistung';
+      case 'PRODUCT': return 'Produkt';
+      case 'SUBSCRIPTION': return 'Abonnement';
+      case 'DISCOUNT': return 'Rabatt';
+      case 'FEE': return 'Gebühr';
+      default: return type;
+    }
+  }
+
+  getItemTypeBadgeClass(type: string): string {
+    switch (type) {
+      case 'SERVICE': return 'bg-primary';
+      case 'PRODUCT': return 'bg-success';
+      case 'SUBSCRIPTION': return 'bg-info';
+      case 'DISCOUNT': return 'bg-warning';
+      case 'FEE': return 'bg-secondary';
+      default: return 'bg-light';
+    }
+  }
+
+  getNetAmount(item: any): number {
+    const baseAmount = item.quantity * item.unitPrice;
+    const discount = item.discountAmount || 0;
+    return baseAmount - discount;
+  }
+
+  // Modal Actions
+  openEditModalFromDetails(): void {
+    if (this.selectedInvoice) {
+      console.log('Invoice für Bearbeitung:', this.selectedInvoice);
+      // Verwende JSON für eine tiefe Kopie
+      const invoiceToEdit = JSON.parse(JSON.stringify(this.selectedInvoice));
+      console.log('Kopierte Invoice:', invoiceToEdit);
+      this.closeDetailsModal();
+      this.editInvoice(invoiceToEdit);
+    } else {
+      console.error('Keine selectedInvoice verfügbar für Bearbeitung');
+    }
+  }
+
+  sendInvoiceFromDetails(): void {
+    if (this.selectedInvoice) {
+      this.closeDetailsModal();
+      this.sendInvoice(this.selectedInvoice);
+    }
+  }
+
+  viewOpenItemsFromDetails(): void {
+    if (this.selectedInvoice) {
+      this.invoiceAction.emit({ action: 'viewOpenItems', invoice: this.selectedInvoice });
+    }
+  }
+
+  cancelInvoiceFromDetails(): void {
+    if (this.selectedInvoice) {
+      this.invoiceAction.emit({ action: 'cancel', invoice: this.selectedInvoice });
+      this.closeDetailsModal();
+    }
+  }
+
+  deleteInvoiceFromDetails(): void {
+    if (this.selectedInvoice) {
+      this.invoiceAction.emit({ action: 'delete', invoice: this.selectedInvoice });
+      this.closeDetailsModal();
+    }
   }
 }

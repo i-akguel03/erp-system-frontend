@@ -47,141 +47,13 @@ interface MobilePanelState {
     SubscriptionPanelComponent,
     FinancialTabsComponent
   ],
-  template: `
-    <div class="component-container" [class.mobile-view]="isMobile">
-      
-      <!-- Mobile Backdrop -->
-      <div class="mobile-backdrop" 
-           [class.show]="hasExpandedPanel"
-           (click)="collapseAllPanels()"></div>
-      
-      <!-- Oben: Vertragsliste -->
-      <div class="contract-list">
-        <div class="card" 
-             [class.mobile-collapsed]="isMobile && mobilePanelState.contracts === 'collapsed'"
-             [class.mobile-expanded]="isMobile && mobilePanelState.contracts === 'expanded'">
-          
-          <div class="card-header" 
-               (click)="toggleMobilePanel('contracts')"
-               [class.clickable]="isMobile">
-            <div class="card-title">
-              <i class="fas fa-file-contract me-2"></i>
-              Verträge
-              <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
-                {{ contracts.length }}
-              </span>
-            </div>
-            <i class="fas fa-chevron-down collapse-indicator mobile-only"
-               [class.collapsed]="mobilePanelState.contracts === 'collapsed'"></i>
-          </div>
-          
-          <div class="card-body">
-            <app-contract-list
-              [contracts]="contracts"
-              [customers]="customers"
-              [loading]="loading"
-              [error]="error"
-              [selectedContract]="selectedContract"
-              (contractSelected)="onContractSelected($event)"
-              (contractAction)="onContractAction($event)">
-            </app-contract-list>
-          </div>
-        </div>
-      </div>
-
-      <!-- Unten: Abos & Finanzdetails -->
-      <div class="bottom-row">
-        
-        <!-- Abonnements Panel -->
-        <div class="subscription-section">
-          <div class="card"
-               [class.mobile-collapsed]="isMobile && mobilePanelState.subscriptions === 'collapsed'"
-               [class.mobile-expanded]="isMobile && mobilePanelState.subscriptions === 'expanded'">
-            
-            <div class="card-header" 
-                 (click)="toggleMobilePanel('subscriptions')"
-                 [class.clickable]="isMobile">
-              <div class="card-title">
-                <i class="fas fa-sync-alt me-2"></i>
-                Abonnements
-                <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
-                  {{ subscriptions.length }}
-                </span>
-                <span class="badge bg-secondary ms-1" *ngIf="selectedContract && !subscriptions?.length">
-                  Keine Abos
-                </span>
-              </div>
-              <i class="fas fa-chevron-down collapse-indicator mobile-only"
-                 [class.collapsed]="mobilePanelState.subscriptions === 'collapsed'"></i>
-            </div>
-            
-            <div class="card-body">
-              <app-subscription-panel
-                [subscriptions]="subscriptions"
-                [selectedContract]="selectedContract"
-                [selectedSubscription]="selectedSubscription"
-                (subscriptionSelected)="onSubscriptionSelected($event)">
-              </app-subscription-panel>
-            </div>
-          </div>
-        </div>
-
-        <!-- Finanz-Tabs Panel -->
-        <div class="financial-section">
-          <div class="card"
-               [class.mobile-collapsed]="isMobile && mobilePanelState.financial === 'collapsed'"
-               [class.mobile-expanded]="isMobile && mobilePanelState.financial === 'expanded'">
-            
-            <div class="card-header" 
-                 (click)="toggleMobilePanel('financial')"
-                 [class.clickable]="isMobile">
-              <div class="card-title">
-                <i class="fas fa-chart-line me-2"></i>
-                Finanzdetails
-                <span class="badge bg-success ms-2" *ngIf="selectedSubscription">
-                  {{ selectedSubscription.name || 'Ausgewählt' }}
-                </span>
-                <span class="badge bg-secondary ms-2" *ngIf="!selectedSubscription">
-                  Kein Abo gewählt
-                </span>
-              </div>
-              <i class="fas fa-chevron-down collapse-indicator mobile-only"
-                 [class.collapsed]="mobilePanelState.financial === 'collapsed'"></i>
-            </div>
-            
-            <div class="card-body">
-              <app-financial-tabs
-                [selectedContract]="selectedContract"
-                [selectedSubscription]="selectedSubscription"
-                [customers]="customers"
-                (invoiceAction)="onInvoiceAction($event)"
-                (openItemAction)="onOpenItemAction($event)">
-              </app-financial-tabs>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mobile Breadcrumb Navigation -->
-      <div class="mobile-breadcrumb" *ngIf="isMobile && getMobileBreadcrumb().length > 0">
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item" 
-                *ngFor="let item of getMobileBreadcrumb(); let last = last"
-                [class.active]="last">
-              {{ item }}
-            </li>
-          </ol>
-        </nav>
-      </div>
-    </div>
-  `,
+  templateUrl: './contract-center.html',
   styleUrls: ['./contract-center.scss']
 })
 export class ContractCenterComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // Original data properties
+  // Data properties
   contracts: Contract[] = [];
   selectedContract: Contract | null = null;
   subscriptions: Subscription[] = [];
@@ -194,22 +66,18 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
 
   // Mobile state management
   isMobile = false;
-  mobilePanelState: MobilePanelState = {
-    contracts: 'normal',
-    subscriptions: 'normal',
-    financial: 'normal'
-  };
+  mobileCurrentView: 'contracts' | 'subscriptions' | 'financial' = 'contracts';
 
   constructor(
     private contractService: ContractService,
     private customerService: CustomerService,
     private subscriptionService: SubscriptionService,
     private invoiceService: InvoiceService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.checkMobileView();
-    this.initializeMobileState();
+    this.updateBodyScrollLock();
     this.loadCustomers();
     this.loadContracts();
   }
@@ -217,9 +85,12 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
+
     // Restore body scroll on destroy
-    document.body.style.overflow = '';
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
   }
 
   @HostListener('window:resize', ['$event'])
@@ -229,8 +100,8 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape', ['$event'])
   onEscapePress(event: KeyboardEvent) {
-    if (this.isMobile && this.hasExpandedPanel) {
-      this.collapseAllPanels();
+    if (this.isMobile) {
+      this.navigateBack();
     }
   }
 
@@ -238,92 +109,105 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   private checkMobileView() {
     const wasMobile = this.isMobile;
     this.isMobile = window.innerWidth <= 768;
-    
+
     if (wasMobile !== this.isMobile) {
-      this.initializeMobileState();
+      this.updateBodyScrollLock();
+
+      if (!this.isMobile) {
+        // Reset mobile view when switching to desktop
+        this.mobileCurrentView = 'contracts';
+      }
     }
   }
 
-  private initializeMobileState() {
+  private updateBodyScrollLock() {
+    if (typeof document === 'undefined') return;
+
     if (this.isMobile) {
-      // Mobile: Start with contracts visible, others collapsed
-      this.mobilePanelState = {
-        contracts: 'normal',
-        subscriptions: 'collapsed',
-        financial: 'collapsed'
-      };
-    } else {
-      // Desktop: All panels normal
-      this.mobilePanelState = {
-        contracts: 'normal',
-        subscriptions: 'normal',
-        financial: 'normal'
-      };
-    }
-  }
-
-  // Mobile panel management
-  toggleMobilePanel(panel: keyof MobilePanelState) {
-    if (!this.isMobile) return;
-
-    const currentState = this.mobilePanelState[panel];
-
-    if (currentState === 'collapsed') {
-      // Expand this panel, collapse others
-      this.collapseAllPanels();
-      this.mobilePanelState[panel] = 'expanded';
       document.body.style.overflow = 'hidden';
-      
-    } else if (currentState === 'expanded') {
-      // Collapse this panel
-      this.mobilePanelState[panel] = 'collapsed';
-      document.body.style.overflow = '';
-      
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
     } else {
-      // From normal to collapsed
-      this.mobilePanelState[panel] = 'collapsed';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     }
   }
 
-  collapseAllPanels() {
-    if (!this.isMobile) return;
-
-    this.mobilePanelState = {
-      contracts: 'collapsed',
-      subscriptions: 'collapsed',
-      financial: 'collapsed'
-    };
-    
-    document.body.style.overflow = '';
+  // Mobile navigation methods
+  getMobileNavTitle(): string {
+    switch (this.mobileCurrentView) {
+      case 'contracts':
+        return 'Verträge';
+      case 'subscriptions':
+        return `Abonnements von ${this.selectedContract?.contractTitle || 'Vertrag'}`;
+      case 'financial':
+        return `Finanzdetails von ${this.selectedSubscription?.productName || this.selectedContract?.contractTitle || 'Auswahl'}`;
+      default:
+        return 'Navigation';
+    }
   }
 
-  get hasExpandedPanel(): boolean {
-    return Object.values(this.mobilePanelState).some(state => state === 'expanded');
+  navigateBack(): void {
+    if (!this.isMobile) return;
+
+    console.log('Navigate back from:', this.mobileCurrentView);
+
+    switch (this.mobileCurrentView) {
+      case 'financial':
+        this.mobileCurrentView = 'subscriptions';
+        break;
+      case 'subscriptions':
+        this.mobileCurrentView = 'contracts';
+        break;
+      case 'contracts':
+        // Already at root
+        break;
+    }
+
+    console.log('Navigated to:', this.mobileCurrentView);
+  }
+
+  resetToContracts(): void {
+    if (!this.isMobile) return;
+
+    console.log('Reset to contracts view');
+    this.mobileCurrentView = 'contracts';
   }
 
   getMobileBreadcrumb(): string[] {
     const breadcrumb: string[] = [];
-    
-    if (this.selectedContract) {
+
+    if (this.mobileCurrentView === 'contracts') {
+      return breadcrumb;
+    }
+
+    breadcrumb.push('Verträge');
+
+    if (this.selectedContract && this.mobileCurrentView !== 'subscriptions') {
       breadcrumb.push(this.selectedContract.contractTitle || 'Vertrag');
     }
-    
-    if (this.selectedSubscription) {
+
+    if (this.selectedSubscription && this.mobileCurrentView === 'financial') {
       breadcrumb.push(this.selectedSubscription.productName || 'Abonnement');
     }
-    
+
     return breadcrumb;
   }
 
-  // Original load methods
+  // Data loading methods
   private loadCustomers(): void {
     this.customerService.getCustomers()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: customers => {
           this.customers = {};
-          customers.forEach(c => { 
-            if (c.id) this.customers[c.id] = c; 
+          customers.forEach(c => {
+            if (c.id) this.customers[c.id] = c;
           });
         },
         error: err => {
@@ -358,11 +242,11 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       .subscribe({
         next: subs => {
           this.subscriptions = subs;
-          
-          // Mobile: Auto-expand subscriptions if available
-          if (this.isMobile && subs.length > 0) {
-            this.mobilePanelState.subscriptions = 'normal';
-            this.mobilePanelState.contracts = 'collapsed';
+
+          // Mobile: Navigate to subscriptions view
+          if (this.isMobile) {
+            console.log('Subscriptions loaded, navigating to subscriptions view');
+            this.mobileCurrentView = 'subscriptions';
           }
         },
         error: err => {
@@ -372,20 +256,15 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Enhanced event handlers with mobile navigation
+  // Event handlers
   onContractSelected(contract: Contract): void {
     if (this.selectedContract?.id === contract.id) return;
+
+    console.log('Contract selected:', contract.contractTitle);
 
     this.selectedContract = contract;
     this.subscriptions = [];
     this.selectedSubscription = null;
-
-    // Mobile: Smart navigation flow
-    if (this.isMobile) {
-      this.mobilePanelState.contracts = 'collapsed';
-      this.mobilePanelState.subscriptions = 'normal';
-      this.mobilePanelState.financial = 'collapsed';
-    }
 
     this.loadSubscriptions(contract.id!);
   }
@@ -393,18 +272,20 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   onSubscriptionSelected(subscription: Subscription): void {
     if (this.selectedSubscription?.id === subscription.id) return;
 
+    console.log('Subscription selected:', subscription.productName);
+
     this.selectedSubscription = subscription;
 
     // Mobile: Navigate to financial details
     if (this.isMobile) {
-      this.mobilePanelState.subscriptions = 'collapsed';
-      this.mobilePanelState.financial = 'normal';
+      console.log('Mobile: Navigating to financial view');
+      this.mobileCurrentView = 'financial';
     }
   }
 
   onContractAction(event: ContractActionEvent): void {
     const { action, contract } = event;
-    
+
     switch (action) {
       case 'neu':
         this.createNewContract();
@@ -426,7 +307,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
 
   onInvoiceAction(event: InvoiceActionEvent): void {
     const { action, invoice } = event;
-    
+
     switch (action) {
       case 'edit':
         this.editInvoice(invoice);
@@ -442,7 +323,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
 
   onOpenItemAction(event: OpenItemActionEvent): void {
     const { action, openItem } = event;
-    
+
     switch (action) {
       case 'payment':
         this.processPayment(openItem);

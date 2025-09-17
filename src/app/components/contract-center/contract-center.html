@@ -1,40 +1,196 @@
-<div class="component-container">
-  <!-- Oben: Vertragsliste -->
-  <div class="contract-list">
-    <app-contract-list
-      [contracts]="contracts"
-      [customers]="customers"
-      [loading]="loading"
-      [error]="error"
-      [selectedContract]="selectedContract"
-      (contractSelected)="onContractSelected($event)"
-      (contractAction)="onContractAction($event)">
-    </app-contract-list>
-  </div>
+    <div class="component-container" [class.mobile-view]="isMobile">
+      
+      <!-- Mobile Navigation Bar -->
+      <div class="mobile-nav-bar" *ngIf="isMobile && mobileCurrentView !== 'contracts'">
+        <button class="nav-back-button" (click)="navigateBack()">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <span class="nav-title">{{ getMobileNavTitle() }}</span>
+        <button class="nav-close" (click)="resetToContracts()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <!-- Desktop: Normal Layout -->
+      <ng-container *ngIf="!isMobile">
+        <!-- Oben: Vertragsliste -->
+        <div class="contract-list">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-file-contract me-2"></i>
+                Verträge
+                <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
+                  {{ contracts.length }}
+                </span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="scrollable-content">
+                <app-contract-list
+                  [contracts]="contracts"
+                  [customers]="customers"
+                  [loading]="loading"
+                  [error]="error"
+                  [selectedContract]="selectedContract"
+                  (contractSelected)="onContractSelected($event)"
+                  (contractAction)="onContractAction($event)">
+                </app-contract-list>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  <!-- Unten: Abos & Finanzdetails -->
-  <div class="bottom-row">
-        
-    <!-- Abonnements Panel -->
-    <div class="subscription-section">
-      <app-subscription-panel
-        [subscriptions]="subscriptions"
-        [selectedContract]="selectedContract"
-        [selectedSubscription]="selectedSubscription"
-        (subscriptionSelected)="onSubscriptionSelected($event)">
-      </app-subscription-panel>
+        <!-- Unten: Abos & Finanzdetails -->
+        <div class="bottom-row">
+          <!-- Abonnements Panel -->
+          <div class="subscription-section">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fas fa-sync-alt me-2"></i>
+                      <h8 class="mb-0">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Abonnements {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+                        <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
+                    {{ subscriptions.length }}
+                  </span>
+                      </h8>
+                  
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="scrollable-content">
+                  <app-subscription-panel
+                    [subscriptions]="subscriptions"
+                    [selectedContract]="selectedContract"
+                    [selectedSubscription]="selectedSubscription"
+                    (subscriptionSelected)="onSubscriptionSelected($event)">
+                  </app-subscription-panel>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Finanz-Tabs Panel -->
+          <div class="financial-section">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <div>
+                    <i class="fas fa-euro-sign me-2"></i>
+                    Finanzdetails {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="scrollable-content">
+                  <app-financial-tabs
+                    [selectedContract]="selectedContract"
+                    [selectedSubscription]="selectedSubscription"
+                    [customers]="customers"
+                    (invoiceAction)="onInvoiceAction($event)"
+                    (openItemAction)="onOpenItemAction($event)">
+                  </app-financial-tabs>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Mobile: Stack Layout -->
+      <ng-container *ngIf="isMobile">
+        <!-- Contracts View -->
+        <div class="mobile-panel contracts-panel" 
+             [class.active]="mobileCurrentView === 'contracts'">
+          <div class="card h-100">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-file-contract me-2"></i>
+                Verträge
+                <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
+                  {{ contracts.length }}
+                </span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="scrollable-content">
+                <app-contract-list
+                  [contracts]="contracts"
+                  [customers]="customers"
+                  [loading]="loading"
+                  [error]="error"
+                  [selectedContract]="selectedContract"
+                  (contractSelected)="onContractSelected($event)"
+                  (contractAction)="onContractAction($event)">
+                </app-contract-list>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subscriptions View -->
+        <div class="mobile-panel subscriptions-panel" 
+             [class.active]="mobileCurrentView === 'subscriptions'">
+          <div class="card h-100">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-sync-alt me-2"></i>
+                Abonnements von {{ selectedContract?.contractTitle }}
+                <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
+                  {{ subscriptions.length }}
+                </span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="scrollable-content">
+                <app-subscription-panel
+                  [subscriptions]="subscriptions"
+                  [selectedContract]="selectedContract"
+                  [selectedSubscription]="selectedSubscription"
+                  (subscriptionSelected)="onSubscriptionSelected($event)">
+                </app-subscription-panel>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial View -->
+        <div class="mobile-panel financial-panel" 
+             [class.active]="mobileCurrentView === 'financial'">
+          <div class="card h-100">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-chart-line me-2"></i>
+                Finanzdetails von {{ selectedSubscription?.productName || selectedContract?.contractTitle }}
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="scrollable-content">
+                <app-financial-tabs
+                  [selectedContract]="selectedContract"
+                  [selectedSubscription]="selectedSubscription"
+                  [customers]="customers"
+                  (invoiceAction)="onInvoiceAction($event)"
+                  (openItemAction)="onOpenItemAction($event)">
+                </app-financial-tabs>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Mobile Breadcrumb -->
+      <div class="mobile-breadcrumb" *ngIf="isMobile && getMobileBreadcrumb().length > 0">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item" 
+                *ngFor="let item of getMobileBreadcrumb(); let last = last"
+                [class.active]="last">
+              {{ item }}
+            </li>
+          </ol>
+        </nav>
+      </div>
     </div>
-
-    <!-- Finanz-Tabs Panel -->
-    <div class="financial-section">
-      <app-financial-tabs
-        [selectedContract]="selectedContract"
-        [selectedSubscription]="selectedSubscription"
-        [customers]="customers"
-        (invoiceAction)="onInvoiceAction($event)"
-        (openItemAction)="onOpenItemAction($event)">
-      </app-financial-tabs>
-    </div>
-
-  </div>
-</div>

@@ -1,137 +1,73 @@
 <div class="card flex-fill d-flex flex-column h-100">
-  <div class="card-header d-flex justify-content-between align-items-center">
+
+  <!-- Header -->
+  <!-- <div class="card-header d-flex justify-content-between align-items-center">
     <div>
       <i class="fas fa-euro-sign me-2"></i>
       Finanzdetails {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
     </div>
     <div *ngIf="selectedSubscription">
-      <small class="text-muted">
-        Subscription: {{ selectedSubscription.subscriptionNumber }}
-      </small>
-      <button class="btn btn-sm btn-outline-secondary ms-2" 
-              (click)="refreshData()" 
-              [disabled]="isLoading">
+      <small class="text-muted">Subscription: {{ selectedSubscription.subscriptionNumber }}</small>
+      <button class="btn btn-sm btn-outline-secondary ms-2" (click)="refreshData()" [disabled]="isLoading">
         <i class="fas fa-refresh" [class.fa-spin]="isLoading"></i>
       </button>
     </div>
-  </div>
-  
+  </div> -->
+
   <!-- Tab Navigation -->
   <ul class="nav nav-tabs nav-fill" role="tablist">
     <li class="nav-item">
-      <button class="nav-link"
-              [class.active]="activeTab === 'schedule'"
-              type="button" 
-              role="tab"
-              (click)="setActiveTab('schedule')">
-        <i class="fas fa-calendar-alt me-1"></i>
-        <span class="d-none d-sm-inline">Fälligkeitsplan</span>
-        <span class="d-sm-none">Plan</span>
-        <span class="badge bg-secondary ms-1">{{ dueSchedules.length }}</span>
-        <div *ngIf="loading.schedules" class="spinner-border spinner-border-sm ms-1"></div>
+      <button class="nav-link" [class.active]="activeTab==='schedule'" (click)="setActiveTab('schedule')">
+        <i class="fas fa-calendar-alt me-1"></i> Fälligkeitsplan
       </button>
     </li>
     <li class="nav-item">
-      <button class="nav-link"
-              [class.active]="activeTab === 'invoices'"
-              type="button" 
-              role="tab"
-              (click)="setActiveTab('invoices')">
-        <i class="fas fa-file-invoice me-1"></i>
-        <span class="d-none d-sm-inline">Rechnungen</span>
-        <span class="d-sm-none">Rech.</span>
-        <span class="badge bg-secondary ms-1">{{ invoices.length }}</span>
-        <div *ngIf="loading.invoices" class="spinner-border spinner-border-sm ms-1"></div>
+      <button class="nav-link" [class.active]="activeTab==='invoices'" (click)="setActiveTab('invoices')">
+        <i class="fas fa-file-invoice me-1"></i> Rechnungen
       </button>
     </li>
     <li class="nav-item">
-      <button class="nav-link"
-              [class.active]="activeTab === 'openitems'"
-              type="button" 
-              role="tab"
-              (click)="setActiveTab('openitems')">
-        <i class="fas fa-exclamation-triangle me-1"></i>
-        <span class="d-none d-sm-inline">Offene Posten</span>
-        <span class="d-sm-none">Offen</span>
-        <span class="badge bg-warning ms-1">{{ openItems.length }}</span>
-        <div *ngIf="loading.openItems" class="spinner-border spinner-border-sm ms-1"></div>
+      <button class="nav-link" [class.active]="activeTab==='openitems'" (click)="setActiveTab('openitems')">
+        <i class="fas fa-exclamation-triangle me-1"></i> Offene Posten
       </button>
     </li>
   </ul>
 
-  <!-- Error Messages -->
-  <div *ngIf="hasErrors" class="alert alert-warning mx-3 mt-2">
-    <div *ngFor="let error of allErrors">
-      <i class="fas fa-exclamation-triangle me-1"></i>{{ error }}
-    </div>
-  </div>
-
-  <!-- No Subscription Selected -->
-  <div *ngIf="!selectedSubscription" class="card-body d-flex align-items-center justify-content-center">
-    <div class="text-center text-muted">
-      <i class="fas fa-hand-pointer fa-3x mb-3"></i>
-      <h5>Keine Subscription ausgewählt</h5>
-      <p>Wählen Sie eine Subscription aus, um die Finanzdetails anzuzeigen.</p>
-    </div>
-  </div>
-
   <!-- Tab Content -->
-  <div *ngIf="selectedSubscription" class="card-body p-0 flex-fill">
+  <div class="card-body p-0 flex-fill">
     <div class="tab-content h-100">
-      
-      <!-- Fälligkeitsplan Tab -->
-      <div class="tab-pane h-100"
-           [class.active]="activeTab === 'schedule'"
-           role="tabpanel">
-        <div *ngIf="loading.schedules" class="d-flex align-items-center justify-content-center h-100">
-          <div class="text-center">
-            <div class="spinner-border text-primary mb-2"></div>
-            <div>Fälligkeitspläne werden geladen...</div>
-          </div>
+
+      <!-- Fälligkeitsplan -->
+      <div class="tab-pane h-100" [class.active]="activeTab==='schedule'">
+        <div class="scrollable">
+          <app-due-schedule-tab [dueSchedules]="dueSchedules"></app-due-schedule-tab>
         </div>
-        <app-due-schedule-tab
-         *ngIf="!loading.schedules"
-         [dueSchedules]="dueSchedules">
-        </app-due-schedule-tab>
       </div>
 
-      <!-- Rechnungen Tab -->
-      <div class="tab-pane h-100"
-           [class.active]="activeTab === 'invoices'"
-           role="tabpanel">
-        <div *ngIf="loading.invoices" class="d-flex align-items-center justify-content-center h-100">
-          <div class="text-center">
-            <div class="spinner-border text-primary mb-2"></div>
-            <div>Rechnungen werden geladen...</div>
-          </div>
+      <!-- Rechnungen -->
+      <div class="tab-pane h-100" [class.active]="activeTab==='invoices'">
+        <div class="scrollable">
+          <app-invoice-tab
+            [invoices]="invoices"
+            [customers]="customers"
+            (invoiceAction)="onInvoiceAction($event)">
+          </app-invoice-tab>
         </div>
-        <app-invoice-tab
-         *ngIf="!loading.invoices"
-         [invoices]="invoices"
-          [customers]="customers"
-          (invoiceAction)="onInvoiceAction($event)">
-        </app-invoice-tab>
       </div>
 
-      <!-- Offene Posten Tab -->
-      <div class="tab-pane h-100"
-           [class.active]="activeTab === 'openitems'"
-           role="tabpanel">
-        <div *ngIf="loading.openItems" class="d-flex align-items-center justify-content-center h-100">
-          <div class="text-center">
-            <div class="spinner-border text-primary mb-2"></div>
-            <div>Offene Posten werden geladen...</div>
-          </div>
+      <!-- Offene Posten -->
+      <div class="tab-pane h-100" [class.active]="activeTab==='openitems'">
+        <div class="scrollable">
+          <app-open-items-tab
+            [openItems]="openItems"
+            [customers]="customers"
+            [selectedSubscriptionId]="selectedSubscription?.id || null"
+            (openItemAction)="onOpenItemAction($event)">
+          </app-open-items-tab>
         </div>
-        <app-open-items-tab
-         *ngIf="!loading.openItems"
-         [openItems]="openItems"
-          [customers]="customers"
-          [selectedSubscriptionId]="selectedSubscription?.id || null"
-          (openItemAction)="onOpenItemAction($event)">
-        </app-open-items-tab>
       </div>
 
     </div>
   </div>
+
 </div>

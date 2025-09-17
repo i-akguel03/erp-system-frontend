@@ -22,6 +22,10 @@ export class OpenItemsTabComponent implements OnChanges {
   
   @Output() openItemAction = new EventEmitter<OpenItemActionEvent>();
 
+  // Modal State
+  showDetailsModal = false;
+  selectedOpenItem: OpenItem | null = null;
+
   ngOnChanges(changes: SimpleChanges): void {
     // DEBUG: Logging für Input-Changes
     if (changes['openItems']) {
@@ -48,6 +52,17 @@ export class OpenItemsTabComponent implements OnChanges {
     });
   }
 
+  // Modal Management
+  openDetailsModal(openItem: OpenItem): void {
+    this.selectedOpenItem = { ...openItem };
+    this.showDetailsModal = true;
+  }
+
+  closeDetailsModal(): void {
+    this.showDetailsModal = false;
+    this.selectedOpenItem = null;
+  }
+
   // Gefilterte OpenItems basierend auf Subscription
   get filteredOpenItems(): OpenItem[] {
     console.log('🔍 Getting filtered items:', {
@@ -65,44 +80,6 @@ export class OpenItemsTabComponent implements OnChanges {
     // dass das Backend bereits gefilterte Daten liefert
     console.log('✅ No filtering needed - assuming backend provides filtered data');
     return this.openItems;
-    
-    /* DEAKTIVIERT: Filter funktioniert nicht, da keine Verknüpfungsfelder vorhanden
-    if (!this.selectedSubscriptionId) {
-      console.log('✅ No subscription filter - returning all items');
-      return this.openItems;
-    }
-    
-    // Debugging der Filterlogik
-    const filtered = this.openItems.filter(item => {
-      // Mehrere Verknüpfungsmöglichkeiten prüfen:
-      const directMatch = item.subscriptionId === this.selectedSubscriptionId;
-      const invoiceMatch = (item as any).invoice?.subscriptionId === this.selectedSubscriptionId;
-      const contractMatch = (item as any).contractId === this.selectedSubscriptionId;
-      
-      const matches = directMatch || invoiceMatch || contractMatch;
-      
-      console.log('🔍 Filter check:', {
-        itemId: item.id,
-        itemSubscriptionId: item.subscriptionId,
-        invoiceSubscriptionId: (item as any).invoice?.subscriptionId,
-        contractId: (item as any).contractId,
-        selectedSubscriptionId: this.selectedSubscriptionId,
-        directMatch,
-        invoiceMatch, 
-        contractMatch,
-        finalMatch: matches
-      });
-      return matches;
-    });
-    
-    console.log('✅ Filtered result:', {
-      originalCount: this.openItems.length,
-      filteredCount: filtered.length,
-      filtered: filtered
-    });
-    
-    return filtered;
-    */
   }
 
   getOpenItemStatusBadgeClass(status: OpenItemStatus): string {
@@ -125,6 +102,15 @@ export class OpenItemsTabComponent implements OnChanges {
       case OpenItemStatus.OVERDUE: return 'Überfällig';
       default: return status || 'Unbekannt';
     }
+  }
+
+  // Alias für Template-Kompatibilität
+  getStatusBadgeClass(status: OpenItemStatus): string {
+    return this.getOpenItemStatusBadgeClass(status);
+  }
+
+  getStatusLabel(status: OpenItemStatus): string {
+    return this.getOpenItemStatusLabel(status);
   }
 
   getDaysOverdue(openItem: OpenItem): number {
@@ -190,17 +176,17 @@ export class OpenItemsTabComponent implements OnChanges {
     return this.filteredOpenItems.reduce((total, item) => total + (item.amount || 0), 0);
   }
 
-  // Action Methods
+  // Action Methods - Details direkt öffnen
+  onDetails(openItem: OpenItem): void {
+    this.openDetailsModal(openItem);
+  }
+
   onPayment(openItem: OpenItem): void {
     this.openItemAction.emit({ action: 'payment', openItem });
   }
 
   onReminder(openItem: OpenItem): void {
     this.openItemAction.emit({ action: 'reminder', openItem });
-  }
-
-  onDetails(openItem: OpenItem): void {
-    this.openItemAction.emit({ action: 'details', openItem });
   }
 
   onEdit(openItem: OpenItem): void {
@@ -233,6 +219,45 @@ export class OpenItemsTabComponent implements OnChanges {
     return openItem.status === OpenItemStatus.OPEN || 
            openItem.status === OpenItemStatus.OVERDUE ||
            openItem.status === OpenItemStatus.PARTIALLY_PAID;
+  }
+
+  // Modal Actions für Footer
+  onPaymentFromDetails(): void {
+    if (this.selectedOpenItem) {
+      const openItemForPayment = this.selectedOpenItem; // Referenz sichern
+      this.closeDetailsModal();
+      this.onPayment(openItemForPayment);
+    }
+  }
+
+  onEditFromDetails(): void {
+    if (this.selectedOpenItem) {
+      console.log('OpenItem für Bearbeitung:', this.selectedOpenItem);
+      const openItemToEdit = this.selectedOpenItem; // Verwende die Original-Referenz
+      console.log('OpenItem vor onEdit Aufruf:', openItemToEdit);
+      this.onEdit(openItemToEdit);
+      // Schließe das Modal erst NACH dem Event
+      setTimeout(() => {
+        this.closeDetailsModal();
+      }, 10);
+    } else {
+      console.error('Keine selectedOpenItem verfügbar für Bearbeitung');
+    }
+  }
+
+  onReminderFromDetails(): void {
+    if (this.selectedOpenItem) {
+      const openItemForReminder = this.selectedOpenItem; // Referenz sichern
+      this.onReminder(openItemForReminder);
+    }
+  }
+
+  onCancelFromDetails(): void {
+    if (this.selectedOpenItem) {
+      const openItemForCancel = this.selectedOpenItem; // Referenz sichern
+      this.onCancel(openItemForCancel);
+      this.closeDetailsModal();
+    }
   }
 
   // Math für Template

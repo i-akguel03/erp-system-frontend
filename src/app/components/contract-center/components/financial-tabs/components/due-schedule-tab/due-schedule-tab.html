@@ -1,61 +1,87 @@
-<div class="h-100 p-3" style="overflow-y: auto; overflow-x: hidden;">
+<div class="container mt-3 d-flex flex-column schedule-container" style="height: 80vh;">
 
-  <!-- Fälligkeitsliste -->
-  <div *ngIf="dueSchedules.length > 0; else noSchedules">
-    <ul class="list-group list-group-flush">
-      <li *ngFor="let schedule of dueSchedules" class="list-group-item due-schedule-item">
-        <div class="d-flex justify-content-between align-items-start">
-          <div class="due-schedule-info">
-            <div class="due-schedule-date">
-              <i [class]="getDueDateIcon(schedule.dueDate!, schedule.status!)" class="me-2"></i>
-              <strong [class]="getDueDateWarningClass(schedule.dueDate!)">
-                {{ schedule.dueDate | date:'dd.MM.yyyy' }}
-              </strong>
-              
-              <!-- Tage bis Fälligkeit -->
-              <small class="ms-2" [class]="getDueDateWarningClass(schedule.dueDate!)">
-                <ng-container [ngSwitch]="getDaysUntilDue(schedule.dueDate!)">
-                  <span *ngSwitchCase="0">(heute)</span>
-                  <span *ngSwitchCase="1">(morgen)</span>
-                  <span *ngSwitchCase="-1">(gestern)</span>
-                  <span *ngSwitchDefault>
-                    <span *ngIf="getDaysUntilDue(schedule.dueDate!) > 0">(in {{ getDaysUntilDue(schedule.dueDate!) }} Tagen)</span>
-                    <span *ngIf="getDaysUntilDue(schedule.dueDate!) < -1">(vor {{ Math.abs(getDaysUntilDue(schedule.dueDate!)) }} Tagen)</span>
-                  </span>
-                </ng-container>
-              </small>
-            </div>
-            
-            <!-- Fälligkeitsnummer -->
-            <div class="text-muted small mt-1" *ngIf="schedule.dueNumber">
-              Nr. {{ schedule.dueNumber }}
-            </div>
-            
-            <!-- Abonnement Info -->
-            <div class="text-muted small" *ngIf="schedule.subscriptionNumber || schedule.subscriptionId">
-              Abonnement: {{ schedule.subscriptionNumber || schedule.subscriptionId }}
-            </div>
-          </div>
-          
-          <div class="text-end">
+  <!-- Ladeanzeige -->
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <!-- Fehleranzeige -->
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
+
+  <!-- Desktop Tabelle -->
+  <div class="table-responsive d-none d-md-block scrollable" *ngIf="dueSchedules.length > 0">
+    <table class="table table-hover table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Nr.</th>
+          <th>Abonnement</th>
+          <th>Fälligkeitsdatum</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let schedule of dueSchedules">
+          <td>{{ schedule.dueNumber }}</td>
+          <td>{{ schedule.subscriptionNumber || schedule.subscriptionId }}</td>
+          <td>{{ schedule.dueDate | date:'dd.MM.yyyy' }}</td>
+          <td>
             <span class="badge" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
               {{ getStatusLabel(schedule.status!, isOverdue(schedule.dueDate!)) }}
             </span>
-          </div>
-        </div>
-      </li>
-    </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="d-block d-md-none scrollable" *ngIf="dueSchedules.length > 0">
+    <div *ngFor="let schedule of dueSchedules" class="card mb-3 shadow-sm due-schedule-item">
+      <div class="card-body due-schedule-info">
+        <h5 class="card-title">Abonnement: {{ schedule.subscriptionNumber || schedule.subscriptionId }}</h5>
+        <p class="card-text">
+          <strong>Fälligkeitsdatum:</strong> {{ schedule.dueDate | date:'shortDate' }}<br>
+          <strong>Status:</strong>
+          <span class="badge" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
+            {{ getStatusLabel(schedule.status!, isOverdue(schedule.dueDate!)) }}
+          </span>
+        </p>
+      </div>
+    </div>
   </div>
 
   <!-- Keine Fälligkeiten -->
-  <ng-template #noSchedules>
-    <div class="text-center py-5 text-muted">
-      <i class="fas fa-calendar-alt fa-3x mb-3"></i>
-      <div class="h5">Keine Fälligkeiten vorhanden</div>
-      <small>
-        Für das ausgewählte Abonnement sind noch keine Fälligkeitstermine hinterlegt.
-      </small>
+  <div *ngIf="dueSchedules.length === 0 && !loading" class="text-center mt-3">
+    Keine Fälligkeiten gefunden.
+  </div>
+
+  <!-- Modal für neue Fälligkeit -->
+  <div *ngIf="showNewScheduleModal" class="modal show d-block" tabindex="-1" (click)="closeNewScheduleModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Neue Fälligkeit erstellen</h5>
+          <button type="button" class="btn-close" (click)="closeNewScheduleModal()"></button>
+        </div>
+        <div class="modal-body">
+          <input type="date" class="form-control mb-2" [(ngModel)]="newSchedule.dueDate">
+
+          <select class="form-select mb-2" [(ngModel)]="newSchedule.subscriptionId">
+            <option value="" disabled selected>Abonnement auswählen...</option>
+            <option *ngFor="let sub of subscriptions" [value]="sub.id">
+              {{ sub.productName }} – {{ sub.subscriptionNumber }}
+            </option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeNewScheduleModal()">Abbrechen</button>
+          <button class="btn btn-primary" (click)="createSchedule()">Erstellen</button>
+        </div>
+      </div>
     </div>
-  </ng-template>
+  </div>
 
 </div>

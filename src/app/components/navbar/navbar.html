@@ -3,44 +3,73 @@
   <div class="container-fluid">
     
     <!-- Brand/Logo -->
-    <a class="navbar-brand" routerLink="/dashboard" (click)="closeNavbar(); closeDropdown()">
+    <a class="navbar-brand" routerLink="/dashboard" (click)="closeNavbar(); closeAllDropdowns()">
       <i class="bi bi-building me-2"></i>
       ERP System
     </a>
-
+    
     <!-- Toggle Button für Mobile -->
     <button 
-      class="navbar-toggler" 
-      type="button" 
+      class="navbar-toggler"
+      type="button"
       (click)="toggleNavbar()"
       [attr.aria-expanded]="!isCollapsed">
       <span class="navbar-toggler-icon"></span>
     </button>
-
+    
     <!-- Navbar Content -->
     <div class="collapse navbar-collapse" [class.show]="!isCollapsed">
       
       <!-- Navigation Links nur wenn eingeloggt -->
       <ul class="navbar-nav me-auto mb-2 mb-lg-0" *ngIf="isLoggedIn()">
-        <!-- ✅ KORRIGIERT: slice(0, -1) entfernt! -->
+        
+        <!-- Normale Menüeinträge -->
         <li class="nav-item" *ngFor="let item of items">
-          <a 
-            class="nav-link" 
-            [routerLink]="item.routerLink"
-            routerLinkActive="active"
-            (click)="closeNavbar(); closeDropdown()">
+          
+          <!-- Falls kein children -> normaler Link -->
+          <a *ngIf="!item.children"
+             class="nav-link"
+             [routerLink]="item.routerLink"
+             routerLinkActive="active"
+             (click)="navigateAndClose(item.routerLink)">
             <i [class]="'bi ' + item.icon + ' me-2'"></i>
             {{ item.label }}
           </a>
+          
+          <!-- Falls children -> Dropdown (manuell gesteuert) -->
+          <div *ngIf="item.children" class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle"
+               role="button"
+               (click)="toggleNavDropdown(item.label)"
+               [class.active]="isNavDropdownOpen(item.label)"
+               style="cursor: pointer;">
+              <i [class]="'bi ' + item.icon + ' me-2'"></i>
+              {{ item.label }}
+            </a>
+            
+            <!-- Dropdown Menu -->
+            <ul class="dropdown-menu" [class.show]="isNavDropdownOpen(item.label)">
+              <li *ngFor="let child of item.children">
+                <a class="dropdown-item"
+                   [routerLink]="child.routerLink"
+                   routerLinkActive="active"
+                   (click)="navigateAndClose(child.routerLink)">
+                  <i [class]="'bi ' + child.icon + ' me-2'"></i>
+                  {{ child.label }}
+                </a>
+              </li>
+            </ul>
+          </div>
         </li>
       </ul>
-
+      
       <!-- User Info & Dropdown -->
       <div class="navbar-nav ms-auto" *ngIf="isLoggedIn()">
         <div class="nav-item dropdown">
           <a 
-            class="nav-link dropdown-toggle" 
+            class="nav-link dropdown-toggle"
             (click)="toggleDropdown()"
+            [class.active]="isDropdownOpen"
             style="cursor: pointer;">
             <i class="bi bi-person-circle me-2"></i>
             {{ currentUser || 'Benutzer' }}
@@ -48,7 +77,7 @@
           
           <ul class="dropdown-menu dropdown-menu-end" [class.show]="isDropdownOpen">
             <li>
-              <a class="dropdown-item text-danger" (click)="logout(); closeNavbar(); closeDropdown()" style="cursor: pointer;">
+              <a class="dropdown-item text-danger" (click)="logout()" style="cursor: pointer;">
                 <i class="bi bi-box-arrow-right me-2"></i>
                 Abmelden
               </a>

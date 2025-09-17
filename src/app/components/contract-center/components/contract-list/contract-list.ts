@@ -97,26 +97,22 @@ export class ContractListComponent implements OnInit, OnDestroy {
   }
 
   // Vertragsstatus-Logik
-  getContractStatus(contract: Contract): string {
-    const now = new Date();
-    const startDate = this.safeDate(contract.startDate);
-    const endDate = this.safeDate(contract.endDate);
-    
-    if (!startDate || !endDate) return 'Unbekannt';
-    if (now < startDate) return 'Geplant';
-    if (now > endDate) return 'Abgelaufen';
-    return 'Aktiv';
-  }
+  // Vertragsstatus-Logik aus Modell
+getContractStatus(contract: Contract): string {
+  return contract.contractStatus ?? 'Unbekannt';
+}
 
-  getContractStatusClass(contract: Contract): string {
-    const status = this.getContractStatus(contract);
-    switch (status) {
-      case 'Aktiv': return 'badge bg-success';
-      case 'Geplant': return 'badge bg-warning text-dark';
-      case 'Abgelaufen': return 'badge bg-secondary';
-      default: return 'badge bg-light text-dark';
-    }
+getContractStatusClass(contract: Contract): string {
+  switch (contract.contractStatus) {
+    case 'ACTIVE': return 'badge bg-success';
+    case 'DRAFT': return 'badge bg-warning text-dark';
+    case 'SUSPENDED': return 'badge bg-secondary';
+    case 'TERMINATED': return 'badge bg-dark text-white';
+    case 'EXPIRED': return 'badge bg-danger';
+    default: return 'badge bg-light text-dark';
   }
+}
+
 
   private safeDate(value?: string | Date): Date | null {
     if (!value) return null;
