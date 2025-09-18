@@ -1,3 +1,4 @@
+// financial-tabs.component.ts
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -68,7 +69,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     openItems: null as string | null
   };
 
-  // Modal states für lokale Behandlung
+  // Modal states
   showPaymentModal = false;
   showEditInvoiceModal = false;
   showEditOpenItemModal = false;
@@ -136,6 +137,9 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
       case 'delete':
         this.deleteInvoice(event.invoice);
         break;
+      case 'duplicate':
+        this.duplicateInvoice(event.invoice);
+        break;
       default:
         // Für andere Actions an Parent weiterleiten
         this.invoiceAction.emit(event);
@@ -158,6 +162,10 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
         break;
       case 'cancel':
         this.cancelOpenItem(event.openItem);
+        break;
+      case 'details':
+        // Details werden bereits in der Child-Komponente behandelt
+        console.log('Details Action - wird in Child-Komponente behandelt');
         break;
       default:
         // Für andere Actions an Parent weiterleiten
@@ -202,6 +210,18 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  private duplicateInvoice(invoice: Invoice): void {
+    if (!invoice.id) return;
+    
+    // this.invoiceService.duplicateInvoice(invoice.id).subscribe({
+    //   next: (duplicated) => {
+    //     this.invoices.push(duplicated);
+    //     this.showSuccessMessage('Rechnung wurde dupliziert');
+    //   },
+    //   error: (err) => this.handleError('Fehler beim Duplizieren der Rechnung', err)
+    // });
+  }
+
   // OpenItem Actions
   private addReminder(openItem: OpenItem): void {
     if (!openItem.id) return;
@@ -227,8 +247,9 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  // Modal Management
+  // Modal Management - Payment
   openPaymentModal(openItem: OpenItem): void {
+    console.log('Opening payment modal for:', openItem);
     this.selectedOpenItemForPayment = { ...openItem };
     this.paymentAmount = openItem.outstandingAmount || 0;
     this.paymentMethod = '';
@@ -244,6 +265,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     this.paymentReference = '';
   }
 
+  // Modal Management - Edit Invoice
   openEditInvoiceModal(invoice: Invoice): void {
     if (!invoice) {
       console.error('Fehler: Invoice ist null oder undefined');
@@ -263,7 +285,15 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedInvoiceForEdit = null;
   }
 
+  // Modal Management - Edit OpenItem
   openEditOpenItemModal(openItem: OpenItem): void {
+    console.log('Opening edit modal for OpenItem:', openItem);
+    if (!openItem) {
+      console.error('Fehler: OpenItem ist null oder undefined');
+      this.handleError('Kein gültiger offener Posten zum Bearbeiten ausgewählt');
+      return;
+    }
+    
     this.selectedOpenItemForEdit = { ...openItem };
     this.editOpenItem = { ...openItem };
     this.editOpenItemDueDateString = this.formatDateForInput(openItem.dueDate || new Date());
@@ -275,7 +305,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedOpenItemForEdit = null;
   }
 
-  // Form Actions
+  // Form Actions - Payment
   recordPayment(): void {
     if (!this.selectedOpenItemForPayment?.id || !this.paymentAmount || this.paymentAmount <= 0) {
       this.handleError('Bitte geben Sie einen gültigen Zahlungsbetrag ein');
@@ -302,6 +332,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  // Form Actions - Update Invoice
   updateInvoice(): void {
     if (!this.editInvoice.id) return;
 
@@ -321,8 +352,12 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  // Form Actions - Update OpenItem
   updateOpenItem(): void {
-    if (!this.editOpenItem.id) return;
+    if (!this.editOpenItem.id) {
+      this.handleError('Keine gültige ID für Update gefunden');
+      return;
+    }
 
     const openItemToUpdate: OpenItem = {
       ...this.editOpenItem,
@@ -348,37 +383,38 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private updateLocalOpenItem(updated: OpenItem): void {
+    console.log('Updating local OpenItem:', updated);
     const index = this.openItems.findIndex(i => i.id === updated.id);
     if (index >= 0) {
       this.openItems[index] = updated;
+      console.log('Local OpenItem updated at index:', index);
+    } else {
+      console.warn('OpenItem not found in local array for update:', updated.id);
     }
   }
 
   private formatDateForInput(date: Date | string | undefined | null): string {
-    if (!date) return new Date().toISOString().split('T')[0]; // Fallback auf heute
+    if (!date) return new Date().toISOString().split('T')[0];
     
     try {
       const d = typeof date === 'string' ? new Date(date) : date;
       if (isNaN(d.getTime())) {
-        return new Date().toISOString().split('T')[0]; // Fallback bei ungültigem Datum
+        return new Date().toISOString().split('T')[0];
       }
       return d.toISOString().split('T')[0];
     } catch (error) {
       console.warn('Fehler beim Formatieren des Datums:', date, error);
-      return new Date().toISOString().split('T')[0]; // Fallback
+      return new Date().toISOString().split('T')[0];
     }
   }
 
   private handleError(message: string, err?: any): void {
     console.error(message, err);
-    // Hier könnten Sie eine Toast-Notification oder ähnliches anzeigen
     alert(message + (err?.error?.message ? ': ' + err.error.message : ''));
   }
 
   private showSuccessMessage(message: string): void {
-    // Hier könnten Sie eine Toast-Notification oder ähnliches anzeigen
     console.log('Success:', message);
-    // Temporär mit alert - in Produktion durch Toast ersetzen
     alert(message);
   }
 
@@ -501,13 +537,30 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
            openItem.status === 'OVERDUE';
   }
 
-  canEdit(item: Invoice | OpenItem): boolean {
-    if ('invoiceNumber' in item) {
-      // Es ist eine Invoice
-      return item.status !== 'CANCELLED';
-    } else {
-      // Es ist ein OpenItem
-      return item.status !== 'PAID' && item.status !== 'CANCELLED';
+  canEditInvoice(invoice: Invoice): boolean {
+    return invoice.status !== 'CANCELLED' && 
+           invoice.status !== 'SENT' && 
+           invoice.status !== 'DRAFT';
+  }
+
+  canEditOpenItem(openItem: OpenItem): boolean {
+    return openItem.status !== 'PAID' && openItem.status !== 'CANCELLED';
+  }
+
+  // Quick Payment Helper Methods
+  setFullPayment(): void {
+    if (this.selectedOpenItemForPayment) {
+      this.paymentAmount = this.selectedOpenItemForPayment.outstandingAmount || 0;
     }
+  }
+
+  setHalfPayment(): void {
+    if (this.selectedOpenItemForPayment) {
+      this.paymentAmount = Math.round((this.selectedOpenItemForPayment.outstandingAmount || 0) / 2 * 100) / 100;
+    }
+  }
+
+  resetPayment(): void {
+    this.paymentAmount = 0;
   }
 }

@@ -1,45 +1,51 @@
-<div class="subscription-header-section">
-</div>
+<div class="subscription-header-section"></div>
 
-<div class="subscription-content scrollable flex-fill p-0">
+<div class="subscription-content d-flex flex-column flex-fill p-0 overflow-auto">
   <!-- Abonnements-Liste -->
   <div *ngIf="subscriptions.length > 0; else noSubscriptions">
     <div *ngFor="let subscription of subscriptions"
-         class="subscription-item"
-         [class.selected]="isSelectedSubscription(subscription)"
-         (click)="selectSubscription(subscription)">
-              
-      <div class="subscription-header">
-        <div class="subscription-title">
-          <strong>{{ subscription.productName || 'Unbenanntes Produkt' }}</strong>
-          <span [ngClass]="getSubscriptionStatusClass(subscription)" class="ms-2">
+         class="subscription-item p-3 border-bottom cursor-pointer position-relative"
+         [class.bg-primary-subtle]="isSelectedSubscription(subscription)"
+         [class.border-start]="isSelectedSubscription(subscription)"
+         [class.border-primary]="isSelectedSubscription(subscription)"
+         [class.border-4]="isSelectedSubscription(subscription)"
+         [class.shadow-sm]="isSelectedSubscription(subscription)"
+         (click)="selectSubscription(subscription)"
+         style="transition: all 0.2s ease-in-out;"
+         onmouseover="this.classList.add('bg-primary-subtle', 'border-start', 'border-primary', 'border-3')"
+         onmouseout="if(!this.classList.contains('border-4')) { this.classList.remove('bg-primary-subtle', 'border-start', 'border-primary', 'border-3'); }">
+                 
+      <div class="subscription-header mb-2">
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+          <strong class="text-body">{{ subscription.productName || 'Unbenanntes Produkt' }}</strong>
+          <span [ngClass]="getSubscriptionStatusClass(subscription)" class="badge">
             {{ getSubscriptionStatusText(subscription) }}
           </span>
         </div>
-        <div class="subscription-number text-muted small">
+        <div class="text-muted small font-monospace">
           {{ subscription.subscriptionNumber }}
         </div>
       </div>
 
-      <div class="subscription-details">
-        <div class="row">
+      <div class="subscription-details mb-3">
+        <div class="row g-3">
           <div class="col-sm-6">
-            <small class="text-muted">Laufzeit:</small><br>
+            <small class="text-muted d-block">Laufzeit:</small>
             <span class="fw-bold">
               <span *ngIf="subscription.startDate">{{ subscription.startDate | date:'dd.MM.yyyy' }}</span>
               <span *ngIf="!subscription.startDate" class="text-muted">Nicht definiert</span>
-              -
+              <span class="mx-1">-</span>
               <span *ngIf="subscription.endDate">{{ subscription.endDate | date:'dd.MM.yyyy' }}</span>
               <span *ngIf="!subscription.endDate" class="text-muted">Unbegrenzt</span>
             </span>
           </div>
           <div class="col-sm-6">
-            <small class="text-muted">Verbleibendes Zeit:</small><br>
+            <small class="text-muted d-block">Verbleibendes Zeit:</small>
             <span [ngClass]="getExpiryWarningClass(getDaysUntilExpiry(subscription))">
               <ng-container *ngIf="getDaysUntilExpiry(subscription) as days; else unlimited">
-                <span *ngIf="days > 0">{{ days }} Tage</span>
-                <span *ngIf="days === 0">Läuft heute ab</span>
-                <span *ngIf="days < 0">Abgelaufen vor {{ Math.abs(days) }} Tagen</span>
+                <span *ngIf="days > 0" class="text-success">{{ days }} Tage</span>
+                <span *ngIf="days === 0" class="text-warning fw-bold">Läuft heute ab</span>
+                <span *ngIf="days < 0" class="text-danger fw-bold">Abgelaufen vor {{ Math.abs(days) }} Tagen</span>
               </ng-container>
               <ng-template #unlimited>
                 <span class="text-success">Unbegrenzt</span>
@@ -51,32 +57,82 @@
 
       <!-- Zusätzliche Produktinformationen -->
       <div *ngIf="subscription.productCode || subscription.subscriptionType"
-           class="subscription-meta">
-        <div class="row">
+           class="subscription-meta pt-2 border-top border-light">
+        <div class="row g-3">
           <div class="col-sm-6" *ngIf="subscription.productCode">
-            <small class="text-muted">Produktcode:</small><br>
-            <code class="small">{{ subscription.productCode }}</code>
+            <small class="text-muted d-block">Produktcode:</small>
+            <code class="bg-light text-dark px-2 py-1 rounded small">{{ subscription.productCode }}</code>
           </div>
           <div class="col-sm-6" *ngIf="subscription.subscriptionType">
-            <small class="text-muted">Typ:</small><br>
-            <span class="small">{{ subscription.subscriptionType }}</span>
+            <small class="text-muted d-block">Typ:</small>
+            <span class="small text-body">{{ subscription.subscriptionType }}</span>
           </div>
         </div>
       </div>
-     </div>
+     
+    </div>
   </div>
 
   <!-- Keine Abonnements -->
   <ng-template #noSubscriptions>
-    <div class="text-center py-4 text-muted">
-      <i class="fas fa-sync-alt fa-2x mb-3 text-muted"></i>
-      <div class="h6">Keine Abonnements vorhanden</div>
-      <small *ngIf="selectedContract">
+    <div class="text-center py-5 text-muted">
+      <i class="fas fa-sync-alt display-4 mb-3 text-muted opacity-50"></i>
+      <div class="h6 mb-3">Keine Abonnements vorhanden</div>
+      <small class="text-muted" *ngIf="selectedContract">
         Für den ausgewählten Vertrag "{{ selectedContract.contractTitle }}" sind keine Abonnements hinterlegt.
       </small>
-      <small *ngIf="!selectedContract">
+      <small class="text-muted" *ngIf="!selectedContract">
         Wählen Sie einen Vertrag aus, um die zugehörigen Abonnements anzuzeigen.
       </small>
     </div>
   </ng-template>
 </div>
+
+<style>
+/* Nur minimale Custom CSS - hauptsächlich Bootstrap Classes verwendet */
+
+/* Cursor Pointer für alle clickbaren Elemente */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Custom Hover Effects mit Inline-JavaScript da Bootstrap keine Hover-States für border-start hat */
+.subscription-item:hover:not(.border-4) {
+  background-color: var(--bs-primary-bg-subtle) !important;
+}
+
+/* Font Monospace für Subscription Numbers */
+.font-monospace {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Mobile Responsiveness - kleinere Paddings */
+@media (max-width: 768px) {
+  .subscription-item {
+    padding: 0.75rem !important;
+  }
+  
+  .subscription-details .row > div {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Smooth transitions für alle interaktiven Elemente */
+.subscription-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Accessibility - Focus States */
+.subscription-item:focus {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
+}
+
+/* Dark Mode Support mit Bootstrap CSS Custom Properties */
+@media (prefers-color-scheme: dark) {
+  .subscription-item code {
+    background-color: var(--bs-dark) !important;
+    color: var(--bs-light) !important;
+  }
+}
+</style>

@@ -1,196 +1,485 @@
-    <div class="component-container" [class.mobile-view]="isMobile">
+<!-- Contract Center HTML Template mit Bootstrap Classes - FIXED Mobile Navigation Buttons -->
+<div class="container-fluid p-0 d-flex flex-column position-absolute top-0 start-0 end-0 bottom-0" 
+     [class]="{'d-md-none': isMobile}" 
+     style="overflow: hidden !important;">
+  
+  <!-- Mobile Navigation Bar - GELBE BUTTONS MIT TEXT -->
+  <nav class="navbar navbar-dark bg-primary position-sticky top-0 d-md-none" 
+       *ngIf="isMobile"
+       style="min-height: 60px; z-index: 9999 !important; position: relative !important;">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <!-- Back Button - Gelb mit Text -->
+      <button class="btn btn-warning text-dark fw-bold d-flex align-items-center" 
+              (click)="navigateBack()" 
+              [disabled]="!canNavigateBack()"
+              [class.btn-secondary]="!canNavigateBack()"
+              [class.btn-warning]="canNavigateBack()"
+              style="min-height: 40px; flex-shrink: 0; font-size: 0.9rem;">
+        <i class="fas fa-arrow-left me-1"></i>
+        Zurück
+      </button>
       
-      <!-- Mobile Navigation Bar -->
-      <div class="mobile-nav-bar" *ngIf="isMobile && mobileCurrentView !== 'contracts'">
-        <button class="nav-back-button" (click)="navigateBack()">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <span class="nav-title">{{ getMobileNavTitle() }}</span>
-        <button class="nav-close" (click)="resetToContracts()">
-          <i class="fas fa-times"></i>
-        </button>
+      <!-- Title - Zentriert mit Platz für Buttons -->
+      <div class="flex-grow-1 text-center px-2">
+        <span class="navbar-brand mb-0 h6 text-white text-truncate d-block">
+          {{ getMobileNavTitle() }}
+        </span>
       </div>
       
-      <!-- Desktop: Normal Layout -->
-      <ng-container *ngIf="!isMobile">
-        <!-- Oben: Vertragsliste -->
-        <div class="contract-list">
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">
-                <i class="fas fa-file-contract me-2"></i>
-                Verträge
-                <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
-                  {{ contracts.length }}
-                </span>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="scrollable-content">
-                <app-contract-list
-                  [contracts]="contracts"
-                  [customers]="customers"
-                  [loading]="loading"
-                  [error]="error"
-                  [selectedContract]="selectedContract"
-                  (contractSelected)="onContractSelected($event)"
-                  (contractAction)="onContractAction($event)">
-                </app-contract-list>
-              </div>
-            </div>
+      <!-- Home Button - Gelb mit Text -->
+      <button class="btn btn-warning text-dark fw-bold d-flex align-items-center" 
+              (click)="resetToContracts()"
+              [class.btn-secondary]="mobileCurrentView === 'contracts'"
+              [class.btn-warning]="mobileCurrentView !== 'contracts'"
+              style="min-height: 40px; flex-shrink: 0; font-size: 0.9rem;">
+        <i class="fas fa-home me-1"></i>
+        Start
+      </button>
+    </div>
+  </nav>
+  
+  <!-- Desktop: Normal Layout - Fixed Height Layout -->
+  <div class="d-none d-md-flex flex-column flex-fill p-3 gap-3 overflow-hidden" *ngIf="!isMobile">
+    
+    <!-- Oben: Vertragsliste (60%) - Fixed Height Container -->
+    <div class="d-flex flex-column overflow-hidden" style="flex: 0 0 60%; min-height: 0;">
+      <div class="card h-100 d-flex flex-column overflow-hidden">
+        <div class="card-header bg-primary-subtle flex-shrink-0">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-file-contract me-2 text-primary"></i>
+            <span class="fw-semibold">Verträge</span>
+            <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
+              {{ contracts.length }}
+            </span>
           </div>
         </div>
-
-        <!-- Unten: Abos & Finanzdetails -->
-        <div class="bottom-row">
-          <!-- Abonnements Panel -->
-          <div class="subscription-section">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">
-                  <i class="fas fa-sync-alt me-2"></i>
-                      <h8 class="mb-0">
-                        <i class="fas fa-sync-alt me-2"></i>
-                        Abonnements {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
-                        <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
-                    {{ subscriptions.length }}
-                  </span>
-                      </h8>
-                  
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="scrollable-content">
-                  <app-subscription-panel
-                    [subscriptions]="subscriptions"
-                    [selectedContract]="selectedContract"
-                    [selectedSubscription]="selectedSubscription"
-                    (subscriptionSelected)="onSubscriptionSelected($event)">
-                  </app-subscription-panel>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Finanz-Tabs Panel -->
-          <div class="financial-section">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">
-                  <div>
-                    <i class="fas fa-euro-sign me-2"></i>
-                    Finanzdetails {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
-                  </div>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="scrollable-content">
-                  <app-financial-tabs
-                    [selectedContract]="selectedContract"
-                    [selectedSubscription]="selectedSubscription"
-                    [customers]="customers"
-                    (invoiceAction)="onInvoiceAction($event)"
-                    (openItemAction)="onOpenItemAction($event)">
-                  </app-financial-tabs>
-                </div>
-              </div>
-            </div>
+        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
+          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; min-height: 0;">
+            <app-contract-list
+              [contracts]="contracts"
+              [customers]="customers"
+              [loading]="loading"
+              [error]="error"
+              [selectedContract]="selectedContract"
+              (contractSelected)="onContractSelected($event)"
+              (contractAction)="onContractAction($event)">
+            </app-contract-list>
           </div>
         </div>
-      </ng-container>
-
-      <!-- Mobile: Stack Layout -->
-      <ng-container *ngIf="isMobile">
-        <!-- Contracts View -->
-        <div class="mobile-panel contracts-panel" 
-             [class.active]="mobileCurrentView === 'contracts'">
-          <div class="card h-100">
-            <div class="card-header">
-              <div class="card-title">
-                <i class="fas fa-file-contract me-2"></i>
-                Verträge
-                <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
-                  {{ contracts.length }}
-                </span>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="scrollable-content">
-                <app-contract-list
-                  [contracts]="contracts"
-                  [customers]="customers"
-                  [loading]="loading"
-                  [error]="error"
-                  [selectedContract]="selectedContract"
-                  (contractSelected)="onContractSelected($event)"
-                  (contractAction)="onContractAction($event)">
-                </app-contract-list>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Subscriptions View -->
-        <div class="mobile-panel subscriptions-panel" 
-             [class.active]="mobileCurrentView === 'subscriptions'">
-          <div class="card h-100">
-            <div class="card-header">
-              <div class="card-title">
-                <i class="fas fa-sync-alt me-2"></i>
-                Abonnements von {{ selectedContract?.contractTitle }}
-                <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
-                  {{ subscriptions.length }}
-                </span>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="scrollable-content">
-                <app-subscription-panel
-                  [subscriptions]="subscriptions"
-                  [selectedContract]="selectedContract"
-                  [selectedSubscription]="selectedSubscription"
-                  (subscriptionSelected)="onSubscriptionSelected($event)">
-                </app-subscription-panel>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Financial View -->
-        <div class="mobile-panel financial-panel" 
-             [class.active]="mobileCurrentView === 'financial'">
-          <div class="card h-100">
-            <div class="card-header">
-              <div class="card-title">
-                <i class="fas fa-chart-line me-2"></i>
-                Finanzdetails von {{ selectedSubscription?.productName || selectedContract?.contractTitle }}
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="scrollable-content">
-                <app-financial-tabs
-                  [selectedContract]="selectedContract"
-                  [selectedSubscription]="selectedSubscription"
-                  [customers]="customers"
-                  (invoiceAction)="onInvoiceAction($event)"
-                  (openItemAction)="onOpenItemAction($event)">
-                </app-financial-tabs>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- Mobile Breadcrumb -->
-      <div class="mobile-breadcrumb" *ngIf="isMobile && getMobileBreadcrumb().length > 0">
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item" 
-                *ngFor="let item of getMobileBreadcrumb(); let last = last"
-                [class.active]="last">
-              {{ item }}
-            </li>
-          </ol>
-        </nav>
       </div>
     </div>
+
+    <!-- Unten: Abos & Finanzdetails (40%) - Fixed Height Container -->
+    <div class="d-flex gap-3 overflow-hidden" style="flex: 0 0 40%; min-height: 0;">
+      
+      <!-- Abonnements Panel (50%) - Fixed Height -->
+      <div class="d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
+        <div class="card h-100 d-flex flex-column overflow-hidden">
+          <div class="card-header bg-info-subtle flex-shrink-0">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-sync-alt me-2 text-info"></i>
+              <span class="fw-semibold">
+                Abonnements {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+              </span>
+              <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
+                {{ subscriptions.length }}
+              </span>
+            </div>
+          </div>
+          <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
+            <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; min-height: 0;">
+              <app-subscription-panel
+                [subscriptions]="subscriptions"
+                [selectedContract]="selectedContract"
+                [selectedSubscription]="selectedSubscription"
+                (subscriptionSelected)="onSubscriptionSelected($event)">
+              </app-subscription-panel>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Finanz-Tabs Panel (50%) - Fixed Height -->
+      <div class="d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
+        <div class="card h-100 d-flex flex-column overflow-hidden">
+          <div class="card-header bg-success-subtle flex-shrink-0">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-euro-sign me-2 text-success"></i>
+              <span class="fw-semibold">
+                Finanzdetails {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+              </span>
+            </div>
+          </div>
+          <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
+            <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; min-height: 0;">
+              <app-financial-tabs
+                [selectedContract]="selectedContract"
+                [selectedSubscription]="selectedSubscription"
+                [customers]="customers"
+                (invoiceAction)="onInvoiceAction($event)"
+                (openItemAction)="onOpenItemAction($event)">
+              </app-financial-tabs>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile: Stack Layout - Fixed Height -->
+  <div class="d-md-none position-relative overflow-hidden flex-fill" *ngIf="isMobile">
+    
+    <!-- Contracts View - Immer sichtbar als Base -->
+    <div class="position-absolute w-100 h-100 bg-white"
+         [style.transform]="mobileCurrentView === 'contracts' ? 'translateX(0)' : 'translateX(-100%)'"
+         style="transition: transform 0.3s ease; z-index: 100;">
+      <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
+        <div class="card-header bg-light flex-shrink-0">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-file-contract me-2 text-primary"></i>
+            <span class="fw-semibold">Verträge</span>
+            <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
+              {{ contracts.length }}
+            </span>
+          </div>
+        </div>
+        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
+          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch; min-height: 0;">
+            <app-contract-list
+              [contracts]="contracts"
+              [customers]="customers"
+              [loading]="loading"
+              [error]="error"
+              [selectedContract]="selectedContract"
+              (contractSelected)="onContractSelected($event)"
+              (contractAction)="onContractAction($event)">
+            </app-contract-list>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscriptions View - Slides over from right -->
+    <div class="position-absolute w-100 h-100 bg-white"
+         [style.transform]="mobileCurrentView === 'subscriptions' ? 'translateX(0)' : 'translateX(100%)'"
+         style="transition: transform 0.3s ease; z-index: 200;">
+      <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
+        <div class="card-header bg-light flex-shrink-0">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-sync-alt me-2 text-info"></i>
+            <span class="fw-semibold">Abonnements</span>
+            <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
+              {{ subscriptions.length }}
+            </span>
+            <small class="text-muted ms-2" *ngIf="selectedContract">
+              ({{ selectedContract.contractNumber }})
+            </small>
+          </div>
+        </div>
+        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
+          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch; min-height: 0;">
+            <app-subscription-panel
+              [subscriptions]="subscriptions"
+              [selectedContract]="selectedContract"
+              [selectedSubscription]="selectedSubscription"
+              (subscriptionSelected)="onSubscriptionSelected($event)">
+            </app-subscription-panel>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial View - Slides over from right -->
+    <div class="position-absolute w-100 h-100 bg-white"
+         [style.transform]="mobileCurrentView === 'financial' ? 'translateX(0)' : 'translateX(100%)'"
+         style="transition: transform 0.3s ease; z-index: 300;">
+      <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
+        <div class="card-header bg-light flex-shrink-0">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-chart-line me-2 text-success"></i>
+            <span class="fw-semibold">Finanzdetails</span>
+            <small class="text-muted ms-2" *ngIf="selectedSubscription">
+              ({{ selectedSubscription.productName }})
+            </small>
+            <small class="text-muted ms-2" *ngIf="!selectedSubscription && selectedContract">
+              ({{ selectedContract.contractNumber }})
+            </small>
+          </div>
+        </div>
+        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
+          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch; min-height: 0;">
+            <app-financial-tabs
+              [selectedContract]="selectedContract"
+              [selectedSubscription]="selectedSubscription"
+              [customers]="customers"
+              (invoiceAction)="onInvoiceAction($event)"
+              (openItemAction)="onOpenItemAction($event)">
+            </app-financial-tabs>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Breadcrumb -->
+  <nav aria-label="breadcrumb" class="d-md-none px-3 py-2 bg-light border-top" 
+       *ngIf="isMobile && getMobileBreadcrumb().length > 0">
+    <ol class="breadcrumb mb-0 small">
+      <li class="breadcrumb-item" 
+          *ngFor="let item of getMobileBreadcrumb(); let last = last"
+          [class.active]="last"
+          [class.text-truncate]="true"
+          style="max-width: 150px;">
+        {{ item }}
+      </li>
+    </ol>
+  </nav>
+</div>
+
+<style>
+/* Contract Center spezifische CSS - überschreibt App-Container */
+
+/* WICHTIG: Contract Center nimmt kompletten verfügbaren Platz ohne eigenes Scrolling */
+:host {
+  display: block;
+  height: 100%;
+  overflow: hidden !important;
+  position: relative;
+}
+
+/* Überschreibe Parent Container Scrolling */
+:host ::ng-deep .app-main-container {
+  overflow: hidden !important;
+}
+
+/* Fix für Suchleiste in Contract-List - macht sie sticky */
+:host ::ng-deep app-contract-list .form-control,
+:host ::ng-deep app-contract-list .search-container,
+:host ::ng-deep app-contract-list input[placeholder*="suchen"] {
+  position: sticky !important;
+  top: 0 !important;
+  background: white !important;
+  z-index: 10 !important;
+  border-bottom: 1px solid #dee2e6 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Sicherstellen dass Liste unter Suchfeld startet */
+:host ::ng-deep app-contract-list .list-group,
+:host ::ng-deep app-contract-list .table-responsive,
+:host ::ng-deep app-contract-list > div > div:not(:first-child) {
+  padding-top: 0.5rem;
+}
+
+/* Custom Scrollbars nur für scrollbare Container */
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: #6c757d;
+  border-radius: 3px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: #495057;
+}
+
+/* Mobile Navigation Z-Index Fix - HÖCHSTE PRIORITÄT */
+.navbar {
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Sicherstellen dass Mobile Content unter der Navbar startet */
+.d-md-none.position-relative {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Überschreibe alle anderen z-index Werte */
+:host ::ng-deep .navbar,
+:host ::ng-deep nav.navbar {
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Content Container Z-Index niedriger setzen */
+:host ::ng-deep .card,
+:host ::ng-deep .position-absolute,
+:host ::ng-deep .container-fluid {
+  z-index: 1 !important;
+}
+
+/* Spezielle Z-Index für Mobile Views */
+:host ::ng-deep .position-absolute[style*="z-index: 100"],
+:host ::ng-deep .position-absolute[style*="z-index: 200"], 
+:host ::ng-deep .position-absolute[style*="z-index: 300"] {
+  z-index: 100 !important;
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 768px) {
+  /* Navbar Container */
+  .navbar {
+    padding: 0.5rem 1rem;
+    min-height: 60px !important;
+  }
+  
+  .navbar .container-fluid {
+    height: 100%;
+    min-height: 60px;
+  }
+  
+  /* Gelbe Button Styling */
+  .navbar .btn-warning {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+    font-weight: 600 !important;
+    padding: 0.375rem 0.75rem !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Gelbe Button Hover States */
+  .navbar .btn-warning:hover {
+    background-color: #ffcd39 !important;
+    border-color: #ffcd39 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  /* Disabled Button State */
+  .navbar .btn:disabled,
+  .navbar .btn.btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #ffffff !important;
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.7;
+  }
+  
+  /* Active/Current Page Button */
+  .navbar .btn.btn-secondary {
+    background-color: #495057 !important;
+    border-color: #495057 !important;
+    color: #ffffff !important;
+  }
+  
+  /* Icon Sizing */
+  .navbar .btn i {
+    font-size: 1.2rem !important;
+    line-height: 1 !important;
+  }
+  
+  /* Title Container */
+  .navbar .flex-grow-1 {
+    min-width: 0; /* Wichtig für text-truncate */
+    margin: 0 0.5rem;
+  }
+  
+  /* Title Text */
+  .navbar-brand {
+    font-size: 1.1rem !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+  }
+  
+  /* Ensure buttons are always visible and clickable - HÖCHSTER Z-INDEX */
+  .navbar .btn {
+    position: relative !important;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Fix für Touch-Targets */
+  .navbar .btn::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    z-index: -1;
+  }
+}
+
+/* Animation improvements */
+@media (prefers-reduced-motion: no-preference) {
+  .position-absolute {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .navbar .btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
+/* Accessibility improvements */
+button:disabled {
+  cursor: not-allowed;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+/* Focus States für bessere Accessibility */
+.navbar .btn:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.8) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+  z-index: 10001 !important;
+}
+
+/* Navbar muss über allem anderen stehen */
+.navbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 9999 !important;
+}
+
+/* Fix für überlagernde Elemente */
+.position-sticky {
+  z-index: 9999 !important;
+}
+
+/* Breadcrumb improvements */
+.breadcrumb-item + .breadcrumb-item::before {
+  content: "›";
+  font-weight: bold;
+}
+
+.breadcrumb-item.text-truncate {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+/* Additional Debug Styles - Remove in production */
+.navbar {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.navbar .btn {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+</style>

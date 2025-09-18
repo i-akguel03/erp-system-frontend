@@ -1,3 +1,4 @@
+// open-item-tab.component.ts
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OpenItem, OpenItemStatus } from '../../../../../../models/OpenItem';
@@ -82,6 +83,7 @@ export class OpenItemsTabComponent implements OnChanges {
     return this.openItems;
   }
 
+  // Status Badge Methoden
   getOpenItemStatusBadgeClass(status: OpenItemStatus): string {
     switch (status) {
       case OpenItemStatus.OPEN: return 'bg-warning text-dark';
@@ -113,6 +115,7 @@ export class OpenItemsTabComponent implements OnChanges {
     return this.getOpenItemStatusLabel(status);
   }
 
+  // Datumsberechnungen
   getDaysOverdue(openItem: OpenItem): number {
     if (!openItem.dueDate || !openItem.overdue) return 0;
     const due = new Date(openItem.dueDate);
@@ -150,6 +153,7 @@ export class OpenItemsTabComponent implements OnChanges {
     return daysUntilDue <= 7 && daysUntilDue >= 0;
   }
 
+  // Hilfsmethoden
   getCustomerById(customerId?: string): Customer | undefined {
     if (!customerId) return undefined;
     return this.customers[customerId];
@@ -178,23 +182,30 @@ export class OpenItemsTabComponent implements OnChanges {
 
   // Action Methods - Details direkt öffnen
   onDetails(openItem: OpenItem): void {
+    console.log('Open Details for:', openItem);
     this.openDetailsModal(openItem);
   }
 
   onPayment(openItem: OpenItem): void {
+    console.log('Payment Action for:', openItem);
     this.openItemAction.emit({ action: 'payment', openItem });
   }
 
   onReminder(openItem: OpenItem): void {
+    console.log('Reminder Action for:', openItem);
     this.openItemAction.emit({ action: 'reminder', openItem });
   }
 
   onEdit(openItem: OpenItem): void {
+    console.log('Edit Action for:', openItem);
     this.openItemAction.emit({ action: 'edit', openItem });
   }
 
   onCancel(openItem: OpenItem): void {
-    this.openItemAction.emit({ action: 'cancel', openItem });
+    console.log('Cancel Action for:', openItem);
+    if (confirm('Möchten Sie diesen offenen Posten wirklich stornieren?')) {
+      this.openItemAction.emit({ action: 'cancel', openItem });
+    }
   }
 
   // Permission Checks
@@ -224,7 +235,8 @@ export class OpenItemsTabComponent implements OnChanges {
   // Modal Actions für Footer
   onPaymentFromDetails(): void {
     if (this.selectedOpenItem) {
-      const openItemForPayment = this.selectedOpenItem; // Referenz sichern
+      console.log('Payment from Details:', this.selectedOpenItem);
+      const openItemForPayment = { ...this.selectedOpenItem }; // Kopie erstellen
       this.closeDetailsModal();
       this.onPayment(openItemForPayment);
     }
@@ -232,14 +244,11 @@ export class OpenItemsTabComponent implements OnChanges {
 
   onEditFromDetails(): void {
     if (this.selectedOpenItem) {
-      console.log('OpenItem für Bearbeitung:', this.selectedOpenItem);
-      const openItemToEdit = this.selectedOpenItem; // Verwende die Original-Referenz
-      console.log('OpenItem vor onEdit Aufruf:', openItemToEdit);
+      console.log('Edit from Details - OpenItem für Bearbeitung:', this.selectedOpenItem);
+      const openItemToEdit = { ...this.selectedOpenItem }; // Kopie erstellen für Event
+      console.log('Edit from Details - OpenItem vor onEdit Aufruf:', openItemToEdit);
+      this.closeDetailsModal();
       this.onEdit(openItemToEdit);
-      // Schließe das Modal erst NACH dem Event
-      setTimeout(() => {
-        this.closeDetailsModal();
-      }, 10);
     } else {
       console.error('Keine selectedOpenItem verfügbar für Bearbeitung');
     }
@@ -247,16 +256,21 @@ export class OpenItemsTabComponent implements OnChanges {
 
   onReminderFromDetails(): void {
     if (this.selectedOpenItem) {
-      const openItemForReminder = this.selectedOpenItem; // Referenz sichern
+      console.log('Reminder from Details:', this.selectedOpenItem);
+      const openItemForReminder = { ...this.selectedOpenItem }; // Kopie erstellen
+      this.closeDetailsModal();
       this.onReminder(openItemForReminder);
     }
   }
 
   onCancelFromDetails(): void {
     if (this.selectedOpenItem) {
-      const openItemForCancel = this.selectedOpenItem; // Referenz sichern
-      this.onCancel(openItemForCancel);
-      this.closeDetailsModal();
+      console.log('Cancel from Details:', this.selectedOpenItem);
+      const openItemForCancel = { ...this.selectedOpenItem }; // Kopie erstellen
+      if (confirm('Möchten Sie diesen offenen Posten wirklich stornieren?')) {
+        this.closeDetailsModal();
+        this.openItemAction.emit({ action: 'cancel', openItem: openItemForCancel });
+      }
     }
   }
 

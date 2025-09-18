@@ -1,80 +1,99 @@
-<!-- Sticky Suchbereich -->
-<div class="sticky-header">
-  <div class="input-group mb-2">
-    <input type="text" 
-           class="form-control" 
-           placeholder="Vertrag, Kunde oder Nummer suchen..." 
-           [(ngModel)]="searchTerm" 
-           (input)="filterContracts()">
-    <span class="input-group-text"><i class="fas fa-search"></i></span>
+<!-- Bootstrap Contract List Template -->
+<div class="d-flex flex-column h-100">
+  
+  <!-- Sticky Suchbereich mit Bootstrap -->
+  <div class="position-sticky bg-body border-bottom px-3 py-2 flex-shrink-0" style="top: 0; z-index: 10;">
+    <div class="input-group">
+      <input type="text" 
+             class="form-control" 
+             placeholder="Vertrag, Kunde oder Nummer suchen..." 
+             [(ngModel)]="searchTerm" 
+             (input)="filterContracts()">
+      <span class="input-group-text">
+        <i class="fas fa-search text-muted"></i>
+      </span>
+    </div>
   </div>
-</div>
 
-<!-- Scrollbarer Vertragsbereich -->
-<div class="scrollable-contracts">
-  <div class="card h-100">
-    <div class="card-body p-0">
+  <!-- Scrollbarer Vertragsbereich mit Bootstrap -->
+  <div class="flex-grow-1 overflow-hidden">
+    <div class="h-100">
 
       <!-- Loading-Anzeige -->
-      <div *ngIf="loading" class="text-center p-4">
-        <div class="spinner-border text-primary" role="status">
+      <div *ngIf="loading" class="d-flex flex-column align-items-center justify-content-center h-100">
+        <div class="spinner-border text-primary mb-3" role="status">
           <span class="visually-hidden">Wird geladen...</span>
         </div>
-        <div class="mt-2">Verträge werden geladen...</div>
+        <div class="text-muted">Verträge werden geladen...</div>
       </div>
 
       <!-- Fehler-Anzeige -->
-      <div *ngIf="error && !loading" class="alert alert-danger m-3" role="alert">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        {{ error }}
+      <div *ngIf="error && !loading" class="p-3">
+        <div class="alert alert-danger" role="alert">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          {{ error }}
+        </div>
       </div>
 
-      <!-- Tabelle für alle Größen -->
-      <div *ngIf="!loading && !error" class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="table-light">
+      <!-- Tabelle - Bootstrap Table Responsive -->
+      <div *ngIf="!loading && !error" class="h-100 overflow-auto">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-light position-sticky top-0">
             <tr>
-              <th>Nr.</th>
-              <th>Titel</th>
-              <th>Kunde</th>
-              <th class="d-none d-md-table-cell">Start</th>
-              <th class="d-none d-md-table-cell">Ende</th>
-              <th class="d-none d-md-table-cell">Status</th>
+              <th scope="col" class="fw-semibold">Nr.</th>
+              <th scope="col" class="fw-semibold">Titel</th>
+              <th scope="col" class="fw-semibold">Kunde</th>
+              <th scope="col" class="fw-semibold d-none d-md-table-cell">Start</th>
+              <th scope="col" class="fw-semibold d-none d-md-table-cell">Ende</th>
+              <th scope="col" class="fw-semibold d-none d-md-table-cell">Status</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let contract of filteredContracts" 
                 (click)="selectContract(contract)"
                 (contextmenu)="onContractRightClick($event, contract)"
-                [class.table-active]="isSelectedContract(contract)"
-                style="cursor: pointer;">
-              <td class="fw-bold">{{ contract.contractNumber }}</td>
-              <td>{{ contract.contractTitle }}</td>
+                [class]="{'table-active bg-primary bg-opacity-10': isSelectedContract(contract)}"
+                class="user-select-none cursor-pointer">
+              
+              <td class="fw-bold text-primary">{{ contract.contractNumber }}</td>
+              
+              <td>
+                <div class="fw-semibold">{{ contract.contractTitle }}</div>
+              </td>
+              
               <td>
                 <div *ngIf="getCustomerById(contract.customerId); let customer">
-                  {{ customer.firstName }} {{ customer.lastName }}
-                  <small class="text-muted d-block">{{ customer.customerNumber }}</small>
+                  <div class="fw-medium">{{ customer.firstName }} {{ customer.lastName }}</div>
+                  <small class="text-muted">{{ customer.customerNumber }}</small>
                 </div>
-                <small *ngIf="!getCustomerById(contract.customerId)" class="text-muted">
+                <small *ngIf="!getCustomerById(contract.customerId)" class="text-danger">
                   Kunde nicht gefunden
                 </small>
               </td>
+              
               <td class="d-none d-md-table-cell">
-                {{ contract.startDate | date:'dd.MM.yyyy' }}
+                <span class="text-nowrap">{{ contract.startDate | date:'dd.MM.yyyy' }}</span>
               </td>
+              
               <td class="d-none d-md-table-cell">
-                {{ contract.endDate | date:'dd.MM.yyyy' }}
+                <span class="text-nowrap">{{ contract.endDate | date:'dd.MM.yyyy' }}</span>
               </td>
+              
               <td class="d-none d-md-table-cell">
-                <span [ngClass]="getContractStatusClass(contract)">
+                <span class="badge" [ngClass]="getContractStatusClass(contract)">
                   {{ getContractStatus(contract) }}
                 </span>
               </td>
             </tr>
+            
+            <!-- Keine Ergebnisse -->
             <tr *ngIf="filteredContracts.length === 0">
-              <td colspan="6" class="text-center p-3 text-muted">
-                <i class="fas fa-search fa-2x mb-2 d-block"></i>
-                Keine Verträge gefunden
+              <td colspan="6" class="text-center py-5">
+                <div class="d-flex flex-column align-items-center text-muted">
+                  <i class="fas fa-search fa-3x mb-3 text-secondary"></i>
+                  <h6 class="mb-1">Keine Verträge gefunden</h6>
+                  <small>Versuchen Sie andere Suchbegriffe</small>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -85,28 +104,86 @@
   </div>
 </div>
 
-<!-- Kontextmenü -->
+<!-- Bootstrap Dropdown als Kontextmenü -->
 <div *ngIf="contextMenuVisible" 
-     class="context-menu"
+     class="dropdown-menu show position-fixed border shadow-lg"
      [style.left.px]="contextMenuPosition.x"
-     [style.top.px]="contextMenuPosition.y">
-  <ul class="list-unstyled mb-0">
-    <li><button class="dropdown-item" (click)="onContractAction('neu')">
-      <i class="fas fa-plus me-2"></i>Neuer Vertrag
-    </button></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><button class="dropdown-item" (click)="onContractAction('edit')">
-      <i class="fas fa-edit me-2"></i>Bearbeiten
-    </button></li>
-    <li><button class="dropdown-item" (click)="onContractAction('duplicate')">
-      <i class="fas fa-copy me-2"></i>Duplizieren
-    </button></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><button class="dropdown-item text-warning" (click)="onContractAction('kündigen')">
-      <i class="fas fa-ban me-2"></i>Kündigen
-    </button></li>
-    <li><button class="dropdown-item text-danger" (click)="onContractAction('stornieren')">
-      <i class="fas fa-times me-2"></i>Stornieren
-    </button></li>
-  </ul>
+     [style.top.px]="contextMenuPosition.y"
+     style="z-index: 1050; min-width: 220px;">
+  
+  <h6 class="dropdown-header">
+    <i class="fas fa-file-contract me-2"></i>Vertragsaktionen
+  </h6>
+  
+  <button class="dropdown-item" (click)="onContractAction('neu')">
+    <i class="fas fa-plus me-2 text-success"></i>Neuer Vertrag
+  </button>
+  
+  <div class="dropdown-divider"></div>
+  
+  <button class="dropdown-item" (click)="onContractAction('edit')">
+    <i class="fas fa-edit me-2 text-primary"></i>Bearbeiten
+  </button>
+  
+  <button class="dropdown-item" (click)="onContractAction('duplicate')">
+    <i class="fas fa-copy me-2 text-info"></i>Duplizieren
+  </button>
+  
+  <div class="dropdown-divider"></div>
+  
+  <button class="dropdown-item text-warning" (click)="onContractAction('kündigen')">
+    <i class="fas fa-ban me-2"></i>Kündigen
+  </button>
+  
+  <button class="dropdown-item text-danger" (click)="onContractAction('stornieren')">
+    <i class="fas fa-times me-2"></i>Stornieren
+  </button>
 </div>
+
+<style>
+/* Minimal CSS - nur was Bootstrap nicht kann */
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Smooth Hover Effects */
+.table tbody tr:hover {
+  background-color: var(--bs-gray-50) !important;
+}
+
+.table tbody tr.table-active:hover {
+  background-color: var(--bs-primary-bg-subtle) !important;
+}
+
+/* Custom Scrollbars */
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: #6c757d;
+  border-radius: 3px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: #495057;
+}
+
+/* Mobile Optimierungen */
+@media (max-width: 768px) {
+  .table td {
+    font-size: 0.875rem;
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .table th {
+    font-size: 0.875rem;
+    padding: 0.75rem 0.5rem;
+  }
+}
+</style>

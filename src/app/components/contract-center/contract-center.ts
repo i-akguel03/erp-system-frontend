@@ -64,9 +64,10 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   error: string | null = null;
 
-  // Mobile state management
+  // Mobile state management - FIXED: Added navigation stack
   isMobile = false;
   mobileCurrentView: 'contracts' | 'subscriptions' | 'financial' = 'contracts';
+  mobileNavigationStack: Array<'contracts' | 'subscriptions' | 'financial'> = ['contracts']; // NEW: Navigation history
 
   constructor(
     private contractService: ContractService,
@@ -116,6 +117,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       if (!this.isMobile) {
         // Reset mobile view when switching to desktop
         this.mobileCurrentView = 'contracts';
+        this.mobileNavigationStack = ['contracts']; // FIXED: Reset navigation stack
       }
     }
   }
@@ -138,62 +140,102 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
   }
 
+  // FIXED: Added method to navigate to a mobile view with stack management
+  private navigateToMobileView(view: 'contracts' | 'subscriptions' | 'financial'): void {
+    if (!this.isMobile) return;
+
+    this.mobileCurrentView = view;
+    
+    // Add to navigation stack if not already the current view
+    if (this.mobileNavigationStack[this.mobileNavigationStack.length - 1] !== view) {
+      this.mobileNavigationStack.push(view);
+    }
+    
+    console.log('Navigated to:', view, 'Stack:', this.mobileNavigationStack);
+  }
+
   // Mobile navigation methods
   getMobileNavTitle(): string {
     switch (this.mobileCurrentView) {
       case 'contracts':
         return 'Verträge';
       case 'subscriptions':
-        return `Abonnements von ${this.selectedContract?.contractTitle || 'Vertrag'}`;
+        return 'Abonnements';
       case 'financial':
-        return `Finanzdetails von ${this.selectedSubscription?.productName || this.selectedContract?.contractTitle || 'Auswahl'}`;
+        return 'Finanzdetails';
       default:
         return 'Navigation';
     }
   }
 
+  // FIXED: Improved back navigation using stack
   navigateBack(): void {
     if (!this.isMobile) return;
 
-    console.log('Navigate back from:', this.mobileCurrentView);
+    console.log('Navigate back from:', this.mobileCurrentView, 'Stack:', this.mobileNavigationStack);
 
-    switch (this.mobileCurrentView) {
-      case 'financial':
-        this.mobileCurrentView = 'subscriptions';
-        break;
-      case 'subscriptions':
-        this.mobileCurrentView = 'contracts';
-        break;
-      case 'contracts':
-        // Already at root
-        break;
+    if (this.mobileNavigationStack.length > 1) {
+      // Remove current view from stack
+      this.mobileNavigationStack.pop();
+      
+      // Get previous view
+      const previousView = this.mobileNavigationStack[this.mobileNavigationStack.length - 1];
+      this.mobileCurrentView = previousView;
+      
+      // Clear selections when navigating back
+      if (previousView === 'contracts') {
+        this.selectedContract = null;
+        this.selectedSubscription = null;
+        this.subscriptions = [];
+      } else if (previousView === 'subscriptions') {
+        this.selectedSubscription = null;
+      }
+      
+      console.log('Navigated back to:', previousView, 'New stack:', this.mobileNavigationStack);
     }
-
-    console.log('Navigated to:', this.mobileCurrentView);
   }
 
+  // FIXED: Reset method now also resets the stack
   resetToContracts(): void {
     if (!this.isMobile) return;
 
     console.log('Reset to contracts view');
     this.mobileCurrentView = 'contracts';
+    this.mobileNavigationStack = ['contracts']; // Reset stack
+    this.selectedContract = null;
+    this.selectedSubscription = null;
+    this.subscriptions = [];
   }
 
+  // NEW: Method to check if back navigation is possible
+  canNavigateBack(): boolean {
+    return this.isMobile && this.mobileNavigationStack.length > 1;
+  }
+
+  // FIXED: Improved breadcrumb with better logic
   getMobileBreadcrumb(): string[] {
     const breadcrumb: string[] = [];
 
     if (this.mobileCurrentView === 'contracts') {
-      return breadcrumb;
+      return breadcrumb; // No breadcrumb on root view
     }
 
+    // Always start with Verträge when not on contracts view
     breadcrumb.push('Verträge');
 
+    // Add contract title if selected and not on subscriptions view
     if (this.selectedContract && this.mobileCurrentView !== 'subscriptions') {
-      breadcrumb.push(this.selectedContract.contractTitle || 'Vertrag');
+      breadcrumb.push(this.selectedContract.contractNumber || this.selectedContract.contractTitle || 'Vertrag');
     }
 
-    if (this.selectedSubscription && this.mobileCurrentView === 'financial') {
-      breadcrumb.push(this.selectedSubscription.productName || 'Abonnement');
+    // Add current view
+    if (this.mobileCurrentView === 'subscriptions') {
+      breadcrumb.push('Abonnements');
+    } else if (this.mobileCurrentView === 'financial') {
+      if (this.selectedSubscription) {
+        breadcrumb.push(this.selectedSubscription.productName || 'Abonnement');
+      }
+      breadcrumb.push('Finanzdetails');
     }
 
     return breadcrumb;
@@ -242,12 +284,6 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       .subscribe({
         next: subs => {
           this.subscriptions = subs;
-
-          // Mobile: Navigate to subscriptions view
-          if (this.isMobile) {
-            console.log('Subscriptions loaded, navigating to subscriptions view');
-            this.mobileCurrentView = 'subscriptions';
-          }
         },
         error: err => {
           console.error('Fehler beim Laden der Abonnements:', err);
@@ -256,9 +292,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Event handlers
+  // Event handlers - FIXED: Using new navigation method
   onContractSelected(contract: Contract): void {
-    if (this.selectedContract?.id === contract.id) return;
+    if (this.selectedContract?.id === contract.id && !this.isMobile) return;
 
     console.log('Contract selected:', contract.contractTitle);
 
@@ -266,20 +302,25 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     this.subscriptions = [];
     this.selectedSubscription = null;
 
+    // FIXED: Use proper navigation method for mobile
+    if (this.isMobile) {
+      this.navigateToMobileView('subscriptions');
+    }
+
     this.loadSubscriptions(contract.id!);
   }
 
   onSubscriptionSelected(subscription: Subscription): void {
-    if (this.selectedSubscription?.id === subscription.id) return;
+    if (this.selectedSubscription?.id === subscription.id && !this.isMobile) return;
 
     console.log('Subscription selected:', subscription.productName);
 
     this.selectedSubscription = subscription;
 
-    // Mobile: Navigate to financial details
+    // FIXED: Use proper navigation method for mobile
     if (this.isMobile) {
       console.log('Mobile: Navigating to financial view');
-      this.mobileCurrentView = 'financial';
+      this.navigateToMobileView('financial');
     }
   }
 

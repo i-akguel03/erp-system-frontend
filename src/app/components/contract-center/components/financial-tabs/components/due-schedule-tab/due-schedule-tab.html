@@ -1,87 +1,248 @@
-<div class="container mt-3 d-flex flex-column schedule-container" style="height: 80vh;">
+<div class="h-100 w-100 d-flex flex-column">
 
   <!-- Ladeanzeige -->
-  <div *ngIf="loading" class="text-center my-3">
+  <div *ngIf="loading" class="text-center py-4">
     <div class="spinner-border text-primary"></div>
   </div>
 
   <!-- Fehleranzeige -->
-  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
+  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center mx-3 mt-2 flex-shrink-0">
     {{ error }}
     <button type="button" class="btn-close" (click)="clearError()"></button>
   </div>
 
   <!-- Desktop Tabelle -->
-  <div class="table-responsive d-none d-md-block scrollable" *ngIf="dueSchedules.length > 0">
-    <table class="table table-hover table-bordered">
-      <thead class="table-light">
-        <tr>
-          <th>Nr.</th>
-          <th>Abonnement</th>
-          <th>Fälligkeitsdatum</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let schedule of dueSchedules">
-          <td>{{ schedule.dueNumber }}</td>
-          <td>{{ schedule.subscriptionNumber || schedule.subscriptionId }}</td>
-          <td>{{ schedule.dueDate | date:'dd.MM.yyyy' }}</td>
-          <td>
-            <span class="badge" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
-              {{ getStatusLabel(schedule.status!, isOverdue(schedule.dueDate!)) }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="flex-fill overflow-hidden d-none d-md-block" *ngIf="dueSchedules.length > 0">
+    <div class="h-100 overflow-auto">
+      <table class="table table-hover table-bordered mb-0">
+        <thead class="table-light position-sticky" style="top: 0; z-index: 10;">
+          <tr>
+            <th class="bg-light">Nr.</th>
+            <th class="bg-light">Abonnement</th>
+            <th class="bg-light">Fälligkeitsdatum</th>
+            <th class="bg-light">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let schedule of dueSchedules" class="table-row-hover">
+            <td>{{ schedule.dueNumber }}</td>
+            <td>{{ schedule.subscriptionNumber || schedule.subscriptionId }}</td>
+            <td>{{ schedule.dueDate | date:'dd.MM.yyyy' }}</td>
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
+                {{ getStatusLabel(schedule.status!, isOverdue(schedule.dueDate!)) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Mobile Cards -->
-  <div class="d-block d-md-none scrollable" *ngIf="dueSchedules.length > 0">
-    <div *ngFor="let schedule of dueSchedules" class="card mb-3 shadow-sm due-schedule-item">
-      <div class="card-body due-schedule-info">
-        <h5 class="card-title">Abonnement: {{ schedule.subscriptionNumber || schedule.subscriptionId }}</h5>
-        <p class="card-text">
-          <strong>Fälligkeitsdatum:</strong> {{ schedule.dueDate | date:'shortDate' }}<br>
-          <strong>Status:</strong>
-          <span class="badge" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
-            {{ getStatusLabel(schedule.status!, isOverdue(schedule.dueDate!)) }}
-          </span>
-        </p>
+  <div class="flex-fill overflow-auto d-block d-md-none px-3" *ngIf="dueSchedules.length > 0">
+    <div *ngFor="let schedule of dueSchedules" 
+         class="card mb-3 border-0 border-bottom border-light-subtle position-relative"
+         style="transition: all 0.2s ease-in-out;"
+         onmouseover="this.classList.add('bg-primary-subtle', 'border-start', 'border-primary', 'border-3')"
+         onmouseout="this.classList.remove('bg-primary-subtle', 'border-start', 'border-primary', 'border-3')">
+      <div class="card-body py-3">
+        <h6 class="card-title mb-2 text-primary">
+          Abonnement: {{ schedule.subscriptionNumber || schedule.subscriptionId }}
+        </h6>
+        <div class="card-text">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="text-body">Fälligkeitsdatum:</strong>
+            <span class="fw-semibold">{{ schedule.dueDate | date:'dd.MM.yyyy' }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <strong class="text-body">Status:</strong>
+            <span class="badge" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
+              {{ getStatusLabel(schedule.status!, isOverdue(schedule.dueDate!)) }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Keine Fälligkeiten -->
-  <div *ngIf="dueSchedules.length === 0 && !loading" class="text-center mt-3">
-    Keine Fälligkeiten gefunden.
+  <div *ngIf="dueSchedules.length === 0 && !loading" class="flex-fill d-flex align-items-center justify-content-center text-center">
+    <div>
+      <i class="fas fa-calendar-times display-4 mb-3 text-muted opacity-50"></i>
+      <div class="h6 text-secondary mb-2">Keine Fälligkeiten gefunden</div>
+      <small class="text-muted">Es sind derzeit keine Fälligkeiten für die ausgewählten Kriterien vorhanden.</small>
+    </div>
   </div>
 
   <!-- Modal für neue Fälligkeit -->
-  <div *ngIf="showNewScheduleModal" class="modal show d-block" tabindex="-1" (click)="closeNewScheduleModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
+  <div *ngIf="showNewScheduleModal" 
+       class="modal show d-block position-fixed top-0 start-0 w-100 h-100" 
+       style="z-index: 1050; background-color: rgba(0,0,0,0.5);"
+       tabindex="-1" 
+       (click)="closeNewScheduleModal()">
+    <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Neue Fälligkeit erstellen</h5>
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold">Neue Fälligkeit erstellen</h5>
           <button type="button" class="btn-close" (click)="closeNewScheduleModal()"></button>
         </div>
-        <div class="modal-body">
-          <input type="date" class="form-control mb-2" [(ngModel)]="newSchedule.dueDate">
-
-          <select class="form-select mb-2" [(ngModel)]="newSchedule.subscriptionId">
-            <option value="" disabled selected>Abonnement auswählen...</option>
-            <option *ngFor="let sub of subscriptions" [value]="sub.id">
-              {{ sub.productName }} – {{ sub.subscriptionNumber }}
-            </option>
-          </select>
+        <div class="modal-body py-4">
+          <div class="mb-3">
+            <label for="dueDate" class="form-label fw-semibold">Fälligkeitsdatum</label>
+            <input type="date" 
+                   id="dueDate"
+                   class="form-control" 
+                   [(ngModel)]="newSchedule.dueDate">
+          </div>
+          
+          <div class="mb-3">
+            <label for="subscription" class="form-label fw-semibold">Abonnement</label>
+            <select id="subscription" 
+                    class="form-select" 
+                    [(ngModel)]="newSchedule.subscriptionId">
+              <option value="" disabled selected>Abonnement auswählen...</option>
+              <option *ngFor="let sub of subscriptions" [value]="sub.id">
+                {{ sub.productName }} – {{ sub.subscriptionNumber }}
+              </option>
+            </select>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeNewScheduleModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="createSchedule()">Erstellen</button>
+        <div class="modal-footer border-top">
+          <button class="btn btn-secondary" (click)="closeNewScheduleModal()">
+            Abbrechen
+          </button>
+          <button class="btn btn-primary" (click)="createSchedule()">
+            Erstellen
+          </button>
         </div>
       </div>
     </div>
   </div>
 
 </div>
+
+<style>
+/* Host Element - Füllt Elternkomponente komplett aus */
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+/* Entfernt den doppelten Container-Scrollbalken */
+.container, .container-fluid {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Status Badges mit Bootstrap Farben */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4em 0.6em;
+}
+
+.status-active {
+  background-color: var(--bs-success) !important;
+  color: white !important;
+}
+
+.status-paused {
+  background-color: var(--bs-warning) !important;
+  color: white !important;
+}
+
+.status-suspended {
+  background-color: var(--bs-secondary) !important;
+  color: white !important;
+}
+
+.status-completed {
+  background-color: var(--bs-info) !important;
+  color: white !important;
+}
+
+.status-overdue {
+  background-color: var(--bs-danger) !important;
+  color: white !important;
+}
+
+/* Custom Scrollbar nur für den Tabellen-Container */
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: var(--bs-gray-100);
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: var(--bs-gray-400);
+  border-radius: 3px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: var(--bs-gray-600);
+}
+
+/* Table Hover Effects */
+.table-row-hover:hover {
+  background-color: var(--bs-primary-bg-subtle) !important;
+}
+
+/* Mobile Card Hover Effects */
+.card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modal Improvements */
+.modal {
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  .badge {
+    font-size: 0.7rem;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .table thead th {
+    background-color: var(--bs-dark) !important;
+    border-color: var(--bs-gray-600) !important;
+  }
+  
+  .modal-content {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+  }
+}
+
+/* Accessibility */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Remove any conflicting height constraints */
+.schedule-container,
+.mt-3 {
+  height: auto !important;
+  max-height: none !important;
+}
+</style>
