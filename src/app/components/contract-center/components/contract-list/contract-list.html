@@ -1,9 +1,9 @@
 <!-- Bootstrap Contract List Template -->
 <div class="d-flex flex-column h-100">
   
-  <!-- Sticky Suchbereich mit Bootstrap -->
   <div class="position-sticky bg-body border-bottom px-3 py-2 flex-shrink-0" style="top: 0; z-index: 10;">
-    <div class="input-group">
+  <div class="d-flex gap-2">
+    <div class="input-group flex-grow-1">
       <input type="text" 
              class="form-control" 
              placeholder="Vertrag, Kunde oder Nummer suchen..." 
@@ -13,7 +13,14 @@
         <i class="fas fa-search text-muted"></i>
       </span>
     </div>
+    <button class="btn btn-primary btn-sm d-flex align-items-center" 
+            (click)="onContractAction('neu')"
+            title="Neuer Vertrag">
+      <i class="fas fa-plus me-1"></i>
+      <span class="d-none d-lg-inline">Neu</span>
+    </button>
   </div>
+</div>
 
   <!-- Scrollbarer Vertragsbereich mit Bootstrap -->
   <div class="flex-grow-1 overflow-hidden">

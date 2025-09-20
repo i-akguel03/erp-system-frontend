@@ -49,9 +49,8 @@ export class DueScheduleTabComponent {
     });
   }
 
-  // Helpers
+  // Helpers - Zeigt nur den Backend-Status an
   getStatusLabel(status: ScheduleStatus, overdue: boolean): string {
-    if (overdue) return 'ÜBERFÄLLIG';
     switch (status) {
       case 'ACTIVE': return 'Aktiv';
       case 'PAUSED': return 'Pausiert';
@@ -61,15 +60,24 @@ export class DueScheduleTabComponent {
     }
   }
 
+  // Status-Klassen berücksichtigen weiterhin überdue für visuelle Kennzeichnung
   getStatusClass(status: ScheduleStatus, overdue: boolean): string {
-    if (overdue) return 'status-overdue';
+    // Basis-Status-Klasse
+    let baseClass = '';
     switch (status) {
-      case 'ACTIVE': return 'status-active';
-      case 'PAUSED': return 'status-paused';
-      case 'SUSPENDED': return 'status-suspended';
-      case 'COMPLETED': return 'status-completed';
-      default: return '';
+      case 'ACTIVE': baseClass = 'status-active'; break;
+      case 'PAUSED': baseClass = 'status-paused'; break;
+      case 'SUSPENDED': baseClass = 'status-suspended'; break;
+      case 'COMPLETED': baseClass = 'status-completed'; break;
+      default: baseClass = '';
     }
+
+    // Wenn überfällig, zusätzliche visuelle Kennzeichnung
+    if (overdue && status === 'ACTIVE') {
+      return 'status-overdue'; // Nur aktive überfällige Posten rot markieren
+    }
+
+    return baseClass;
   }
 
   isOverdue(dueDate: string | Date): boolean {

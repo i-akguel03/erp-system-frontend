@@ -19,7 +19,7 @@ export interface Invoice {
   invoiceNumber?: string;
   invoiceDate?: Date;
   dueDate?: Date;
-  status?: 'DRAFT' | 'SENT' | 'CANCELLED';
+  status?: 'ACTIVE' | 'DRAFT' | 'SENT' | 'CANCELLED';
   subtotal?: number;
   taxRate?: number;
   taxAmount?: number;

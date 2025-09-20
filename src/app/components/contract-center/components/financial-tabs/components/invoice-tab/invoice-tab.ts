@@ -42,7 +42,7 @@ export class InvoiceTabComponent {
     switch (status) {
       case 'DRAFT': return 'bg-secondary';
       case 'SENT': return 'bg-primary';
-      case 'PAID': return 'bg-success';
+      case 'ACTIVE': return 'bg-success';
       case 'OVERDUE': return 'bg-danger';
       case 'CANCELLED': return 'bg-dark';
       default: return 'bg-light text-dark';
@@ -53,7 +53,7 @@ export class InvoiceTabComponent {
     switch (status) {
       case 'DRAFT': return 'Entwurf';
       case 'SENT': return 'Versendet';
-      case 'PAID': return 'Bezahlt';
+      case 'ACTIVE': return 'Aktiv';
       case 'OVERDUE': return 'Überfällig';
       case 'CANCELLED': return 'Storniert';
       default: return status;

@@ -16,44 +16,46 @@
   </div> -->
 
   <!-- Tab Navigation -->
-  <ul class="nav nav-tabs nav-fill border-0 bg-light" role="tablist">
-    <li class="nav-item">
-      <button class="nav-link border-0 py-3 px-3 text-start" 
-              [class.active]="activeTab==='schedule'" 
-              [class.bg-primary]="activeTab==='schedule'"
-              [class.text-white]="activeTab==='schedule'"
-              [class.text-dark]="activeTab!=='schedule'"
-              (click)="setActiveTab('schedule')"
-              type="button">
-        <i class="fas fa-calendar-alt me-2"></i>
-        <span class="fw-semibold">Fälligkeitsplan</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link border-0 py-3 px-3 text-start" 
-              [class.active]="activeTab==='invoices'" 
-              [class.bg-primary]="activeTab==='invoices'"
-              [class.text-white]="activeTab==='invoices'"
-              [class.text-dark]="activeTab!=='invoices'"
-              (click)="setActiveTab('invoices')"
-              type="button">
-        <i class="fas fa-file-invoice me-2"></i>
-        <span class="fw-semibold">Rechnungen</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link border-0 py-3 px-3 text-start" 
-              [class.active]="activeTab==='openitems'" 
-              [class.bg-primary]="activeTab==='openitems'"
-              [class.text-white]="activeTab==='openitems'"
-              [class.text-dark]="activeTab!=='openitems'"
-              (click)="setActiveTab('openitems')"
-              type="button">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        <span class="fw-semibold">Offene Posten</span>
-      </button>
-    </li>
-  </ul>
+  <ul class="nav nav-tabs nav-fill border-0 bg-light compact-tabs-v1" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link border-0 py-2 px-2 text-start"
+            [class.active]="activeTab==='schedule'"
+            [class.bg-primary]="activeTab==='schedule'"
+            [class.text-white]="activeTab==='schedule'"
+            [class.text-dark]="activeTab!=='schedule'"
+            (click)="setActiveTab('schedule')"
+            type="button">
+      <i class="fas fa-calendar-alt me-2"></i>
+      <span class="fw-medium small">Fälligkeitsplan</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link border-0 py-2 px-2 text-start"
+            [class.active]="activeTab==='invoices'"
+            [class.bg-primary]="activeTab==='invoices'"
+            [class.text-white]="activeTab==='invoices'"
+            [class.text-dark]="activeTab!=='invoices'"
+            (click)="setActiveTab('invoices')"
+            type="button">
+      <i class="fas fa-file-invoice me-2"></i>
+      <span class="fw-medium small">Rechnungen</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link border-0 py-2 px-2 text-start"
+            [class.active]="activeTab==='openitems'"
+            [class.bg-primary]="activeTab==='openitems'"
+            [class.text-white]="activeTab==='openitems'"
+            [class.text-dark]="activeTab!=='openitems'"
+            (click)="setActiveTab('openitems')"
+            type="button">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <span class="fw-medium small">Offene Posten</span>
+    </button>
+  </li>
+</ul>
+
+
 
   <!-- Tab Content -->
   <div class="flex-fill d-flex flex-column overflow-hidden p-0">
