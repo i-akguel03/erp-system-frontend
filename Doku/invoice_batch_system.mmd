@@ -1,0 +1,163 @@
+sequenceDiagram
+    participant Client
+    participant Orchestrator as InvoiceBatchOrchestrator
+    participant VorgangService
+    participant Analyzer as InvoiceBatchAnalyzer
+    participant Repository as DueScheduleRepository
+    participant Processor as InvoiceBatchProcessor
+    participant InvoiceFactory
+    participant OpenItemFactory
+    participant DueScheduleService
+    participant InvoiceRepo as InvoiceRepository
+    participant OpenItemRepo as OpenItemRepository
+
+    Note over Client, OpenItemRepo: HAUPTSZENARIO Erfolgreicher Rechnungslauf
+
+    Client->>+Orchestrator: runInvoiceBatch(billingDate)
+    Note over Orchestrator: Standard Aufruf mit includeAllPreviousMonths=true
+    Orchestrator->>Orchestrator: runInvoiceBatch(billingDate, true)
+
+    Note over Orchestrator: SCHRITT 1 Vorgang starten
+    Orchestrator->>+VorgangService: starteAutomatischenVorgang(RECHNUNGSLAUF, titel)
+    VorgangService-->>-Orchestrator: vorgang
+    Note over Orchestrator: Log RECHNUNGSLAUF START
+
+    Note over Orchestrator: SCHRITT 2 Analyse durchführen
+    Orchestrator->>+Analyzer: analyzeBillingScope(billingDate, true)
+    Analyzer->>+Repository: findByStatusAndDueDateLessThanEqual(ACTIVE, billingDate)
+    Repository-->>-Analyzer: List<DueSchedule>
+    
+    Analyzer->>Analyzer: createAnalysis(schedules, billingDate, true)
+    Note over Analyzer: Gruppierung nach Monaten und Überfällige vs Aktuelle
+    Analyzer->>Analyzer: logAnalysis(analysis)
+    Analyzer-->>-Orchestrator: InvoiceBatchAnalysis
+
+    alt analysis.getTotalCount() == 0
+        Note over Orchestrator: EARLY EXIT Nichts zu verarbeiten
+        Orchestrator->>+VorgangService: vorgangErfolgreichAbschliessen(vorgangId, 0, 0, 0, null)
+        VorgangService-->>-Orchestrator: void
+        Orchestrator-->>Client: InvoiceBatchResult (empty)
+    else Fälligkeiten vorhanden
+        Note over Orchestrator: SCHRITT 3 Batch Verarbeitung
+        Orchestrator->>+Processor: processBatch(analysis, vorgang, billingDate)
+        
+        Note over Processor: Batch ID generieren BATCH plus vorgangsnummer
+        Note over Processor: ResultBuilder initialisieren
+        
+        loop Für jede DueSchedule in analysis
+            Note over Processor: Einzelne Fälligkeit verarbeiten
+            Processor->>Processor: processingleFälligkeit(dueSchedule, ...)
+            
+            Note over Processor: 1 Rechnung erstellen
+            Processor->>+InvoiceFactory: createInvoiceForDueSchedule(dueSchedule, billingDate, batchId, isOverdue)
+            InvoiceFactory-->>-Processor: invoice
+            Processor->>+InvoiceRepo: save(invoice)
+            InvoiceRepo-->>-Processor: savedInvoice
+            
+            Note over Processor: 2 DueSchedule aktualisieren
+            Processor->>+DueScheduleService: markAsCompleted(dueScheduleId, invoiceId, batchId)
+            DueScheduleService-->>-Processor: void
+            
+            Note over Processor: 3 OpenItem erstellen
+            Processor->>+OpenItemFactory: createOpenItemForInvoice(savedInvoice, isOverdue)
+            OpenItemFactory-->>-Processor: openItem
+            Processor->>+OpenItemRepo: save(openItem)
+            OpenItemRepo-->>-Processor: savedOpenItem
+            
+            Note over Processor: ResultBuilder aktualisieren
+            Note over Processor: Success-Log schreiben
+        end
+        
+        Processor->>Processor: validateResult(result)
+        Processor-->>-Orchestrator: InvoiceBatchResult
+        
+        Note over Orchestrator: SCHRITT 4 Vorgang abschließen
+        Orchestrator->>Orchestrator: closeVorgang(vorgang, result, analysis)
+        
+        alt result.hasErrors()
+            Orchestrator->>+VorgangService: vorgangMitFehlerAbschliessen(vorgangId, errorSummary)
+            VorgangService-->>-Orchestrator: void
+        else Erfolg
+            Orchestrator->>+VorgangService: vorgangErfolgreichAbschliessen(vorgangId, processed, created, 0, totalAmount)
+            VorgangService-->>-Orchestrator: void
+        end
+        
+        Note over Orchestrator: Log Vorgang abgeschlossen
+        Orchestrator-->>-Client: InvoiceBatchResult
+    end
+
+---
+
+    Note over Client, OpenItemRepo: FEHLERSZENARIO Exception während Verarbeitung
+
+    Client->>+Orchestrator: runInvoiceBatch(billingDate)
+    Orchestrator->>+VorgangService: starteAutomatischenVorgang(...)
+    VorgangService-->>-Orchestrator: vorgang
+    
+    Orchestrator->>+Analyzer: analyzeBillingScope(billingDate, true)
+    Analyzer-->>-Orchestrator: analysis
+    
+    Orchestrator->>+Processor: processBatch(analysis, vorgang, billingDate)
+    
+    Processor->>+InvoiceFactory: createInvoiceForDueSchedule(...)
+    InvoiceFactory-->>-Processor: invoice
+    
+    Processor->>+InvoiceRepo: save(invoice)
+    Note over InvoiceRepo: Database Exception
+    InvoiceRepo-->>-Processor: Exception
+    
+    Note over Processor: handleProcessingError
+    Processor->>Processor: resultBuilder.addError(error)
+    Processor->>+DueScheduleService: rollbackCompleted(dueScheduleId, reason)
+    DueScheduleService-->>-Processor: void
+    Note over Processor: Error Log schreiben
+    
+    Processor-->>-Orchestrator: InvoiceBatchResult (with errors)
+    
+    Note over Orchestrator: Exception Handling
+    Orchestrator->>+VorgangService: vorgangMitFehlerAbschliessen(vorgangId, errorMessage)
+    VorgangService-->>-Orchestrator: void
+    
+    Orchestrator-->>Client: RuntimeException Rechnungslauf fehlgeschlagen
+
+    Note over Client, Repository: ANALYSE SZENARIO Nur Analyse ohne Verarbeitung
+
+    Client->>+Analyzer: analyzeBillingScope(billingDate, includeAllPreviousMonths)
+    
+    alt includeAllPreviousMonths == true
+        Analyzer->>+Repository: findByStatusAndDueDateLessThanEqual(ACTIVE, billingDate)
+    else nur exakter Stichtag
+        Analyzer->>+Repository: findByStatusAndDueDate(ACTIVE, billingDate)
+    end
+    Repository-->>-Analyzer: List<DueSchedule>
+    
+    Note over Analyzer: Überfällige Fälligkeiten ermitteln
+    Analyzer->>Analyzer: schedules.stream().filter(ds -> ds.getDueDate().isBefore(billingDate))
+    
+    Note over Analyzer: Aktuelle Fälligkeiten ermitteln  
+    Analyzer->>Analyzer: schedules.stream().filter(ds -> ds.getDueDate().equals(billingDate))
+    
+    Note over Analyzer: Gruppierung nach Monaten
+    Analyzer->>Analyzer: schedules.stream().collect(groupingBy(...))
+    
+    Analyzer->>Analyzer: logAnalysis(analysis)
+    Note over Analyzer: Detaillierte Logs Gesamt Überfällig Aktuell und Aufschlüsselung nach Monaten
+    
+    Analyzer-->>-Client: InvoiceBatchAnalysis
+
+    Note over Client, Repository: VALIDIERUNGS SZENARIO Kann Rechnungslauf ausgeführt werden
+
+    Client->>+Analyzer: canRunBillingBatch(billingDate, includeAllPreviousMonths)
+    
+    alt includeAllPreviousMonths == true
+        Analyzer->>+Repository: countByStatusAndDueDateLessThanEqual(ACTIVE, billingDate)
+    else nur exakter Stichtag
+        Analyzer->>+Repository: countByStatusAndDueDateLessThanEqual(ACTIVE, billingDate)
+    end
+    Repository-->>-Analyzer: count
+    
+    alt count > 0
+        Analyzer-->>-Client: true
+    else keine Fälligkeiten
+        Analyzer-->>-Client: false
+    end

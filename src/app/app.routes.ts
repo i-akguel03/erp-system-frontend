@@ -14,6 +14,8 @@ import { ContractCenterComponent } from './components/contract-center/contract-c
 import { DueScheduleListComponent } from './components/schedule-list/schedule-list';
 import { InvoiceListComponent } from './components/invoice-list/invoice-list';
 import { OpenItemList } from './components/open-item-list/open-item-list';
+import { VorgaengeListComponent } from './components/vorgang-list/vorgang-list';
+import { InvoiceBatchListComponent } from './components/invoice-batch-list/invoice-batch-list';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -31,6 +33,9 @@ export const routes: Routes = [
   { path: 'due-schedule', component: DueScheduleListComponent, canActivate: [AuthGuard] },
   { path: 'invoice', component: InvoiceListComponent, canActivate: [AuthGuard] },
   { path: 'open-item', component: OpenItemList, canActivate: [AuthGuard] },
+  { path: 'invoice-batch', component: InvoiceBatchListComponent, canActivate: [AuthGuard] },
+
+  { path: 'vorgang', component: VorgaengeListComponent, canActivate: [AuthGuard] },
 
 
   // Weiterleitungen

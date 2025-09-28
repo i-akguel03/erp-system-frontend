@@ -37,6 +37,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
         { label: 'Fälligkeitspläne', icon: 'bi-calendar-event', routerLink: '/due-schedule' },
         { label: 'Rechnungen', icon: 'bi-receipt', routerLink: '/invoice' },
         { label: 'Offene Posten', icon: 'bi-cash', routerLink: '/open-item' },
+        { label: 'Vorgänge', icon: 'bi-cash', routerLink: '/vorgang' },
+        { label: 'Rechnungslauf', icon: 'bi-cash', routerLink: '/invoice-batch' },
       ]
     },
     { label: 'Vertragscenter', icon: 'bi-briefcase', routerLink: '/contract-center' },

@@ -1,0 +1,290 @@
+classDiagram
+    %% ===============================================================================================
+    %% HAUPTKLASSEN DES INVOICE BATCH SYSTEMS
+    %% ===============================================================================================
+
+    class InvoiceBatchOrchestrator {
+        -Logger logger
+        -InvoiceBatchProcessor processor
+        -InvoiceBatchAnalyzer analyzer
+        -VorgangService vorgangService
+        +runInvoiceBatch(billingDate: LocalDate): InvoiceBatchResult
+        +runInvoiceBatch(billingDate: LocalDate, includeAllPreviousMonths: boolean): InvoiceBatchResult
+        -startVorgang(billingDate: LocalDate, includeAllPreviousMonths: boolean): Vorgang
+        -closeVorgang(vorgang: Vorgang, result: InvoiceBatchResult, analysis: InvoiceBatchAnalysis): void
+    }
+
+    class InvoiceBatchAnalyzer {
+        -Logger logger
+        -DueScheduleRepository dueScheduleRepository
+        +analyzeBillingScope(billingDate: LocalDate, includeAllPreviousMonths: boolean): InvoiceBatchAnalysis
+        +canRunBillingBatch(billingDate: LocalDate, includeAllPreviousMonths: boolean): boolean
+        -createAnalysis(schedules: List~DueSchedule~, billingDate: LocalDate, includeAllPreviousMonths: boolean): InvoiceBatchAnalysis
+        -logAnalysis(analysis: InvoiceBatchAnalysis): void
+    }
+
+    class InvoiceBatchProcessor {
+        -Logger logger
+        -InvoiceFactory invoiceFactory
+        -OpenItemFactory openItemFactory
+        -DueScheduleService dueScheduleService
+        -InvoiceRepository invoiceRepository
+        -OpenItemRepository openItemRepository
+        +processBatch(analysis: InvoiceBatchAnalysis, vorgang: Vorgang, billingDate: LocalDate): InvoiceBatchResult
+        -processingleFälligkeit(dueSchedule: DueSchedule, billingDate: LocalDate, batchId: String, vorgang: Vorgang, resultBuilder: InvoiceBatchResult.Builder): void
+        -handleProcessingError(dueSchedule: DueSchedule, e: Exception, resultBuilder: InvoiceBatchResult.Builder): void
+        -validateResult(result: InvoiceBatchResult): void
+    }
+
+    %% ===============================================================================================
+    %% DATENKLASSEN UND RESULTS
+    %% ===============================================================================================
+
+    class InvoiceBatchResult {
+        -int createdInvoices
+        -int createdOpenItems
+        -int processedDueSchedules
+        -BigDecimal totalAmount
+        -String message
+        -String vorgangsnummer
+        -String batchId
+        -List~String~ errors
+        -List~String~ successMessages
+        +getCreatedInvoices(): int
+        +getCreatedOpenItems(): int
+        +getProcessedDueSchedules(): int
+        +getTotalAmount(): BigDecimal
+        +getMessage(): String
+        +getVorgangsnummer(): String
+        +getBatchId(): String
+        +getErrors(): List~String~
+        +getSuccessMessages(): List~String~
+        +hasErrors(): boolean
+        +hasVorgang(): boolean
+        +isSuccessful(): boolean
+        +getErrorCount(): int
+        +toString(): String
+        +createLegacy(createdInvoices: int, processedDueSchedules: int, totalAmount: BigDecimal, message: String): InvoiceBatchResult
+    }
+
+    class InvoiceBatchResultBuilder {
+        -int createdInvoices
+        -int createdOpenItems
+        -int processedDueSchedules
+        -BigDecimal totalAmount
+        -String message
+        -String vorgangsnummer
+        -String batchId
+        -List~String~ errors
+        -List~String~ successMessages
+        +withVorgangsnummer(vorgangsnummer: String): Builder
+        +withBatchId(batchId: String): Builder
+        +withMessage(message: String): Builder
+        +addCreatedInvoice(invoice: Invoice): Builder
+        +addCreatedOpenItem(openItem: OpenItem): Builder
+        +addProcessedDueSchedule(dueSchedule: DueSchedule): Builder
+        +addError(error: String): Builder
+        +addSuccessMessage(message: String): Builder
+        +addAmount(amount: BigDecimal): Builder
+        +build(): InvoiceBatchResult
+    }
+
+    class InvoiceBatchAnalysis {
+        -List~DueSchedule~ dueSchedules
+        -LocalDate billingDate
+        -boolean includeAllPreviousMonths
+        -long overdueCount
+        -long currentCount
+        -Map~String, List~DueSchedule~~ monthGroups
+        +getDueSchedules(): List~DueSchedule~
+        +getBillingDate(): LocalDate
+        +isIncludeAllPreviousMonths(): boolean
+        +getOverdueCount(): long
+        +getCurrentCount(): long
+        +getMonthGroups(): Map~String, List~DueSchedule~~
+        +getTotalCount(): int
+        +getMonthCount(): int
+        +getFutureCount(): long
+        +isEmpty(): boolean
+        +hasOverdueItems(): boolean
+    }
+
+    class InvoiceBatchPreview {
+        -InvoiceBatchAnalysis analysis
+        -BigDecimal estimatedAmount
+        +getTotalDueSchedules(): int
+        +getOverdueCount(): long
+        +getCurrentCount(): long
+        +getBillingDate(): LocalDate
+        +isIncludeAllPreviousMonths(): boolean
+        +getMonthGroups(): Map~String, List~DueSchedule~~
+        +getMonthCount(): int
+        +getEstimatedAmount(): BigDecimal
+        +toString(): String
+    }
+
+    %% ===============================================================================================
+    %% DOMAIN KLASSEN (Vereinfacht)
+    %% ===============================================================================================
+
+    class Vorgang {
+        -Long id
+        -String vorgangsnummer
+        -String titel
+        -String beschreibung
+        -VorgangTyp typ
+        -String metadaten
+        +getId(): Long
+        +getVorgangsnummer(): String
+        +getTitel(): String
+        +getBeschreibung(): String
+        +getTyp(): VorgangTyp
+        +getMetadaten(): String
+        +getDauerInMs(): long
+        +setBeschreibung(beschreibung: String): void
+        +setMetadaten(metadaten: String): void
+    }
+
+    class DueSchedule {
+        -Long id
+        -String dueNumber
+        -LocalDate dueDate
+        -DueStatus status
+        -BigDecimal amount
+        -Vorgang vorgang
+        +getId(): Long
+        +getDueNumber(): String
+        +getDueDate(): LocalDate
+        +getStatus(): DueStatus
+        +getAmount(): BigDecimal
+        +getVorgang(): Vorgang
+        +setVorgang(vorgang: Vorgang): void
+    }
+
+    class Invoice {
+        -Long id
+        -String invoiceNumber
+        -BigDecimal totalAmount
+        -LocalDate invoiceDate
+        -Vorgang vorgang
+        +getId(): Long
+        +getInvoiceNumber(): String
+        +getTotalAmount(): BigDecimal
+        +getInvoiceDate(): LocalDate
+        +getVorgang(): Vorgang
+        +setVorgang(vorgang: Vorgang): void
+    }
+
+    class OpenItem {
+        -Long id
+        -BigDecimal amount
+        -LocalDate dueDate
+        -Vorgang vorgang
+        +getId(): Long
+        +getAmount(): BigDecimal
+        +getDueDate(): LocalDate
+        +getVorgang(): Vorgang
+        +setVorgang(vorgang: Vorgang): void
+    }
+
+    %% ===============================================================================================
+    %% ENUMS
+    %% ===============================================================================================
+
+    class VorgangTyp {
+        <<enumeration>>
+        RECHNUNGSLAUF
+        MANUAL_PROCESS
+        CORRECTION
+    }
+
+    class DueStatus {
+        <<enumeration>>
+        ACTIVE
+        COMPLETED
+        CANCELLED
+        ERROR
+    }
+
+    %% ===============================================================================================
+    %% SERVICES UND REPOSITORIES (Vereinfacht)
+    %% ===============================================================================================
+
+    class VorgangService {
+        +starteAutomatischenVorgang(typ: VorgangTyp, titel: String): Vorgang
+        +vorgangErfolgreichAbschliessen(id: Long, processed: int, invoices: int, errors: int, amount: BigDecimal): void
+        +vorgangMitFehlerAbschliessen(id: Long, error: String): void
+    }
+
+    class DueScheduleService {
+        +markAsCompleted(id: Long, invoiceId: Long, batchId: String): void
+        +rollbackCompleted(id: Long, reason: String): void
+    }
+
+    class InvoiceFactory {
+        +createInvoiceForDueSchedule(dueSchedule: DueSchedule, billingDate: LocalDate, batchId: String, isOverdue: boolean): Invoice
+    }
+
+    class OpenItemFactory {
+        +createOpenItemForInvoice(invoice: Invoice, isOverdue: boolean): OpenItem
+    }
+
+    class DueScheduleRepository {
+        +findByStatusAndDueDateLessThanEqual(status: DueStatus, date: LocalDate): List~DueSchedule~
+        +findByStatusAndDueDate(status: DueStatus, date: LocalDate): List~DueSchedule~
+        +countByStatusAndDueDateLessThanEqual(status: DueStatus, date: LocalDate): long
+    }
+
+    class InvoiceRepository {
+        +save(invoice: Invoice): Invoice
+    }
+
+    class OpenItemRepository {
+        +save(openItem: OpenItem): OpenItem
+    }
+
+    %% ===============================================================================================
+    %% BEZIEHUNGEN
+    %% ===============================================================================================
+
+    %% Orchestrator Dependencies
+    InvoiceBatchOrchestrator --> InvoiceBatchProcessor : uses
+    InvoiceBatchOrchestrator --> InvoiceBatchAnalyzer : uses
+    InvoiceBatchOrchestrator --> VorgangService : uses
+    InvoiceBatchOrchestrator --> Vorgang : creates
+    InvoiceBatchOrchestrator --> InvoiceBatchResult : returns
+
+    %% Analyzer Dependencies
+    InvoiceBatchAnalyzer --> DueScheduleRepository : uses
+    InvoiceBatchAnalyzer --> InvoiceBatchAnalysis : creates
+    InvoiceBatchAnalyzer --> DueSchedule : queries
+
+    %% Processor Dependencies
+    InvoiceBatchProcessor --> InvoiceFactory : uses
+    InvoiceBatchProcessor --> OpenItemFactory : uses
+    InvoiceBatchProcessor --> DueScheduleService : uses
+    InvoiceBatchProcessor --> InvoiceRepository : uses
+    InvoiceBatchRepository --> OpenItemRepository : uses
+    InvoiceBatchProcessor --> InvoiceBatchResult : creates
+    InvoiceBatchProcessor --> InvoiceBatchResultBuilder : uses
+
+    %% Data Flow
+    InvoiceBatchAnalysis --> DueSchedule : contains
+    InvoiceBatchPreview --> InvoiceBatchAnalysis : wraps
+    InvoiceBatchResult --> InvoiceBatchResultBuilder : created by
+    InvoiceBatchResultBuilder --> Invoice : tracks
+    InvoiceBatchResultBuilder --> OpenItem : tracks
+    InvoiceBatchResultBuilder --> DueSchedule : tracks
+
+    %% Domain Relations
+    Vorgang --> VorgangTyp : has
+    DueSchedule --> DueStatus : has
+    DueSchedule --> Vorgang : belongs to
+    Invoice --> Vorgang : belongs to
+    OpenItem --> Vorgang : belongs to
+
+    %% Factory Relations
+    InvoiceFactory --> Invoice : creates
+    InvoiceFactory --> DueSchedule : uses
+    OpenItemFactory --> OpenItem : creates
+    OpenItemFactory --> Invoice : uses
