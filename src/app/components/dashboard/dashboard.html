@@ -1,80 +1,330 @@
-<div class="container my-5">
-  <!-- Header -->
-  <div class="text-center mb-5">
-    <h1 class="display-3 fw-bold text-gradient">ERP-System Dashboard</h1>
-    <p class="lead text-muted">Ein modernes Fullstack-ERP-System für Vertrieb, Kunden- und Produktmanagement</p>
+<!-- dashboard.component.html -->
+<div class="hero-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h1 class="hero-title">ERP-System Backend</h1>
+      <p class="hero-subtitle">Moderne Enterprise Resource Planning Lösung mit Spring Boot & Angular</p>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a [href]="githubUrl" target="_blank" class="btn btn-dark btn-lg px-4">
+          <i class="bi bi-github me-2"></i>GitHub Repository
+        </a>
+        <a [href]="swaggerUrl" target="_blank" class="btn btn-primary btn-lg px-4">
+          <i class="bi bi-file-text me-2"></i>API Dokumentation
+        </a>
+      </div>
+    </div>
   </div>
+</div>
 
-  <!-- Projektbeschreibung -->
-  <div class="row mb-4">
-    <div class="col-md-12">
-      <div class="card p-4 shadow-lg border-0 bg-light rounded-4">
-        <div class="card-body text-center">
-          <h4 class="card-title mb-3">Über das Projekt</h4>
-          <p class="card-text fs-5 text-secondary">
-            Unser ERP-System ermöglicht effiziente Verwaltung von Produkten, Kunden und Lagerbeständen. 
-            Die moderne Architektur kombiniert ein robustes Backend mit einer dynamischen Angular-Oberfläche.
+<div class="container my-5">
+  <!-- Projektübersicht -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="feature-card project-overview">
+        <div class="card-body">
+          <h2 class="section-title text-center mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>Projektübersicht
+          </h2>
+          <p class="lead text-center text-muted mb-4">
+            Ein vollständiges ERP-System für modernes Geschäftsmanagement mit Fokus auf 
+            Abonnements, Rechnungsstellung und Kundenbeziehungen.
           </p>
+          <div class="row g-3">
+            <div class="col-md-4 text-center">
+              <div class="stat-box">
+                <i class="bi bi-code-slash fs-1 text-primary mb-2"></i>
+                <h4 class="fw-bold">REST API</h4>
+                <p class="text-muted small">Vollständige Backend-Architektur</p>
+              </div>
+            </div>
+            <div class="col-md-4 text-center">
+              <div class="stat-box">
+                <i class="bi bi-shield-check fs-1 text-success mb-2"></i>
+                <h4 class="fw-bold">Sicherheit</h4>
+                <p class="text-muted small">JWT & Spring Security</p>
+              </div>
+            </div>
+            <div class="col-md-4 text-center">
+              <div class="stat-box">
+                <i class="bi bi-database fs-1 text-info mb-2"></i>
+                <h4 class="fw-bold">Datenbank</h4>
+                <p class="text-muted small">PostgreSQL/MSSQL Support</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Technologien -->
-  <div class="row g-4">
-    <div class="col-md-4">
-      <div class="tech-card shadow-lg rounded-4 text-white p-4 text-center" style="background: linear-gradient(135deg,#1f4037,#99f2c8)">
-        <i class="bi bi-server display-4 mb-3"></i>
-        <h5 class="fw-bold mb-2">Backend</h5>
-        <p>Spring Boot, Spring Security & JWT, MSSQL/PostgreSQL</p>
+  <!-- Technologie-Stack -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <h2 class="section-title text-center mb-4">
+        <i class="bi bi-layers-fill me-2"></i>Technologie-Stack
+      </h2>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-3" *ngFor="let tech of technologies">
+      <div class="tech-card" [class]="tech.colorClass">
+        <div class="tech-icon">
+          <i [class]="tech.icon"></i>
+        </div>
+        <h5 class="fw-bold mb-2">{{ tech.title }}</h5>
+        <p class="small mb-0">{{ tech.description }}</p>
       </div>
     </div>
+  </div>
 
-    <div class="col-md-4">
-      <div class="tech-card shadow-lg rounded-4 text-white p-4 text-center" style="background: linear-gradient(135deg,#ff416c,#ff4b2b)">
-        <i class="bi bi-browser-chrome display-4 mb-3"></i>
-        <h5 class="fw-bold mb-2">Frontend</h5>
-        <p>Angular, Bootstrap, Responsive Design & interaktive Tabellen</p>
+  <!-- Hauptfunktionen -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <h2 class="section-title text-center mb-4">
+        <i class="bi bi-star-fill me-2"></i>Hauptfunktionen
+      </h2>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-4" *ngFor="let feature of features">
+      <div class="feature-card feature-hover">
+        <div class="feature-icon-wrapper mb-3">
+          <i [class]="feature.icon + ' feature-icon'"></i>
+        </div>
+        <h5 class="fw-bold mb-3">{{ feature.title }}</h5>
+        <p class="text-muted mb-3">{{ feature.description }}</p>
+        <ul class="list-unstyled small">
+          <li *ngFor="let detail of feature.details" class="mb-1">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>{{ detail }}
+          </li>
+        </ul>
       </div>
     </div>
+  </div>
 
-    <div class="col-md-4">
-      <div class="tech-card shadow-lg rounded-4 text-white p-4 text-center" style="background: linear-gradient(135deg,#1e3c72,#2a5298)">
-        <i class="bi bi-cloud-arrow-up display-4 mb-3"></i>
-        <h5 class="fw-bold mb-2">Deployment & CI/CD</h5>
-        <p>Docker, GitHub Actions, Render Cloud oder lokale Server</p>
+  <!-- Architektur-Highlights -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="feature-card architecture-card">
+        <h2 class="section-title text-center mb-4">
+          <i class="bi bi-diagram-3-fill me-2"></i>Architektur-Highlights
+        </h2>
+        <div class="row g-4">
+          <div class="col-md-6" *ngFor="let highlight of architectureHighlights">
+            <div class="d-flex">
+              <div class="flex-shrink-0">
+                <div class="architecture-icon">
+                  <i [class]="highlight.icon"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h5 class="fw-bold mb-2">{{ highlight.title }}</h5>
+                <p class="text-muted small mb-0">{{ highlight.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Call to Action -->
-  <div class="text-center mt-5">
-    <p class="fs-5">Starte die Anwendung und verwalte Kunden, Produkte und Bestände effizient!</p>
-    <a href="https://erp-system-backend-yo8w.onrender.com/swagger-ui/index.html" class="btn btn-gradient btn-lg text-white fw-bold">API Dokumentation</a>
+  <div class="row">
+    <div class="col-12">
+      <div class="cta-section text-center">
+        <h3 class="fw-bold mb-3">Bereit für den nächsten Schritt?</h3>
+        <p class="lead text-muted mb-4">
+          Erkunden Sie den vollständigen Quellcode und die API-Dokumentation
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a [href]="githubUrl" target="_blank" class="btn btn-lg btn-outline-dark px-5">
+            <i class="bi bi-github me-2"></i>Code ansehen
+          </a>
+          <a [href]="swaggerUrl" target="_blank" class="btn btn-lg btn-gradient px-5">
+            <i class="bi bi-rocket-takeoff me-2"></i>API testen
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
-.text-gradient {
-  background: linear-gradient(90deg, #ff416c, #ff4b2b);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+  .hero-section {
+    padding: 4rem 0 3rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-bottom: 3rem;
+  }
 
-.tech-card {
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-.tech-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-}
+  .hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    animation: fadeInUp 0.8s ease-out;
+  }
 
-.btn-gradient {
-  background: linear-gradient(90deg, #1f4037, #99f2c8);
-  border: none;
-}
-.btn-gradient:hover {
-  background: linear-gradient(90deg, #99f2c8, #1f4037);
-}
+  .hero-subtitle {
+    font-size: 1.3rem;
+    opacity: 0.95;
+    margin-bottom: 2rem;
+    animation: fadeInUp 1s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .feature-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+  }
+
+  .feature-hover:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  }
+
+  .section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+  }
+
+  .tech-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    border-left: 4px solid;
+  }
+
+  .tech-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+  }
+
+  .tech-card.primary {
+    border-left-color: #667eea;
+  }
+
+  .tech-card.success {
+    border-left-color: #38ef7d;
+  }
+
+  .tech-card.danger {
+    border-left-color: #f45c43;
+  }
+
+  .tech-card.info {
+    border-left-color: #00f2fe;
+  }
+
+  .tech-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .tech-card.primary .tech-icon {
+    color: #667eea;
+  }
+
+  .tech-card.success .tech-icon {
+    color: #11998e;
+  }
+
+  .tech-card.danger .tech-icon {
+    color: #eb3349;
+  }
+
+  .tech-card.info .tech-icon {
+    color: #4facfe;
+  }
+
+  .feature-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .feature-icon {
+    font-size: 1.8rem;
+    color: white;
+  }
+
+  .stat-box {
+    padding: 1.5rem;
+  }
+
+  .project-overview {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+
+  .architecture-card {
+    background: linear-gradient(to bottom right, #fafafa, #f0f0f0);
+  }
+
+  .architecture-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  .cta-section {
+    padding: 3rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 25px rgba(17, 153, 142, 0.3);
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.1rem;
+    }
+  }
 </style>
-

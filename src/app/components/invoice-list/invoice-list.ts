@@ -307,7 +307,7 @@ getItemsCount(invoice: Invoice): number {
   }
 
   canCancel(invoice: Invoice): boolean {
-    return invoice.status === 'DRAFT' || invoice.status === 'SENT';
+    return invoice.status === 'ACTIVE';
   }
 
   canEdit(invoice: Invoice): boolean {
