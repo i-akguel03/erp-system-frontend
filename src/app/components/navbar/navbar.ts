@@ -30,6 +30,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       icon: 'bi-speedometer2', 
       routerLink: '/dashboard' 
     },
+    { label: 'Vertragscenter', icon: 'bi-briefcase', routerLink: '/contract-center' },
     {
       label: 'Stammdaten',
       icon: 'bi-database',
@@ -45,7 +46,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       children: [
         { label: 'Verträge', icon: 'bi-file-text', routerLink: '/contract' },
         { label: 'Abonnements', icon: 'bi-arrow-repeat', routerLink: '/subscription' },
-        { label: 'Vertragscenter', icon: 'bi-briefcase', routerLink: '/contract-center' }
       ]
     },
     {

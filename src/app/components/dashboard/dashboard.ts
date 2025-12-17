@@ -16,7 +16,7 @@ export class Dashboard implements OnInit {
   technologies = [
     {
       title: 'Backend',
-      description: 'Spring Boot 3.x mit Java 17',
+      description: 'Spring Boot mit Java 21',
       icon: 'bi bi-server fs-1',
       colorClass: 'primary'
     },
@@ -28,13 +28,13 @@ export class Dashboard implements OnInit {
     },
     {
       title: 'Datenbank',
-      description: 'PostgreSQL & MSSQL Support',
+      description: 'PostgreSQL',
       icon: 'bi bi-database fs-1',
       colorClass: 'info'
     },
     {
       title: 'Deployment',
-      description: 'Docker & Cloud-Ready',
+      description: 'Cloud-Ready',
       icon: 'bi bi-cloud-arrow-up fs-1',
       colorClass: 'danger'
     }
@@ -48,8 +48,6 @@ export class Dashboard implements OnInit {
       details: [
         'Kundenprofile & Kontakte',
         'Adressverwaltung',
-        'Interaktionshistorie',
-        'Segmentierung'
       ]
     },
     {
@@ -80,8 +78,6 @@ export class Dashboard implements OnInit {
       icon: 'bi bi-receipt',
       details: [
         'Batch-Processing',
-        'PDF-Generierung',
-        'Email-Versand',
         'Zahlungsverfolgung'
       ]
     },
@@ -92,7 +88,6 @@ export class Dashboard implements OnInit {
       details: [
         'Automatische Terminierung',
         'Erinnerungen',
-        'Mahnwesen',
         'Überfälligkeits-Tracking'
       ]
     },
@@ -102,9 +97,7 @@ export class Dashboard implements OnInit {
       icon: 'bi bi-code-square',
       details: [
         'Swagger/OpenAPI 3.0',
-        'Versionierung',
         'CORS-Support',
-        'Rate Limiting'
       ]
     }
   ];

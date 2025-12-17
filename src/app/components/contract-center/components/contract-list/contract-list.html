@@ -13,12 +13,12 @@
         <i class="fas fa-search text-muted"></i>
       </span>
     </div>
-    <button class="btn btn-primary btn-sm d-flex align-items-center" 
+    <!-- <button class="btn btn-primary btn-sm d-flex align-items-center" 
             (click)="onContractAction('neu')"
             title="Neuer Vertrag">
       <i class="fas fa-plus me-1"></i>
       <span class="d-none d-lg-inline">Neu</span>
-    </button>
+    </button> -->
   </div>
 </div>
 
@@ -58,10 +58,12 @@
           <tbody>
             <tr *ngFor="let contract of filteredContracts" 
                 (click)="selectContract(contract)"
-                (contextmenu)="onContractRightClick($event, contract)"
                 [class]="{'table-active bg-primary bg-opacity-10': isSelectedContract(contract)}"
                 class="user-select-none cursor-pointer">
-              
+
+                                <!-- (contextmenu)="onContractRightClick($event, contract)" -->
+
+                
               <td class="fw-bold text-primary">{{ contract.contractNumber }}</td>
               
               <td>
