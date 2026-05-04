@@ -3,45 +3,30 @@
      style="overflow: hidden !important;">
 
   <!-- Mobile Top Header -->
-  <div class="d-md-none d-flex align-items-center bg-primary text-white flex-shrink-0 px-2"
+  <div class="d-md-none d-flex align-items-center bg-white border-bottom flex-shrink-0 px-2"
        *ngIf="isMobile"
        style="height: 56px; z-index: 1000;">
 
     <!-- Back chevron or spacer -->
     <button *ngIf="canNavigateBack()"
-            class="border-0 bg-transparent d-flex align-items-center justify-content-center p-0"
-            style="min-width: 44px; height: 44px; color: white;"
+            class="btn btn-sm border-0 bg-transparent text-primary d-flex align-items-center justify-content-center"
+            style="width: 44px; height: 44px;"
             (click)="navigateBack()">
-      <i class="fas fa-chevron-left" style="font-size: 1.3rem;"></i>
+      <i class="fas fa-chevron-left" style="font-size: 1.2rem;"></i>
     </button>
-    <div *ngIf="!canNavigateBack()" style="min-width: 44px;"></div>
+    <div *ngIf="!canNavigateBack()" style="width: 44px;"></div>
 
     <!-- Title + subtitle -->
     <div class="flex-grow-1 text-center overflow-hidden px-2">
-      <div class="fw-semibold text-truncate" style="font-size: 1rem; line-height: 1.3;">
+      <div class="fw-semibold text-dark text-truncate" style="font-size: 1rem; line-height: 1.3;">
         {{ getMobileNavTitle() }}
       </div>
       <div *ngIf="selectedContract && mobileCurrentView !== 'contracts'"
-           class="text-white-50 text-truncate" style="font-size: 0.75rem; line-height: 1.2;">
+           class="text-muted text-truncate" style="font-size: 0.75rem; line-height: 1.2;">
         {{ selectedContract.contractTitle }}
       </div>
     </div>
 
-    <!-- Contextual + button -->
-    <button class="border-0 bg-transparent d-flex align-items-center justify-content-center p-0"
-            style="min-width: 44px; height: 44px; color: white;"
-            *ngIf="mobileCurrentView === 'contracts'"
-            (click)="openContractModal('create')">
-      <i class="fas fa-plus" style="font-size: 1.3rem;"></i>
-    </button>
-    <button class="border-0 bg-transparent d-flex align-items-center justify-content-center p-0"
-            style="min-width: 44px; height: 44px; color: white;"
-            *ngIf="mobileCurrentView === 'subscriptions' && selectedContract"
-            (click)="openSubscriptionModal()">
-      <i class="fas fa-plus" style="font-size: 1.3rem;"></i>
-    </button>
-    <div *ngIf="mobileCurrentView === 'financial' || (mobileCurrentView === 'subscriptions' && !selectedContract)"
-         style="min-width: 44px;"></div>
   </div>
   
   <!-- Desktop: Normal Layout - Fixed Height Layout -->
@@ -152,12 +137,19 @@
          style="transition: transform 0.3s ease; z-index: 100;">
       <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
         <div class="card-header bg-light flex-shrink-0">
-          <div class="d-flex align-items-center">
-            <i class="fas fa-file-contract me-2 text-primary"></i>
-            <span class="fw-semibold">Verträge</span>
-            <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
-              {{ contracts.length }}
-            </span>
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-file-contract me-2 text-primary"></i>
+              <span class="fw-semibold">Verträge</span>
+              <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
+                {{ contracts.length }}
+              </span>
+            </div>
+            <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                    (click)="openContractModal('create')">
+              <i class="fas fa-plus"></i>
+              <span>Neu</span>
+            </button>
           </div>
         </div>
         <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">

@@ -127,8 +127,8 @@ getContractStatusClass(contract: Contract): string {
     const rect = btn.getBoundingClientRect();
     this.contextMenuContract = contract;
     this.contextMenuPosition = {
-      x: Math.max(0, Math.min(rect.right - 220, window.innerWidth - 224)),
-      y: Math.min(rect.bottom + 4, window.innerHeight - 224)
+      x: Math.max(4, Math.min(rect.right - 220, window.innerWidth - 224)),
+      y: this.calcMenuY(rect.bottom, rect.top)
     };
     this.contextMenuVisible = true;
   }
@@ -136,13 +136,29 @@ getContractStatusClass(contract: Contract): string {
   onContractRightClick(event: MouseEvent, contract: Contract): void {
     event.preventDefault();
     event.stopPropagation();
-
     this.contextMenuContract = contract;
     this.contextMenuPosition = {
-      x: Math.min(event.clientX, window.innerWidth - 220),
-      y: Math.min(event.clientY, window.innerHeight - 200)
+      x: Math.max(4, Math.min(event.clientX, window.innerWidth - 224)),
+      y: this.calcMenuY(event.clientY, event.clientY)
     };
     this.contextMenuVisible = true;
+  }
+
+  private calcMenuY(triggerBottom: number, triggerTop: number): number {
+    const menuH = 252;
+    const isMobile = window.innerWidth <= 768;
+    // On mobile the sliding panel has transform:translateX(0) which makes
+    // position:fixed children relative to the panel, not the viewport.
+    // The panel starts below the 56px header and ends above the 62px tab bar.
+    const headerH = isMobile ? 56 : 0;
+    const tabBarH = isMobile ? 62 : 0;
+    const panelH = window.innerHeight - headerH - tabBarH;
+    const bottomInPanel = triggerBottom - headerH;
+    const topInPanel    = triggerTop   - headerH;
+    const spaceBelow = panelH - bottomInPanel;
+    return spaceBelow >= menuH
+      ? Math.max(4, bottomInPanel + 4)
+      : Math.max(4, topInPanel - menuH - 4);
   }
 
   onContractAction(action: string): void {
