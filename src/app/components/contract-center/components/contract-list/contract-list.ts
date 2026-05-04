@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, OnDestroy, HostListener, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -18,7 +18,7 @@ interface ContractActionEvent {
   templateUrl: './contract-list.html',
   styleUrls: ['./contract-list.scss']
 })
-export class ContractListComponent implements OnInit, OnDestroy {
+export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
@@ -49,8 +49,10 @@ export class ContractListComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  ngOnChanges(): void {
-    this.performSearch(this.searchTerm);
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['contracts']) {
+      this.performSearch(this.searchTerm);
+    }
   }
 
   private setupSearch(): void {
@@ -114,12 +116,6 @@ getContractStatusClass(contract: Contract): string {
 }
 
 
-  private safeDate(value?: string | Date): Date | null {
-    if (!value) return null;
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? null : d;
-  }
-
   // Kontextmenü-Funktionen
   onContractRightClick(event: MouseEvent, contract: Contract): void {
     event.preventDefault();
@@ -149,22 +145,22 @@ getContractStatusClass(contract: Contract): string {
     this.contextMenuContract = null;
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
+  @HostListener('document:click')
+  onDocumentClick(): void {
     if (this.contextMenuVisible) {
       this.closeContextMenu();
     }
   }
 
-  @HostListener('document:keydown.escape', ['$event'])
-  onEscapeKey(event: KeyboardEvent): void {
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
     if (this.contextMenuVisible) {
       this.closeContextMenu();
     }
   }
 
-  @HostListener('window:resize', ['$event'])
-  onWindowResize(event: Event): void {
+  @HostListener('window:resize')
+  onWindowResize(): void {
     if (this.contextMenuVisible) {
       this.closeContextMenu();
     }

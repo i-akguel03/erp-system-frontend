@@ -1,8 +1,8 @@
-// financial-tabs.component.ts
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription as RxSubscription } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
+import { ConfirmationService } from 'primeng/api';
 
 import { Contract } from '../../../../models/Contract';
 import { Subscription } from '../../../../models/Subscription';
@@ -14,6 +14,7 @@ import { OpenItem } from '../../../../models/OpenItem';
 import { DueScheduleService } from '../../../../services/due-schedule-service';
 import { InvoiceService } from '../../../../services/invoice-service';
 import { OpenItemService } from '../../../../services/open-item-service';
+import { NotificationService } from '../../../../services/notification.service';
 
 import { DueScheduleTabComponent } from './components/due-schedule-tab/due-schedule-tab';
 import { InvoiceTabComponent } from './components/invoice-tab/invoice-tab';
@@ -93,12 +94,14 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
 
   activeTab: 'schedule' | 'invoices' | 'openitems' = 'schedule';
 
-  private subscriptions: RxSubscription[] = [];
+  private destroy$ = new Subject<void>();
 
   constructor(
     private dueScheduleService: DueScheduleService,
     private invoiceService: InvoiceService,
-    private openItemService: OpenItemService
+    private openItemService: OpenItemService,
+    private notificationService: NotificationService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -112,8 +115,8 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Cleanup subscriptions
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   setActiveTab(tab: 'schedule' | 'invoices' | 'openitems'): void {
@@ -122,7 +125,6 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
 
   // Invoice Action Handler
   onInvoiceAction(event: InvoiceActionEvent): void {
-    console.log('Invoice Action:', event);
     
     switch (event.action) {
       case 'edit':
@@ -148,7 +150,6 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
 
   // OpenItem Action Handler
   onOpenItemAction(event: OpenItemActionEvent): void {
-    console.log('OpenItem Action:', event);
     
     switch (event.action) {
       case 'payment':
@@ -164,8 +165,6 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
         this.cancelOpenItem(event.openItem);
         break;
       case 'details':
-        // Details werden bereits in der Child-Komponente behandelt
-        console.log('Details Action - wird in Child-Komponente behandelt');
         break;
       default:
         // Für andere Actions an Parent weiterleiten
@@ -187,39 +186,45 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private cancelInvoice(invoice: Invoice): void {
-    if (!invoice.id || !confirm('Möchten Sie diese Rechnung wirklich stornieren?')) return;
-    
-    this.invoiceService.cancelInvoice(invoice.id).subscribe({
-      next: (updated) => {
-        this.updateLocalInvoice(updated);
-        this.showSuccessMessage('Rechnung wurde storniert');
-      },
-      error: (err) => this.handleError('Fehler beim Stornieren der Rechnung', err)
+    if (!invoice.id) return;
+
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diese Rechnung wirklich stornieren?',
+      header: 'Rechnung stornieren',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        this.invoiceService.cancelInvoice(invoice.id!).subscribe({
+          next: (updated) => {
+            this.updateLocalInvoice(updated);
+            this.notificationService.success('Rechnung wurde storniert');
+          },
+          error: (err) => this.handleError('Fehler beim Stornieren der Rechnung', err)
+        });
+      }
     });
   }
 
   private deleteInvoice(invoice: Invoice): void {
-    if (!invoice.id || !confirm('Möchten Sie diese Rechnung wirklich löschen?')) return;
-    
-    this.invoiceService.deleteInvoice(invoice.id).subscribe({
-      next: () => {
-        this.invoices = this.invoices.filter(i => i.id !== invoice.id);
-        this.showSuccessMessage('Rechnung wurde gelöscht');
-      },
-      error: (err) => this.handleError('Fehler beim Löschen der Rechnung', err)
-    });
-  }
-
-  private duplicateInvoice(invoice: Invoice): void {
     if (!invoice.id) return;
-    
-    // this.invoiceService.duplicateInvoice(invoice.id).subscribe({
-    //   next: (duplicated) => {
-    //     this.invoices.push(duplicated);
-    //     this.showSuccessMessage('Rechnung wurde dupliziert');
-    //   },
-    //   error: (err) => this.handleError('Fehler beim Duplizieren der Rechnung', err)
-    // });
+
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diese Rechnung wirklich löschen?',
+      header: 'Rechnung löschen',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        this.invoiceService.deleteInvoice(invoice.id!).subscribe({
+          next: () => {
+            this.invoices = this.invoices.filter(i => i.id !== invoice.id);
+            this.notificationService.success('Rechnung wurde gelöscht');
+          },
+          error: (err) => this.handleError('Fehler beim Löschen der Rechnung', err)
+        });
+      }
+    });
   }
 
   // OpenItem Actions
@@ -236,20 +241,28 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private cancelOpenItem(openItem: OpenItem): void {
-    if (!openItem.id || !confirm('Möchten Sie diesen offenen Posten wirklich stornieren?')) return;
-    
-    this.openItemService.cancelOpenItem(openItem.id).subscribe({
-      next: (updated) => {
-        this.updateLocalOpenItem(updated);
-        this.showSuccessMessage('Offener Posten wurde storniert');
-      },
-      error: (err) => this.handleError('Fehler beim Stornieren des offenen Postens', err)
+    if (!openItem.id) return;
+
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diesen offenen Posten wirklich stornieren?',
+      header: 'Posten stornieren',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        this.openItemService.cancelOpenItem(openItem.id!).subscribe({
+          next: (updated) => {
+            this.updateLocalOpenItem(updated);
+            this.notificationService.success('Offener Posten wurde storniert');
+          },
+          error: (err) => this.handleError('Fehler beim Stornieren des offenen Postens', err)
+        });
+      }
     });
   }
 
   // Modal Management - Payment
   openPaymentModal(openItem: OpenItem): void {
-    console.log('Opening payment modal for:', openItem);
     this.selectedOpenItemForPayment = { ...openItem };
     this.paymentAmount = openItem.outstandingAmount || 0;
     this.paymentMethod = '';
@@ -287,7 +300,6 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
 
   // Modal Management - Edit OpenItem
   openEditOpenItemModal(openItem: OpenItem): void {
-    console.log('Opening edit modal for OpenItem:', openItem);
     if (!openItem) {
       console.error('Fehler: OpenItem ist null oder undefined');
       this.handleError('Kein gültiger offener Posten zum Bearbeiten ausgewählt');
@@ -383,13 +395,9 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private updateLocalOpenItem(updated: OpenItem): void {
-    console.log('Updating local OpenItem:', updated);
     const index = this.openItems.findIndex(i => i.id === updated.id);
     if (index >= 0) {
       this.openItems[index] = updated;
-      console.log('Local OpenItem updated at index:', index);
-    } else {
-      console.warn('OpenItem not found in local array for update:', updated.id);
     }
   }
 
@@ -409,13 +417,12 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private handleError(message: string, err?: any): void {
-    console.error(message, err);
-    alert(message + (err?.error?.message ? ': ' + err.error.message : ''));
+    const detail = err?.error?.message ? `${message}: ${err.error.message}` : message;
+    this.notificationService.error(detail);
   }
 
   private showSuccessMessage(message: string): void {
-    console.log('Success:', message);
-    alert(message);
+    this.notificationService.success(message);
   }
 
   getCustomerById(customerId?: string): Customer | undefined {
@@ -441,20 +448,20 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     this.loading.schedules = true;
     this.errors.schedules = null;
 
-    const sub = this.dueScheduleService.getDueSchedulesBySubscription(this.selectedSubscription.id).subscribe({
-      next: (schedules) => {
-        this.dueSchedules = schedules;
-        this.loading.schedules = false;
-      },
-      error: (err) => {
-        console.error('Fehler beim Laden der Fälligkeitspläne:', err);
-        this.errors.schedules = 'Fehler beim Laden der Fälligkeitspläne';
-        this.loading.schedules = false;
-        this.dueSchedules = [];
-      }
-    });
-
-    this.subscriptions.push(sub);
+    this.dueScheduleService.getDueSchedulesBySubscription(this.selectedSubscription.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (schedules) => {
+          this.dueSchedules = schedules;
+          this.loading.schedules = false;
+        },
+        error: (err) => {
+          console.error('Fehler beim Laden der Fälligkeitspläne:', err);
+          this.errors.schedules = 'Fehler beim Laden der Fälligkeitspläne';
+          this.loading.schedules = false;
+          this.dueSchedules = [];
+        }
+      });
   }
 
   private loadInvoices(): void {
@@ -463,20 +470,20 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     this.loading.invoices = true;
     this.errors.invoices = null;
 
-    const sub = this.invoiceService.getInvoicesBySubscriptionIds([this.selectedSubscription.id]).subscribe({
-      next: (invoices) => {
-        this.invoices = invoices;
-        this.loading.invoices = false;
-      },
-      error: (err) => {
-        console.error('Fehler beim Laden der Rechnungen:', err);
-        this.errors.invoices = 'Fehler beim Laden der Rechnungen';
-        this.loading.invoices = false;
-        this.invoices = [];
-      }
-    });
-
-    this.subscriptions.push(sub);
+    this.invoiceService.getInvoicesBySubscriptionIds([this.selectedSubscription.id])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (invoices) => {
+          this.invoices = invoices;
+          this.loading.invoices = false;
+        },
+        error: (err) => {
+          console.error('Fehler beim Laden der Rechnungen:', err);
+          this.errors.invoices = 'Fehler beim Laden der Rechnungen';
+          this.loading.invoices = false;
+          this.invoices = [];
+        }
+      });
   }
 
   private loadOpenItems(): void {
@@ -485,20 +492,20 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     this.loading.openItems = true;
     this.errors.openItems = null;
 
-    const sub = this.openItemService.getOpenItemsBySubscription(this.selectedSubscription.id).subscribe({
-      next: (openItems) => {
-        this.openItems = openItems;
-        this.loading.openItems = false;
-      },
-      error: (err) => {
-        console.error('Fehler beim Laden der offenen Posten:', err);
-        this.errors.openItems = 'Fehler beim Laden der offenen Posten';
-        this.loading.openItems = false;
-        this.openItems = [];
-      }
-    });
-
-    this.subscriptions.push(sub);
+    this.openItemService.getOpenItemsBySubscription(this.selectedSubscription.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (openItems) => {
+          this.openItems = openItems;
+          this.loading.openItems = false;
+        },
+        error: (err) => {
+          console.error('Fehler beim Laden der offenen Posten:', err);
+          this.errors.openItems = 'Fehler beim Laden der offenen Posten';
+          this.loading.openItems = false;
+          this.openItems = [];
+        }
+      });
   }
 
   private clearData(): void {

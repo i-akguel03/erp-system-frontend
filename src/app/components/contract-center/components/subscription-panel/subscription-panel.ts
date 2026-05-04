@@ -18,6 +18,21 @@ export class SubscriptionPanelComponent {
 
   @Output() subscriptionSelected = new EventEmitter<Subscription>();
 
+  readonly Math = Math;
+  hoveredId: string | null = null;
+
+  onMouseEnter(subscription: Subscription): void {
+    this.hoveredId = subscription.id ?? null;
+  }
+
+  onMouseLeave(): void {
+    this.hoveredId = null;
+  }
+
+  isHovered(subscription: Subscription): boolean {
+    return this.hoveredId === subscription.id;
+  }
+
   selectSubscription(subscription: Subscription): void {
     this.subscriptionSelected.emit(subscription);
   }

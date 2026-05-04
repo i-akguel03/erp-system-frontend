@@ -12,18 +12,20 @@ import { ContractService } from '../../services/contract-service';
 import { CustomerService } from '../../services/customer-service';
 import { SubscriptionService } from '../../services/subscription-service';
 import { InvoiceService } from '../../services/invoice-service';
+import { ConfirmationService } from 'primeng/api';
+import { NotificationService } from '../../services/notification.service';
 
 import { SubscriptionPanelComponent } from './components/subscription-panel/subscription-panel';
 import { FinancialTabsComponent } from './components/financial-tabs/financial-tabs';
 import { ContractListComponent } from './components/contract-list/contract-list';
 
 interface ContractActionEvent {
-  action: string;
+  action: 'neu' | 'edit' | 'duplicate' | 'kündigen' | 'stornieren';
   contract: Contract;
 }
 
 interface InvoiceActionEvent {
-  action: string;
+  action: 'edit' | 'send' | 'details';
   invoice: Invoice;
 }
 
@@ -73,7 +75,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     private contractService: ContractService,
     private customerService: CustomerService,
     private subscriptionService: SubscriptionService,
-    private invoiceService: InvoiceService
+    private invoiceService: InvoiceService,
+    private confirmationService: ConfirmationService,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -145,13 +149,10 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     if (!this.isMobile) return;
 
     this.mobileCurrentView = view;
-    
-    // Add to navigation stack if not already the current view
+
     if (this.mobileNavigationStack[this.mobileNavigationStack.length - 1] !== view) {
       this.mobileNavigationStack.push(view);
     }
-    
-    console.log('Navigated to:', view, 'Stack:', this.mobileNavigationStack);
   }
 
   // Mobile navigation methods
@@ -168,38 +169,25 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  // FIXED: Improved back navigation using stack
   navigateBack(): void {
-    if (!this.isMobile) return;
+    if (!this.isMobile || this.mobileNavigationStack.length <= 1) return;
 
-    console.log('Navigate back from:', this.mobileCurrentView, 'Stack:', this.mobileNavigationStack);
+    this.mobileNavigationStack.pop();
+    const previousView = this.mobileNavigationStack[this.mobileNavigationStack.length - 1];
+    this.mobileCurrentView = previousView;
 
-    if (this.mobileNavigationStack.length > 1) {
-      // Remove current view from stack
-      this.mobileNavigationStack.pop();
-      
-      // Get previous view
-      const previousView = this.mobileNavigationStack[this.mobileNavigationStack.length - 1];
-      this.mobileCurrentView = previousView;
-      
-      // Clear selections when navigating back
-      if (previousView === 'contracts') {
-        this.selectedContract = null;
-        this.selectedSubscription = null;
-        this.subscriptions = [];
-      } else if (previousView === 'subscriptions') {
-        this.selectedSubscription = null;
-      }
-      
-      console.log('Navigated back to:', previousView, 'New stack:', this.mobileNavigationStack);
+    if (previousView === 'contracts') {
+      this.selectedContract = null;
+      this.selectedSubscription = null;
+      this.subscriptions = [];
+    } else if (previousView === 'subscriptions') {
+      this.selectedSubscription = null;
     }
   }
 
-  // FIXED: Reset method now also resets the stack
   resetToContracts(): void {
     if (!this.isMobile) return;
 
-    console.log('Reset to contracts view');
     this.mobileCurrentView = 'contracts';
     this.mobileNavigationStack = ['contracts']; // Reset stack
     this.selectedContract = null;
@@ -296,8 +284,6 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   onContractSelected(contract: Contract): void {
     if (this.selectedContract?.id === contract.id && !this.isMobile) return;
 
-    console.log('Contract selected:', contract.contractTitle);
-
     this.selectedContract = contract;
     this.subscriptions = [];
     this.selectedSubscription = null;
@@ -313,13 +299,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   onSubscriptionSelected(subscription: Subscription): void {
     if (this.selectedSubscription?.id === subscription.id && !this.isMobile) return;
 
-    console.log('Subscription selected:', subscription.productName);
-
     this.selectedSubscription = subscription;
 
-    // FIXED: Use proper navigation method for mobile
     if (this.isMobile) {
-      console.log('Mobile: Navigating to financial view');
       this.navigateToMobileView('financial');
     }
   }
@@ -384,77 +366,78 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Contract action methods
-  private createNewContract(): void {
-    console.log('Neuen Vertrag erstellen');
-  }
+  // Contract action methods — werden in einer späteren Iteration implementiert
+  private createNewContract(): void {}
 
-  private editContract(contract: Contract): void {
-    console.log('Vertrag bearbeiten:', contract);
-  }
+  private editContract(_contract: Contract): void {}
 
-  private duplicateContract(contract: Contract): void {
-    console.log('Vertrag duplizieren:', contract);
-  }
+  private duplicateContract(_contract: Contract): void {}
 
   private terminateContract(contract: Contract): void {
-    if (confirm(`Möchten Sie den Vertrag "${contract.contractTitle}" wirklich kündigen?`)) {
-      console.log('Vertrag kündigen:', contract);
-    }
+    this.confirmationService.confirm({
+      message: `Möchten Sie den Vertrag "${contract.contractTitle}" wirklich kündigen?`,
+      header: 'Vertrag kündigen',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Kündigen',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        // TODO: contractService.terminateContract(contract.id)
+      }
+    });
   }
 
   private cancelContract(contract: Contract): void {
-    if (confirm(`Möchten Sie den Vertrag "${contract.contractTitle}" wirklich stornieren?`)) {
-      console.log('Vertrag stornieren:', contract);
-    }
+    this.confirmationService.confirm({
+      message: `Möchten Sie den Vertrag "${contract.contractTitle}" wirklich stornieren?`,
+      header: 'Vertrag stornieren',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        // TODO: contractService.cancelContract(contract.id)
+      }
+    });
   }
 
   // Invoice action methods
-  private editInvoice(invoice: Invoice): void {
-    console.log('Rechnung bearbeiten:', invoice);
-  }
+  private editInvoice(_invoice: Invoice): void {}
 
   private sendInvoice(invoice: Invoice): void {
     if (!invoice.id) return;
 
     this.invoiceService.sendInvoice(invoice.id).subscribe({
-      next: (updatedInvoice) => {
-        console.log('Rechnung erfolgreich gesendet:', updatedInvoice);
-      },
+      next: () => this.notificationService.success('Rechnung wurde versendet'),
       error: err => {
-        console.error('Fehler beim Senden der Rechnung:', err);
         this.error = 'Fehler beim Senden der Rechnung.';
+        this.notificationService.error('Fehler beim Senden der Rechnung');
+        console.error(err);
       }
     });
   }
 
-  private openInvoiceDetails(invoice: Invoice): void {
-    console.log('Rechnungsdetails öffnen:', invoice);
-  }
+  private openInvoiceDetails(_invoice: Invoice): void {}
 
   // OpenItem action methods
-  private processPayment(openItem: OpenItem): void {
-    console.log('Zahlung verarbeiten:', openItem);
-  }
+  private processPayment(_openItem: OpenItem): void {}
 
-  private sendReminder(openItem: OpenItem): void {
-    if (!openItem.id) return;
-    console.log('Mahnung senden:', openItem);
-  }
+  private sendReminder(_openItem: OpenItem): void {}
 
-  private openOpenItemDetails(openItem: OpenItem): void {
-    console.log('OpenItem Details öffnen:', openItem);
-  }
+  private openOpenItemDetails(_openItem: OpenItem): void {}
 
-  private editOpenItem(openItem: OpenItem): void {
-    console.log('OpenItem bearbeiten:', openItem);
-  }
+  private editOpenItem(_openItem: OpenItem): void {}
 
   private cancelOpenItem(openItem: OpenItem): void {
     if (!openItem.id) return;
 
-    if (confirm('Möchten Sie diesen offenen Posten wirklich stornieren?')) {
-      console.log('OpenItem stornieren:', openItem);
-    }
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diesen offenen Posten wirklich stornieren?',
+      header: 'Posten stornieren',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        // TODO: openItemService.cancelOpenItem(openItem.id)
+      }
+    });
   }
 }

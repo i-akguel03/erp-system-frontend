@@ -1,8 +1,8 @@
-// open-item-tab.component.ts
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OpenItem, OpenItemStatus } from '../../../../../../models/OpenItem';
 import { Customer } from '../../../../../../models/Customer';
+import { ConfirmationService } from 'primeng/api';
 
 interface OpenItemActionEvent {
   action: 'payment' | 'reminder' | 'details' | 'edit' | 'cancel';
@@ -17,6 +17,7 @@ interface OpenItemActionEvent {
   styleUrls: ['./open-item-tab.scss']
 })
 export class OpenItemsTabComponent implements OnChanges {
+  constructor(private confirmationService: ConfirmationService) {}
   @Input() openItems: OpenItem[] = [];
   @Input() customers: { [id: string]: Customer } = {};
   @Input() selectedSubscriptionId: string | null = null;
@@ -192,20 +193,22 @@ export class OpenItemsTabComponent implements OnChanges {
   }
 
   onReminder(openItem: OpenItem): void {
-    console.log('Reminder Action for:', openItem);
     this.openItemAction.emit({ action: 'reminder', openItem });
   }
 
   onEdit(openItem: OpenItem): void {
-    console.log('Edit Action for:', openItem);
     this.openItemAction.emit({ action: 'edit', openItem });
   }
 
   onCancel(openItem: OpenItem): void {
-    console.log('Cancel Action for:', openItem);
-    if (confirm('Möchten Sie diesen offenen Posten wirklich stornieren?')) {
-      this.openItemAction.emit({ action: 'cancel', openItem });
-    }
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diesen offenen Posten wirklich stornieren?',
+      header: 'Posten stornieren',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren',
+      rejectLabel: 'Abbrechen',
+      accept: () => this.openItemAction.emit({ action: 'cancel', openItem })
+    });
   }
 
   // Permission Checks
@@ -235,8 +238,7 @@ export class OpenItemsTabComponent implements OnChanges {
   // Modal Actions für Footer
   onPaymentFromDetails(): void {
     if (this.selectedOpenItem) {
-      console.log('Payment from Details:', this.selectedOpenItem);
-      const openItemForPayment = { ...this.selectedOpenItem }; // Kopie erstellen
+      const openItemForPayment = { ...this.selectedOpenItem };
       this.closeDetailsModal();
       this.onPayment(openItemForPayment);
     }
@@ -244,20 +246,15 @@ export class OpenItemsTabComponent implements OnChanges {
 
   onEditFromDetails(): void {
     if (this.selectedOpenItem) {
-      console.log('Edit from Details - OpenItem für Bearbeitung:', this.selectedOpenItem);
-      const openItemToEdit = { ...this.selectedOpenItem }; // Kopie erstellen für Event
-      console.log('Edit from Details - OpenItem vor onEdit Aufruf:', openItemToEdit);
+      const openItemToEdit = { ...this.selectedOpenItem };
       this.closeDetailsModal();
       this.onEdit(openItemToEdit);
-    } else {
-      console.error('Keine selectedOpenItem verfügbar für Bearbeitung');
     }
   }
 
   onReminderFromDetails(): void {
     if (this.selectedOpenItem) {
-      console.log('Reminder from Details:', this.selectedOpenItem);
-      const openItemForReminder = { ...this.selectedOpenItem }; // Kopie erstellen
+      const openItemForReminder = { ...this.selectedOpenItem };
       this.closeDetailsModal();
       this.onReminder(openItemForReminder);
     }
@@ -265,12 +262,18 @@ export class OpenItemsTabComponent implements OnChanges {
 
   onCancelFromDetails(): void {
     if (this.selectedOpenItem) {
-      console.log('Cancel from Details:', this.selectedOpenItem);
-      const openItemForCancel = { ...this.selectedOpenItem }; // Kopie erstellen
-      if (confirm('Möchten Sie diesen offenen Posten wirklich stornieren?')) {
-        this.closeDetailsModal();
-        this.openItemAction.emit({ action: 'cancel', openItem: openItemForCancel });
-      }
+      const openItemForCancel = { ...this.selectedOpenItem };
+      this.confirmationService.confirm({
+        message: 'Möchten Sie diesen offenen Posten wirklich stornieren?',
+        header: 'Posten stornieren',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Stornieren',
+        rejectLabel: 'Abbrechen',
+        accept: () => {
+          this.closeDetailsModal();
+          this.openItemAction.emit({ action: 'cancel', openItem: openItemForCancel });
+        }
+      });
     }
   }
 

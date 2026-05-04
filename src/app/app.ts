@@ -5,6 +5,8 @@ import { CardModule } from 'primeng/card';
 import { CommonModule } from '@angular/common';
 import { BackendCheckComponent } from './shared/backend-check/backend-check/backend-check';
 import { AuthService } from './auth/services/auth';
+import { Toast } from 'primeng/toast';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 
 @Component({
   selector: 'app-root',
@@ -14,7 +16,9 @@ import { AuthService } from './auth/services/auth';
     NavbarComponent,
     CardModule,
     CommonModule,
-    BackendCheckComponent
+    BackendCheckComponent,
+    Toast,
+    ConfirmDialog
   ],
   templateUrl: './app.html',
   styleUrls: ['./app.scss']

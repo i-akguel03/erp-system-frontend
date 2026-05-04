@@ -1,0 +1,29 @@
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.subscription-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:focus {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem !important;
+  }
+}
+
+.subscription-details .row > div {
+  @media (max-width: 768px) {
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .subscription-item code {
+    background-color: var(--bs-dark) !important;
+    color: var(--bs-light) !important;
+  }
+}

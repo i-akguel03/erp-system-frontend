@@ -1,3 +1,5 @@
+<p-toast position="top-right"></p-toast>
+<p-confirmDialog></p-confirmDialog>
 <app-backend-check *ngIf="!backendReady()" (backendStatus)="backendReady.set($event)"></app-backend-check>
 
 <div *ngIf="backendReady()" class="app-root-container d-flex flex-column vh-100">

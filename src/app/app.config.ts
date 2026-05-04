@@ -8,6 +8,7 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 import { JwtInterceptor } from './auth/interceptors/jwt-interceptor';
 import { provideServiceWorker, ServiceWorkerModule } from '@angular/service-worker';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 
 export const appConfig: ApplicationConfig = {
@@ -18,7 +19,8 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideAnimationsAsync(),
     providePrimeNG({ theme: { preset: Aura } }),
-    // ✅ hier registrieren
+    MessageService,
+    ConfirmationService,
     { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }, provideServiceWorker('ngsw-worker.js', {
             enabled: !isDevMode(),
             registrationStrategy: 'registerWhenStable:30000'

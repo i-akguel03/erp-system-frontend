@@ -5,15 +5,16 @@
   <div *ngIf="subscriptions.length > 0; else noSubscriptions">
     <div *ngFor="let subscription of subscriptions"
          class="subscription-item p-3 border-bottom cursor-pointer position-relative"
-         [class.bg-primary-subtle]="isSelectedSubscription(subscription)"
-         [class.border-start]="isSelectedSubscription(subscription)"
-         [class.border-primary]="isSelectedSubscription(subscription)"
+         [class.bg-primary-subtle]="isSelectedSubscription(subscription) || isHovered(subscription)"
+         [class.border-start]="isSelectedSubscription(subscription) || isHovered(subscription)"
+         [class.border-primary]="isSelectedSubscription(subscription) || isHovered(subscription)"
          [class.border-4]="isSelectedSubscription(subscription)"
+         [class.border-3]="!isSelectedSubscription(subscription) && isHovered(subscription)"
          [class.shadow-sm]="isSelectedSubscription(subscription)"
          (click)="selectSubscription(subscription)"
-         style="transition: all 0.2s ease-in-out;"
-         onmouseover="this.classList.add('bg-primary-subtle', 'border-start', 'border-primary', 'border-3')"
-         onmouseout="if(!this.classList.contains('border-4')) { this.classList.remove('bg-primary-subtle', 'border-start', 'border-primary', 'border-3'); }">
+         (mouseenter)="onMouseEnter(subscription)"
+         (mouseleave)="onMouseLeave()"
+         style="transition: all 0.2s ease-in-out;">
                  
       <div class="subscription-header mb-2">
         <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
@@ -88,51 +89,3 @@
   </ng-template>
 </div>
 
-<style>
-/* Nur minimale Custom CSS - hauptsächlich Bootstrap Classes verwendet */
-
-/* Cursor Pointer für alle clickbaren Elemente */
-.cursor-pointer {
-  cursor: pointer;
-}
-
-/* Custom Hover Effects mit Inline-JavaScript da Bootstrap keine Hover-States für border-start hat */
-.subscription-item:hover:not(.border-4) {
-  background-color: var(--bs-primary-bg-subtle) !important;
-}
-
-/* Font Monospace für Subscription Numbers */
-.font-monospace {
-  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
-/* Mobile Responsiveness - kleinere Paddings */
-@media (max-width: 768px) {
-  .subscription-item {
-    padding: 0.75rem !important;
-  }
-  
-  .subscription-details .row > div {
-    margin-bottom: 0.75rem;
-  }
-}
-
-/* Smooth transitions für alle interaktiven Elemente */
-.subscription-item {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Accessibility - Focus States */
-.subscription-item:focus {
-  outline: 2px solid var(--bs-primary);
-  outline-offset: 2px;
-}
-
-/* Dark Mode Support mit Bootstrap CSS Custom Properties */
-@media (prefers-color-scheme: dark) {
-  .subscription-item code {
-    background-color: var(--bs-dark) !important;
-    color: var(--bs-light) !important;
-  }
-}
-</style>

@@ -1,8 +1,6 @@
 import { Subscription } from "./Subscription";
 
-
-export type SubscriptionStatus = 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'EXPIRED';
-
+export type ContractStatus = 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'EXPIRED';
 
 export interface Contract {
   id?: string;
@@ -12,5 +10,5 @@ export interface Contract {
   startDate?: string | Date;
   endDate?: string | Date;
   subscriptions?: Subscription[];
-  contractStatus?: SubscriptionStatus;
+  contractStatus?: ContractStatus;
 }
