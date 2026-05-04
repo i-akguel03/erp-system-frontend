@@ -1,42 +1,48 @@
-<!-- Contract Center HTML Template mit Bootstrap Classes - FIXED Mobile Navigation Buttons -->
-<div class="container-fluid p-0 d-flex flex-column position-absolute top-0 start-0 end-0 bottom-0" 
-     [class]="{'d-md-none': isMobile}" 
+<!-- Contract Center -->
+<div class="container-fluid p-0 d-flex flex-column position-absolute top-0 start-0 end-0 bottom-0"
      style="overflow: hidden !important;">
-  
-  <!-- Mobile Navigation Bar - GELBE BUTTONS MIT TEXT -->
-  <nav class="navbar navbar-dark bg-primary position-sticky top-0 d-md-none" 
+
+  <!-- Mobile Top Header -->
+  <div class="d-md-none d-flex align-items-center bg-primary text-white flex-shrink-0 px-2"
        *ngIf="isMobile"
-       style="min-height: 60px; z-index: 9999 !important; position: relative !important;">
-    <div class="container-fluid d-flex align-items-center justify-content-between">
-      <!-- Back Button - Gelb mit Text -->
-      <button class="btn btn-warning text-dark fw-bold d-flex align-items-center" 
-              (click)="navigateBack()" 
-              [disabled]="!canNavigateBack()"
-              [class.btn-secondary]="!canNavigateBack()"
-              [class.btn-warning]="canNavigateBack()"
-              style="min-height: 40px; flex-shrink: 0; font-size: 0.9rem;">
-        <i class="fas fa-arrow-left me-1"></i>
-        Zurück
-      </button>
-      
-      <!-- Title - Zentriert mit Platz für Buttons -->
-      <div class="flex-grow-1 text-center px-2">
-        <span class="navbar-brand mb-0 h6 text-white text-truncate d-block">
-          {{ getMobileNavTitle() }}
-        </span>
+       style="height: 56px; z-index: 1000;">
+
+    <!-- Back chevron or spacer -->
+    <button *ngIf="canNavigateBack()"
+            class="border-0 bg-transparent d-flex align-items-center justify-content-center p-0"
+            style="min-width: 44px; height: 44px; color: white;"
+            (click)="navigateBack()">
+      <i class="fas fa-chevron-left" style="font-size: 1.3rem;"></i>
+    </button>
+    <div *ngIf="!canNavigateBack()" style="min-width: 44px;"></div>
+
+    <!-- Title + subtitle -->
+    <div class="flex-grow-1 text-center overflow-hidden px-2">
+      <div class="fw-semibold text-truncate" style="font-size: 1rem; line-height: 1.3;">
+        {{ getMobileNavTitle() }}
       </div>
-      
-      <!-- Home Button - Gelb mit Text -->
-      <button class="btn btn-warning text-dark fw-bold d-flex align-items-center" 
-              (click)="resetToContracts()"
-              [class.btn-secondary]="mobileCurrentView === 'contracts'"
-              [class.btn-warning]="mobileCurrentView !== 'contracts'"
-              style="min-height: 40px; flex-shrink: 0; font-size: 0.9rem;">
-        <i class="fas fa-home me-1"></i>
-        Start
-      </button>
+      <div *ngIf="selectedContract && mobileCurrentView !== 'contracts'"
+           class="text-white-50 text-truncate" style="font-size: 0.75rem; line-height: 1.2;">
+        {{ selectedContract.contractTitle }}
+      </div>
     </div>
-  </nav>
+
+    <!-- Contextual + button -->
+    <button class="border-0 bg-transparent d-flex align-items-center justify-content-center p-0"
+            style="min-width: 44px; height: 44px; color: white;"
+            *ngIf="mobileCurrentView === 'contracts'"
+            (click)="openContractModal('create')">
+      <i class="fas fa-plus" style="font-size: 1.3rem;"></i>
+    </button>
+    <button class="border-0 bg-transparent d-flex align-items-center justify-content-center p-0"
+            style="min-width: 44px; height: 44px; color: white;"
+            *ngIf="mobileCurrentView === 'subscriptions' && selectedContract"
+            (click)="openSubscriptionModal()">
+      <i class="fas fa-plus" style="font-size: 1.3rem;"></i>
+    </button>
+    <div *ngIf="mobileCurrentView === 'financial' || (mobileCurrentView === 'subscriptions' && !selectedContract)"
+         style="min-width: 44px;"></div>
+  </div>
   
   <!-- Desktop: Normal Layout - Fixed Height Layout -->
   <div class="d-none d-md-flex flex-column flex-fill p-3 gap-3 overflow-hidden" *ngIf="!isMobile">
@@ -44,13 +50,18 @@
     <!-- Oben: Vertragsliste (60%) - Fixed Height Container -->
     <div class="d-flex flex-column overflow-hidden" style="flex: 0 0 60%; min-height: 0;">
       <div class="card h-100 d-flex flex-column overflow-hidden">
-        <div class="card-header bg-primary-subtle flex-shrink-0">
-          <div class="d-flex align-items-center">
-            <i class="fas fa-file-contract me-2 text-primary"></i>
-            <span class="fw-semibold">Verträge</span>
-            <span class="badge bg-primary ms-2" *ngIf="contracts?.length">
-              {{ contracts.length }}
-            </span>
+        <div class="card-header bg-primary-subtle flex-shrink-0" style="position: relative; z-index: 20;">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-file-contract me-2 text-primary"></i>
+              <span class="fw-semibold">Verträge</span>
+              <span class="badge bg-primary ms-2" *ngIf="contracts?.length">{{ contracts.length }}</span>
+            </div>
+            <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                    (click)="openContractModal('create')">
+              <i class="fas fa-plus"></i>
+              <span>Neu</span>
+            </button>
           </div>
         </div>
         <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
@@ -76,14 +87,20 @@
       <div class="d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
         <div class="card h-100 d-flex flex-column overflow-hidden">
           <div class="card-header bg-info-subtle flex-shrink-0">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-sync-alt me-2 text-info"></i>
-              <span class="fw-semibold">
-                Abonnements {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
-              </span>
-              <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
-                {{ subscriptions.length }}
-              </span>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-sync-alt me-2 text-info"></i>
+                <span class="fw-semibold">
+                  Abonnements {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+                </span>
+                <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">{{ subscriptions.length }}</span>
+              </div>
+              <button class="btn btn-info btn-sm d-flex align-items-center gap-1"
+                      *ngIf="selectedContract"
+                      (click)="openSubscriptionModal()">
+                <i class="fas fa-plus"></i>
+                <span>Neu</span>
+              </button>
             </div>
           </div>
           <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
@@ -165,15 +182,23 @@
          style="transition: transform 0.3s ease; z-index: 200;">
       <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
         <div class="card-header bg-light flex-shrink-0">
-          <div class="d-flex align-items-center">
-            <i class="fas fa-sync-alt me-2 text-info"></i>
-            <span class="fw-semibold">Abonnements</span>
-            <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
-              {{ subscriptions.length }}
-            </span>
-            <small class="text-muted ms-2" *ngIf="selectedContract">
-              ({{ selectedContract.contractNumber }})
-            </small>
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-sync-alt me-2 text-info"></i>
+              <span class="fw-semibold">Abonnements</span>
+              <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
+                {{ subscriptions.length }}
+              </span>
+              <small class="text-muted ms-2" *ngIf="selectedContract">
+                ({{ selectedContract.contractNumber }})
+              </small>
+            </div>
+            <button class="btn btn-info btn-sm d-flex align-items-center gap-1"
+                    *ngIf="selectedContract"
+                    (click)="openSubscriptionModal()">
+              <i class="fas fa-plus"></i>
+              <span>Neu</span>
+            </button>
           </div>
         </div>
         <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
@@ -182,7 +207,8 @@
               [subscriptions]="subscriptions"
               [selectedContract]="selectedContract"
               [selectedSubscription]="selectedSubscription"
-              (subscriptionSelected)="onSubscriptionSelected($event)">
+              (subscriptionSelected)="onSubscriptionSelected($event)"
+              (createSubscription)="onCreateSubscription()">
             </app-subscription-panel>
           </div>
         </div>
@@ -221,25 +247,271 @@
     </div>
   </div>
 
-  <!-- Mobile Breadcrumb -->
-  <nav aria-label="breadcrumb" class="d-md-none px-3 py-2 bg-light border-top" 
-       *ngIf="isMobile && getMobileBreadcrumb().length > 0">
-    <ol class="breadcrumb mb-0 small">
-      <li class="breadcrumb-item" 
-          *ngFor="let item of getMobileBreadcrumb(); let last = last"
-          [class.active]="last"
-          [class.text-truncate]="true"
-          style="max-width: 150px;">
-        {{ item }}
-      </li>
-    </ol>
-  </nav>
+  <!-- ===== Vertrag-Formular-Dialog ===== -->
+  <p-dialog
+    [(visible)]="showContractModal"
+    [header]="contractModalTitle"
+    [modal]="true"
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '520px', maxWidth: '95vw' }"
+    (onHide)="closeContractModal()">
+
+    <div class="d-flex flex-column gap-3 py-2">
+
+      <!-- Vertragsbezeichnung -->
+      <div>
+        <label class="form-label fw-semibold">
+          Vertragsbezeichnung <span class="text-danger">*</span>
+        </label>
+        <input type="text"
+               class="form-control"
+               [(ngModel)]="contractForm.contractTitle"
+               placeholder="z. B. Wartungsvertrag 2025"
+               [disabled]="contractModalLoading" />
+      </div>
+
+      <!-- Kunde -->
+      <div>
+        <label class="form-label fw-semibold">
+          Kunde <span class="text-danger">*</span>
+        </label>
+        <select class="form-select"
+                [(ngModel)]="contractForm.customerId"
+                [disabled]="contractModalLoading">
+          <option value="" disabled selected>Kunde auswählen …</option>
+          @for (c of customersArray; track c.id) {
+            <option [value]="c.id">
+              {{ c.firstName }} {{ c.lastName }}
+              @if (c.customerNumber) { ({{ c.customerNumber }}) }
+            </option>
+          }
+        </select>
+      </div>
+
+      <!-- Laufzeit -->
+      <div class="row g-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold">
+            Startdatum <span class="text-danger">*</span>
+          </label>
+          <input type="date"
+                 class="form-control"
+                 [(ngModel)]="contractStartDateString"
+                 [disabled]="contractModalLoading" />
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold">Enddatum <small class="text-muted fw-normal">(optional)</small></label>
+          <input type="date"
+                 class="form-control"
+                 [(ngModel)]="contractEndDateString"
+                 [min]="contractStartDateString"
+                 [disabled]="contractModalLoading" />
+        </div>
+      </div>
+
+      <!-- Status (nur bei Bearbeitung) -->
+      @if (contractModalMode === 'edit') {
+        <div>
+          <label class="form-label fw-semibold">Status</label>
+          <select class="form-select"
+                  [(ngModel)]="contractForm.contractStatus"
+                  [disabled]="contractModalLoading">
+            <option value="DRAFT">Entwurf</option>
+            <option value="ACTIVE">Aktiv</option>
+            <option value="SUSPENDED">Ausgesetzt</option>
+            <option value="TERMINATED">Gekündigt</option>
+            <option value="EXPIRED">Abgelaufen</option>
+          </select>
+        </div>
+
+        <!-- Vertragsnummer (nur lesen) -->
+        @if (contractForm.contractNumber) {
+          <div>
+            <label class="form-label fw-semibold">Vertragsnummer</label>
+            <input type="text"
+                   class="form-control bg-light"
+                   [value]="contractForm.contractNumber"
+                   readonly />
+          </div>
+        }
+      }
+      <!-- Buttons -->
+      <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-1">
+        <button class="btn btn-outline-secondary"
+                (click)="closeContractModal()"
+                [disabled]="contractModalLoading">
+          Abbrechen
+        </button>
+        <button class="btn btn-primary d-flex align-items-center gap-2"
+                (click)="saveContract()"
+                [disabled]="contractModalLoading || !contractForm.contractTitle?.trim() || !contractForm.customerId">
+          @if (contractModalLoading) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+          }
+          {{ contractModalMode === 'edit' ? 'Speichern' : 'Erstellen' }}
+        </button>
+      </div>
+    </div>
+  </p-dialog>
+
+  <!-- ===== Abonnement-Formular-Dialog ===== -->
+  <p-dialog
+    [(visible)]="showSubscriptionModal"
+    header="Neues Abonnement"
+    [modal]="true"
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '480px', maxWidth: '95vw' }"
+    (onHide)="closeSubscriptionModal()">
+
+    <div class="d-flex flex-column gap-3 py-2">
+
+      <!-- Produkt -->
+      <div>
+        <label class="form-label fw-semibold">
+          Produkt <span class="text-danger">*</span>
+        </label>
+        <select class="form-select"
+                [(ngModel)]="subscriptionForm.productId"
+                [disabled]="subscriptionModalLoading">
+          <option value="" disabled selected>Produkt auswählen …</option>
+          @for (p of products; track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+        @if (products.length === 0) {
+          <small class="text-muted">Keine Produkte verfügbar</small>
+        }
+      </div>
+
+      <!-- Abrechnungszyklus -->
+      <div>
+        <label class="form-label fw-semibold">
+          Abrechnungszyklus <span class="text-danger">*</span>
+        </label>
+        <select class="form-select"
+                [(ngModel)]="subscriptionForm.billingCycle"
+                [disabled]="subscriptionModalLoading">
+          @for (opt of billingCycleOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Laufzeit -->
+      <div class="row g-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold">
+            Startdatum <span class="text-danger">*</span>
+          </label>
+          <input type="date"
+                 class="form-control"
+                 [(ngModel)]="subscriptionStartDateString"
+                 [disabled]="subscriptionModalLoading" />
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold">
+            Enddatum <small class="text-muted fw-normal">(optional)</small>
+          </label>
+          <input type="date"
+                 class="form-control"
+                 [(ngModel)]="subscriptionEndDateString"
+                 [min]="subscriptionStartDateString"
+                 [disabled]="subscriptionModalLoading" />
+        </div>
+      </div>
+
+      <!-- Auto-Verlängerung -->
+      <div class="form-check">
+        <input class="form-check-input"
+               type="checkbox"
+               id="autoRenewal"
+               [(ngModel)]="subscriptionForm.autoRenewal"
+               [disabled]="subscriptionModalLoading" />
+        <label class="form-check-label" for="autoRenewal">
+          Automatisch verlängern
+        </label>
+      </div>
+
+      <!-- Vertrag (read-only Info) -->
+      @if (selectedContract) {
+        <div class="alert alert-info py-2 mb-0 small">
+          <i class="fas fa-info-circle me-1"></i>
+          Wird dem Vertrag <strong>{{ selectedContract.contractTitle }}</strong>
+          ({{ selectedContract.contractNumber }}) zugeordnet.
+        </div>
+      }
+
+      <!-- Buttons -->
+      <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-1">
+        <button class="btn btn-outline-secondary"
+                (click)="closeSubscriptionModal()"
+                [disabled]="subscriptionModalLoading">
+          Abbrechen
+        </button>
+        <button class="btn btn-primary d-flex align-items-center gap-2"
+                (click)="saveSubscription()"
+                [disabled]="subscriptionModalLoading || !subscriptionForm.productId || !subscriptionStartDateString">
+          @if (subscriptionModalLoading) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+          }
+          Erstellen
+        </button>
+      </div>
+    </div>
+  </p-dialog>
+
+  <!-- Mobile Bottom Tab Bar -->
+  <div class="d-md-none bg-white border-top d-flex align-items-stretch flex-shrink-0"
+       *ngIf="isMobile"
+       style="height: 62px; z-index: 1000;">
+
+    <!-- Verträge -->
+    <button class="flex-fill d-flex flex-column align-items-center justify-content-center border-0 bg-transparent py-2 position-relative"
+            [class.text-primary]="mobileCurrentView === 'contracts'"
+            [class.text-secondary]="mobileCurrentView !== 'contracts'"
+            (click)="resetToContracts()">
+      <i class="fas fa-file-contract" style="font-size: 1.3rem;"></i>
+      <span class="fw-medium mt-1" style="font-size: 0.7rem;">Verträge</span>
+      <div *ngIf="mobileCurrentView === 'contracts'"
+           class="position-absolute bottom-0 start-50 translate-middle-x bg-primary"
+           style="width: 28px; height: 3px; border-radius: 3px 3px 0 0;"></div>
+    </button>
+
+    <!-- Abonnements -->
+    <button class="flex-fill d-flex flex-column align-items-center justify-content-center border-0 bg-transparent py-2 position-relative"
+            [class.text-primary]="mobileCurrentView === 'subscriptions'"
+            [class.text-secondary]="mobileCurrentView !== 'subscriptions' && !!selectedContract"
+            [class.opacity-50]="!selectedContract"
+            [disabled]="!selectedContract"
+            (click)="mobileNavigateTo('subscriptions')">
+      <i class="fas fa-sync-alt" style="font-size: 1.3rem;"></i>
+      <span class="fw-medium mt-1" style="font-size: 0.7rem;">Abonnements</span>
+      <div *ngIf="mobileCurrentView === 'subscriptions'"
+           class="position-absolute bottom-0 start-50 translate-middle-x bg-primary"
+           style="width: 28px; height: 3px; border-radius: 3px 3px 0 0;"></div>
+    </button>
+
+    <!-- Finanzen -->
+    <button class="flex-fill d-flex flex-column align-items-center justify-content-center border-0 bg-transparent py-2 position-relative"
+            [class.text-primary]="mobileCurrentView === 'financial'"
+            [class.text-secondary]="mobileCurrentView !== 'financial' && !!selectedContract"
+            [class.opacity-50]="!selectedContract"
+            [disabled]="!selectedContract"
+            (click)="mobileNavigateTo('financial')">
+      <i class="fas fa-euro-sign" style="font-size: 1.3rem;"></i>
+      <span class="fw-medium mt-1" style="font-size: 0.7rem;">Finanzen</span>
+      <div *ngIf="mobileCurrentView === 'financial'"
+           class="position-absolute bottom-0 start-50 translate-middle-x bg-primary"
+           style="width: 28px; height: 3px; border-radius: 3px 3px 0 0;"></div>
+    </button>
+  </div>
 </div>
 
 <style>
-/* Contract Center spezifische CSS - überschreibt App-Container */
-
-/* WICHTIG: Contract Center nimmt kompletten verfügbaren Platz ohne eigenes Scrolling */
 :host {
   display: block;
   height: 100%;
@@ -247,239 +519,18 @@
   position: relative;
 }
 
-/* Überschreibe Parent Container Scrolling */
 :host ::ng-deep .app-main-container {
   overflow: hidden !important;
 }
 
-/* Fix für Suchleiste in Contract-List - macht sie sticky */
-:host ::ng-deep app-contract-list .form-control,
-:host ::ng-deep app-contract-list .search-container,
-:host ::ng-deep app-contract-list input[placeholder*="suchen"] {
-  position: sticky !important;
-  top: 0 !important;
-  background: white !important;
-  z-index: 10 !important;
-  border-bottom: 1px solid #dee2e6 !important;
-  margin-bottom: 0 !important;
-}
+.overflow-auto::-webkit-scrollbar { width: 6px; height: 6px; }
+.overflow-auto::-webkit-scrollbar-track { background: #f8f9fa; }
+.overflow-auto::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 3px; }
+.overflow-auto::-webkit-scrollbar-thumb:hover { background: #495057; }
 
-/* Sicherstellen dass Liste unter Suchfeld startet */
-:host ::ng-deep app-contract-list .list-group,
-:host ::ng-deep app-contract-list .table-responsive,
-:host ::ng-deep app-contract-list > div > div:not(:first-child) {
-  padding-top: 0.5rem;
-}
+button:disabled { cursor: not-allowed; }
 
-/* Custom Scrollbars nur für scrollbare Container */
-.overflow-auto::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.overflow-auto::-webkit-scrollbar-track {
-  background: #f8f9fa;
-}
-
-.overflow-auto::-webkit-scrollbar-thumb {
-  background: #6c757d;
-  border-radius: 3px;
-}
-
-.overflow-auto::-webkit-scrollbar-thumb:hover {
-  background: #495057;
-}
-
-/* Mobile Navigation Z-Index Fix - HÖCHSTE PRIORITÄT */
-.navbar {
-  z-index: 9999 !important;
-  position: relative !important;
-}
-
-/* Sicherstellen dass Mobile Content unter der Navbar startet */
-.d-md-none.position-relative {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-}
-
-/* Überschreibe alle anderen z-index Werte */
-:host ::ng-deep .navbar,
-:host ::ng-deep nav.navbar {
-  z-index: 9999 !important;
-  position: relative !important;
-}
-
-/* Content Container Z-Index niedriger setzen */
-:host ::ng-deep .card,
-:host ::ng-deep .position-absolute,
-:host ::ng-deep .container-fluid {
-  z-index: 1 !important;
-}
-
-/* Spezielle Z-Index für Mobile Views */
-:host ::ng-deep .position-absolute[style*="z-index: 100"],
-:host ::ng-deep .position-absolute[style*="z-index: 200"], 
-:host ::ng-deep .position-absolute[style*="z-index: 300"] {
-  z-index: 100 !important;
-}
-
-/* Mobile specific adjustments */
-@media (max-width: 768px) {
-  /* Navbar Container */
-  .navbar {
-    padding: 0.5rem 1rem;
-    min-height: 60px !important;
-  }
-  
-  .navbar .container-fluid {
-    height: 100%;
-    min-height: 60px;
-  }
-  
-  /* Gelbe Button Styling */
-  .navbar .btn-warning {
-    background-color: #ffc107 !important;
-    border-color: #ffc107 !important;
-    color: #212529 !important;
-    font-weight: 600 !important;
-    padding: 0.375rem 0.75rem !important;
-    border-radius: 6px !important;
-    transition: all 0.2s ease !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  }
-  
-  /* Gelbe Button Hover States */
-  .navbar .btn-warning:hover {
-    background-color: #ffcd39 !important;
-    border-color: #ffcd39 !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-  }
-  
-  /* Disabled Button State */
-  .navbar .btn:disabled,
-  .navbar .btn.btn-secondary {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
-    color: #ffffff !important;
-    cursor: not-allowed;
-    transform: none;
-    opacity: 0.7;
-  }
-  
-  /* Active/Current Page Button */
-  .navbar .btn.btn-secondary {
-    background-color: #495057 !important;
-    border-color: #495057 !important;
-    color: #ffffff !important;
-  }
-  
-  /* Icon Sizing */
-  .navbar .btn i {
-    font-size: 1.2rem !important;
-    line-height: 1 !important;
-  }
-  
-  /* Title Container */
-  .navbar .flex-grow-1 {
-    min-width: 0; /* Wichtig für text-truncate */
-    margin: 0 0.5rem;
-  }
-  
-  /* Title Text */
-  .navbar-brand {
-    font-size: 1.1rem !important;
-    line-height: 1.2 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 100% !important;
-  }
-  
-  /* Ensure buttons are always visible and clickable - HÖCHSTER Z-INDEX */
-  .navbar .btn {
-    position: relative !important;
-    z-index: 10000 !important;
-    pointer-events: auto !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-  
-  /* Fix für Touch-Targets */
-  .navbar .btn::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    z-index: -1;
-  }
-}
-
-/* Animation improvements */
 @media (prefers-reduced-motion: no-preference) {
-  .position-absolute {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .navbar .btn {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-}
-
-/* Accessibility improvements */
-button:disabled {
-  cursor: not-allowed;
-}
-
-.opacity-50 {
-  opacity: 0.5;
-}
-
-/* Focus States für bessere Accessibility */
-.navbar .btn:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.8) !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
-  z-index: 10001 !important;
-}
-
-/* Navbar muss über allem anderen stehen */
-.navbar {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 9999 !important;
-}
-
-/* Fix für überlagernde Elemente */
-.position-sticky {
-  z-index: 9999 !important;
-}
-
-/* Breadcrumb improvements */
-.breadcrumb-item + .breadcrumb-item::before {
-  content: "›";
-  font-weight: bold;
-}
-
-.breadcrumb-item.text-truncate {
-  display: inline-block;
-  vertical-align: bottom;
-}
-
-/* Additional Debug Styles - Remove in production */
-.navbar {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.navbar .btn {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  .position-absolute { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 }
 </style>

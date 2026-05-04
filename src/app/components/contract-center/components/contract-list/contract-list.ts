@@ -85,6 +85,10 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  emitCreateContract(): void {
+    this.contractAction.emit({ action: 'neu', contract: {} });
+  }
+
   selectContract(contract: Contract): void {
     this.contractSelected.emit(contract);
   }
@@ -117,6 +121,18 @@ getContractStatusClass(contract: Contract): string {
 
 
   // Kontextmenü-Funktionen
+  onContractMenuClick(event: MouseEvent, contract: Contract): void {
+    event.stopPropagation();
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    this.contextMenuContract = contract;
+    this.contextMenuPosition = {
+      x: Math.max(0, Math.min(rect.right - 220, window.innerWidth - 224)),
+      y: Math.min(rect.bottom + 4, window.innerHeight - 224)
+    };
+    this.contextMenuVisible = true;
+  }
+
   onContractRightClick(event: MouseEvent, contract: Contract): void {
     event.preventDefault();
     event.stopPropagation();

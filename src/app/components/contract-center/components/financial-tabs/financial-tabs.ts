@@ -140,7 +140,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
         this.deleteInvoice(event.invoice);
         break;
       case 'duplicate':
-        this.duplicateInvoice(event.invoice);
+        // this.duplicateInvoice(event.invoice);
         break;
       default:
         // Für andere Actions an Parent weiterleiten

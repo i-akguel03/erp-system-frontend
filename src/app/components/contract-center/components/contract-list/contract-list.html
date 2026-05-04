@@ -2,23 +2,15 @@
 <div class="d-flex flex-column h-100">
   
   <div class="position-sticky bg-body border-bottom px-3 py-2 flex-shrink-0" style="top: 0; z-index: 10;">
-  <div class="d-flex gap-2">
-    <div class="input-group flex-grow-1">
-      <input type="text" 
-             class="form-control" 
-             placeholder="Vertrag, Kunde oder Nummer suchen..." 
-             [(ngModel)]="searchTerm" 
-             (input)="filterContracts()">
-      <span class="input-group-text">
-        <i class="fas fa-search text-muted"></i>
-      </span>
-    </div>
-    <!-- <button class="btn btn-primary btn-sm d-flex align-items-center" 
-            (click)="onContractAction('neu')"
-            title="Neuer Vertrag">
-      <i class="fas fa-plus me-1"></i>
-      <span class="d-none d-lg-inline">Neu</span>
-    </button> -->
+  <div class="input-group">
+    <input type="text"
+           class="form-control"
+           placeholder="Vertrag, Kunde oder Nummer suchen..."
+           [(ngModel)]="searchTerm"
+           (input)="filterContracts()">
+    <span class="input-group-text">
+      <i class="fas fa-search text-muted"></i>
+    </span>
   </div>
 </div>
 
@@ -53,15 +45,15 @@
               <th scope="col" class="fw-semibold d-none d-md-table-cell">Start</th>
               <th scope="col" class="fw-semibold d-none d-md-table-cell">Ende</th>
               <th scope="col" class="fw-semibold d-none d-md-table-cell">Status</th>
+              <th scope="col" style="width: 40px;"></th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let contract of filteredContracts" 
+            <tr *ngFor="let contract of filteredContracts"
                 (click)="selectContract(contract)"
+                (contextmenu)="onContractRightClick($event, contract)"
                 [class]="{'table-active bg-primary bg-opacity-10': isSelectedContract(contract)}"
                 class="user-select-none cursor-pointer">
-
-                                <!-- (contextmenu)="onContractRightClick($event, contract)" -->
 
                 
               <td class="fw-bold text-primary">{{ contract.contractNumber }}</td>
@@ -93,11 +85,18 @@
                   {{ getContractStatus(contract) }}
                 </span>
               </td>
+              <td class="text-center p-1">
+                <button class="btn btn-sm border-0 text-secondary p-1 rounded"
+                        (click)="onContractMenuClick($event, contract)"
+                        title="Aktionen">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </td>
             </tr>
             
             <!-- Keine Ergebnisse -->
             <tr *ngIf="filteredContracts.length === 0">
-              <td colspan="6" class="text-center py-5">
+              <td colspan="7" class="text-center py-5">
                 <div class="d-flex flex-column align-items-center text-muted">
                   <i class="fas fa-search fa-3x mb-3 text-secondary"></i>
                   <h6 class="mb-1">Keine Verträge gefunden</h6>

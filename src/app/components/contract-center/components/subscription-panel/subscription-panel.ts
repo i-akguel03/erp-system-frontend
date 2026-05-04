@@ -17,6 +17,7 @@ export class SubscriptionPanelComponent {
   @Input() selectedSubscription: Subscription | null = null;
 
   @Output() subscriptionSelected = new EventEmitter<Subscription>();
+  @Output() createSubscription = new EventEmitter<void>();
 
   readonly Math = Math;
   hoveredId: string | null = null;

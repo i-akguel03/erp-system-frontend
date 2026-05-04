@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
+import { Dialog } from 'primeng/dialog';
 
 import { Contract } from '../../models/Contract';
 import { Subscription } from '../../models/Subscription';
@@ -12,8 +14,11 @@ import { ContractService } from '../../services/contract-service';
 import { CustomerService } from '../../services/customer-service';
 import { SubscriptionService } from '../../services/subscription-service';
 import { InvoiceService } from '../../services/invoice-service';
+import { ProductService } from '../../services/product-service';
 import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
+import { Product } from '../../models/Product';
+import { BillingCycle } from '../../models/Subscription';
 
 import { SubscriptionPanelComponent } from './components/subscription-panel/subscription-panel';
 import { FinancialTabsComponent } from './components/financial-tabs/financial-tabs';
@@ -34,17 +39,13 @@ interface OpenItemActionEvent {
   openItem: OpenItem;
 }
 
-interface MobilePanelState {
-  contracts: 'collapsed' | 'expanded' | 'normal';
-  subscriptions: 'collapsed' | 'expanded' | 'normal';
-  financial: 'collapsed' | 'expanded' | 'normal';
-}
-
 @Component({
   selector: 'app-contract-center',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
+    Dialog,
     ContractListComponent,
     SubscriptionPanelComponent,
     FinancialTabsComponent
@@ -66,16 +67,44 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   error: string | null = null;
 
+  // Contract modal state
+  showContractModal = false;
+  contractModalTitle = '';
+  contractModalMode: 'create' | 'edit' | 'duplicate' = 'create';
+  contractForm: Partial<Contract> = {};
+  contractStartDateString = '';
+  contractEndDateString = '';
+  contractModalLoading = false;
+
+  get customersArray(): Customer[] {
+    return Object.values(this.customers);
+  }
+
   // Mobile state management - FIXED: Added navigation stack
   isMobile = false;
   mobileCurrentView: 'contracts' | 'subscriptions' | 'financial' = 'contracts';
   mobileNavigationStack: Array<'contracts' | 'subscriptions' | 'financial'> = ['contracts']; // NEW: Navigation history
+
+  // Subscription modal state
+  showSubscriptionModal = false;
+  subscriptionForm: Partial<Subscription> = {};
+  subscriptionStartDateString = '';
+  subscriptionEndDateString = '';
+  subscriptionModalLoading = false;
+  products: Product[] = [];
+  readonly billingCycleOptions: { label: string; value: BillingCycle }[] = [
+    { label: 'Monatlich',        value: BillingCycle.MONTHLY },
+    { label: 'Vierteljährlich',  value: BillingCycle.QUARTERLY },
+    { label: 'Halbjährlich',     value: BillingCycle.SEMI_ANNUALLY },
+    { label: 'Jährlich',         value: BillingCycle.ANNUALLY },
+  ];
 
   constructor(
     private contractService: ContractService,
     private customerService: CustomerService,
     private subscriptionService: SubscriptionService,
     private invoiceService: InvoiceService,
+    private productService: ProductService,
     private confirmationService: ConfirmationService,
     private notificationService: NotificationService
   ) { }
@@ -85,6 +114,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     this.updateBodyScrollLock();
     this.loadCustomers();
     this.loadContracts();
+    this.loadProducts();
   }
 
   ngOnDestroy(): void {
@@ -98,13 +128,13 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('window:resize', ['$event'])
-  onResize(event: any) {
+  @HostListener('window:resize')
+  onResize(): void {
     this.checkMobileView();
   }
 
-  @HostListener('document:keydown.escape', ['$event'])
-  onEscapePress(event: KeyboardEvent) {
+  @HostListener('document:keydown.escape')
+  onEscapePress(): void {
     if (this.isMobile) {
       this.navigateBack();
     }
@@ -144,15 +174,20 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  // FIXED: Added method to navigate to a mobile view with stack management
   private navigateToMobileView(view: 'contracts' | 'subscriptions' | 'financial'): void {
     if (!this.isMobile) return;
-
     this.mobileCurrentView = view;
-
     if (this.mobileNavigationStack[this.mobileNavigationStack.length - 1] !== view) {
       this.mobileNavigationStack.push(view);
     }
+  }
+
+  mobileNavigateTo(view: 'subscriptions' | 'financial'): void {
+    if (!this.selectedContract) return;
+    this.mobileCurrentView = view;
+    this.mobileNavigationStack = view === 'subscriptions'
+      ? ['contracts', 'subscriptions']
+      : ['contracts', 'subscriptions', 'financial'];
   }
 
   // Mobile navigation methods
@@ -266,6 +301,15 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       });
   }
 
+  private loadProducts(): void {
+    this.productService.getProducts()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: products => { this.products = products; },
+        error: err => console.error('Fehler beim Laden der Produkte:', err)
+      });
+  }
+
   private loadSubscriptions(contractId: string): void {
     this.subscriptionService.getSubscriptionsByContract(contractId)
       .pipe(takeUntil(this.destroy$))
@@ -294,6 +338,10 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
 
     this.loadSubscriptions(contract.id!);
+  }
+
+  onCreateSubscription(): void {
+    this.openSubscriptionModal();
   }
 
   onSubscriptionSelected(subscription: Subscription): void {
@@ -366,14 +414,118 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Contract action methods — werden in einer späteren Iteration implementiert
-  private createNewContract(): void {}
+  // --- Contract Modal ---
 
-  private editContract(_contract: Contract): void {}
+  openContractModal(mode: 'create' | 'edit' | 'duplicate', contract?: Contract): void {
+    this.contractModalMode = mode;
+    this.contractModalLoading = false;
 
-  private duplicateContract(_contract: Contract): void {}
+    if (mode === 'create') {
+      this.contractModalTitle = 'Neuen Vertrag erstellen';
+      this.contractForm = { contractStatus: 'DRAFT' };
+      this.contractStartDateString = new Date().toISOString().split('T')[0];
+      this.contractEndDateString = '';
+    } else if (mode === 'edit' && contract) {
+      this.contractModalTitle = 'Vertrag bearbeiten';
+      this.contractForm = { ...contract };
+      this.contractStartDateString = this.formatDateForInput(contract.startDate);
+      this.contractEndDateString = this.formatDateForInput(contract.endDate);
+    } else if (mode === 'duplicate' && contract) {
+      this.contractModalTitle = 'Vertrag duplizieren';
+      this.contractForm = {
+        contractTitle: `${contract.contractTitle} (Kopie)`,
+        customerId: contract.customerId,
+        contractStatus: 'DRAFT',
+      };
+      this.contractStartDateString = new Date().toISOString().split('T')[0];
+      this.contractEndDateString = '';
+    }
+
+    this.showContractModal = true;
+  }
+
+  closeContractModal(): void {
+    this.showContractModal = false;
+    this.contractForm = {};
+    this.contractModalLoading = false;
+  }
+
+  saveContract(): void {
+    if (!this.contractForm.contractTitle?.trim() || !this.contractForm.customerId) {
+      this.notificationService.warn('Bitte füllen Sie alle Pflichtfelder aus.');
+      return;
+    }
+
+    const contract: Contract = {
+      ...this.contractForm,
+      startDate: this.contractStartDateString || undefined,
+      endDate: this.contractEndDateString || undefined,
+    };
+
+    this.contractModalLoading = true;
+
+    if (this.contractModalMode === 'edit' && contract.id) {
+      this.contractService.updateContract(contract.id, contract)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: updated => {
+            const idx = this.contracts.findIndex(c => c.id === updated.id);
+            if (idx >= 0) this.contracts[idx] = updated;
+            if (this.selectedContract?.id === updated.id) this.selectedContract = updated;
+            this.closeContractModal();
+            this.notificationService.success('Vertrag wurde aktualisiert');
+          },
+          error: err => {
+            this.contractModalLoading = false;
+            this.notificationService.error('Fehler beim Aktualisieren des Vertrags');
+            console.error(err);
+          }
+        });
+    } else {
+      this.contractService.createContract(contract)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: created => {
+            this.contracts = [created, ...this.contracts];
+            this.closeContractModal();
+            const verb = this.contractModalMode === 'duplicate' ? 'dupliziert' : 'erstellt';
+            this.notificationService.success(`Vertrag wurde ${verb}`);
+          },
+          error: err => {
+            this.contractModalLoading = false;
+            this.notificationService.error('Fehler beim Speichern des Vertrags');
+            console.error(err);
+          }
+        });
+    }
+  }
+
+  private formatDateForInput(date?: string | Date): string {
+    if (!date) return '';
+    try {
+      const d = typeof date === 'string' ? new Date(date) : date;
+      return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
+  }
+
+  // --- Contract Actions ---
+
+  private createNewContract(): void {
+    this.openContractModal('create');
+  }
+
+  private editContract(contract: Contract): void {
+    this.openContractModal('edit', contract);
+  }
+
+  private duplicateContract(contract: Contract): void {
+    this.openContractModal('duplicate', contract);
+  }
 
   private terminateContract(contract: Contract): void {
+    if (!contract.id) return;
     this.confirmationService.confirm({
       message: `Möchten Sie den Vertrag "${contract.contractTitle}" wirklich kündigen?`,
       header: 'Vertrag kündigen',
@@ -381,22 +533,109 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       acceptLabel: 'Kündigen',
       rejectLabel: 'Abbrechen',
       accept: () => {
-        // TODO: contractService.terminateContract(contract.id)
+        this.contractService.terminateContract(contract.id!)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: updated => {
+              this.updateLocalContract(updated);
+              this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde gekündigt`);
+            },
+            error: err => {
+              this.notificationService.error('Fehler beim Kündigen des Vertrags');
+              console.error(err);
+            }
+          });
       }
     });
   }
 
   private cancelContract(contract: Contract): void {
+    if (!contract.id) return;
     this.confirmationService.confirm({
-      message: `Möchten Sie den Vertrag "${contract.contractTitle}" wirklich stornieren?`,
+      message: `Möchten Sie den Vertrag "${contract.contractTitle}" wirklich stornieren? Diese Aktion kann nicht rückgängig gemacht werden.`,
       header: 'Vertrag stornieren',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Stornieren',
       rejectLabel: 'Abbrechen',
       accept: () => {
-        // TODO: contractService.cancelContract(contract.id)
+        this.contractService.terminateContract(contract.id!)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: updated => {
+              this.updateLocalContract(updated);
+              this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde storniert`);
+            },
+            error: err => {
+              this.notificationService.error('Fehler beim Stornieren des Vertrags');
+              console.error(err);
+            }
+          });
       }
     });
+  }
+
+  private updateLocalContract(updated: Contract): void {
+    const idx = this.contracts.findIndex(c => c.id === updated.id);
+    if (idx >= 0) this.contracts[idx] = updated;
+    if (this.selectedContract?.id === updated.id) this.selectedContract = updated;
+  }
+
+  // --- Subscription Modal ---
+
+  openSubscriptionModal(): void {
+    if (!this.selectedContract?.id) {
+      this.notificationService.warn('Bitte wählen Sie zuerst einen Vertrag aus.');
+      return;
+    }
+    this.subscriptionForm = {
+      contractId: this.selectedContract.id,
+      billingCycle: BillingCycle.MONTHLY,
+      autoRenewal: false,
+    };
+    this.subscriptionStartDateString = new Date().toISOString().split('T')[0];
+    this.subscriptionEndDateString = '';
+    this.subscriptionModalLoading = false;
+    this.showSubscriptionModal = true;
+  }
+
+  closeSubscriptionModal(): void {
+    this.showSubscriptionModal = false;
+    this.subscriptionForm = {};
+    this.subscriptionModalLoading = false;
+  }
+
+  saveSubscription(): void {
+    if (!this.subscriptionForm.productId || !this.subscriptionForm.billingCycle || !this.subscriptionStartDateString) {
+      this.notificationService.warn('Bitte füllen Sie alle Pflichtfelder aus.');
+      return;
+    }
+
+    const selectedProduct = this.products.find(p => p.id === this.subscriptionForm.productId);
+    const subscription: Subscription = {
+      contractId: this.selectedContract!.id!,
+      productId: this.subscriptionForm.productId!,
+      productName: selectedProduct?.name,
+      billingCycle: this.subscriptionForm.billingCycle!,
+      startDate: new Date(this.subscriptionStartDateString),
+      endDate: this.subscriptionEndDateString ? new Date(this.subscriptionEndDateString) : undefined,
+      autoRenewal: this.subscriptionForm.autoRenewal ?? false,
+    };
+
+    this.subscriptionModalLoading = true;
+    this.subscriptionService.createSubscription(subscription)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: created => {
+          this.subscriptions = [...this.subscriptions, created];
+          this.closeSubscriptionModal();
+          this.notificationService.success('Abonnement wurde erstellt');
+        },
+        error: err => {
+          this.subscriptionModalLoading = false;
+          this.notificationService.error('Fehler beim Erstellen des Abonnements');
+          console.error(err);
+        }
+      });
   }
 
   // Invoice action methods
