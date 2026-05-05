@@ -12,6 +12,7 @@ interface NavItem {
   icon: string;
   routerLink?: string;
   children?: NavItem[];
+  public?: boolean;
 }
 
 @Component({
@@ -27,15 +28,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
   
   // Logisch reorganisierte Navigation - Mobile First
   items: NavItem[] = [
-    { 
-      label: 'Dashboard', 
-      icon: 'bi-speedometer2', 
-      routerLink: '/dashboard' 
+    {
+      label: 'Dashboard',
+      icon: 'bi-speedometer2',
+      routerLink: '/dashboard',
+      public: true
     },
-    { label: 'Vertragscenter', icon: 'bi-briefcase', routerLink: '/contract-center' },
+    { label: 'Vertragscenter', icon: 'bi-briefcase', routerLink: '/contract-center', public: false },
     {
       label: 'Stammdaten',
       icon: 'bi-database',
+      public: false,
       children: [
         { label: 'Kunden', icon: 'bi-people', routerLink: '/customer' },
         { label: 'Adressen', icon: 'bi-geo-alt', routerLink: '/address' },
@@ -45,6 +48,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     {
       label: 'Verträge',
       icon: 'bi-file-earmark-text',
+      public: false,
       children: [
         { label: 'Verträge', icon: 'bi-file-text', routerLink: '/contract' },
         { label: 'Abonnements', icon: 'bi-arrow-repeat', routerLink: '/subscription' },
@@ -53,6 +57,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     {
       label: 'Fakturierung',
       icon: 'bi-receipt',
+      public: false,
       children: [
         { label: 'Fälligkeitspläne', icon: 'bi-calendar-event', routerLink: '/due-schedule' },
         { label: 'Rechnungslauf', icon: 'bi-play-circle', routerLink: '/invoice-batch' },

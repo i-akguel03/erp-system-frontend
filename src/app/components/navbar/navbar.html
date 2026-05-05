@@ -28,13 +28,13 @@
           <!-- Normaler Link (kein Dropdown) -->
           <a *ngIf="!item.children"
             class="nav-link"
-            [class.disabled]="!isLoggedIn()"
-            [routerLink]="isLoggedIn() ? item.routerLink : null"
+            [class.disabled]="!isLoggedIn() && !item.public"
+            [routerLink]="isLoggedIn() || item.public ? item.routerLink : null"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: false }"
-            (click)="isLoggedIn() && navigateAndClose(item.routerLink)"
+            (click)="(isLoggedIn() || item.public) && navigateAndClose(item.routerLink)"
             [attr.aria-label]="item.label"
-            [attr.aria-disabled]="!isLoggedIn()">
+            [attr.aria-disabled]="!isLoggedIn() && !item.public">
             <i [class]="'bi ' + item.icon + ' me-2'"></i>
             <span>{{ item.label }}</span>
           </a>
