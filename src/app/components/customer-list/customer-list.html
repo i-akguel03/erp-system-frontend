@@ -1,140 +1,163 @@
-<div class="container mt-3">
+<!-- Sticky Toolbar -->
+<div class="position-sticky bg-white shadow-sm border-bottom px-3 px-md-4 py-3" style="top: 0; z-index: 10;">
+  <div class="d-flex gap-2 align-items-center">
+    <div class="input-group">
+      <span class="input-group-text bg-transparent border-end-0 text-muted">
+        <i class="fas fa-search"></i>
+      </span>
+      <input type="text" class="form-control border-start-0 ps-0"
+             placeholder="Name, Nummer oder Telefon suchen..."
+             [(ngModel)]="searchTerm" (ngModelChange)="filterCustomers()">
+    </div>
+    <button class="btn btn-outline-secondary flex-shrink-0" (click)="loadCustomers()" title="Alle anzeigen">
+      <i class="fas fa-sync-alt"></i>
+    </button>
+    <button class="btn btn-primary flex-shrink-0" (click)="openNewModal()">
+      <i class="fas fa-plus me-1"></i><span class="d-none d-sm-inline">Neuer Kunde</span>
+    </button>
+  </div>
+</div>
 
-  <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
-    <!-- Suchfeld -->
-    <input type="text" class="form-control flex-grow-1" placeholder="Kunden suchen..."
-           [(ngModel)]="searchTerm" (ngModelChange)="filterCustomers()">
+<!-- Inhalt -->
+<div class="px-3 px-md-4 py-3">
 
-    <!-- Buttons -->
-    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
-      <button class="btn btn-primary flex-grow-1 flex-md-grow-0" (click)="loadCustomers()">Alle Anzeigen</button>
-      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">Neuer Kunde</button>
+  <div *ngIf="loading" class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Wird geladen...</span>
     </div>
   </div>
 
-  <!-- Lade Spinner -->
-  <div *ngIf="loading" class="text-center my-3">
-    <div class="spinner-border text-primary"></div>
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center mb-3">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <span class="flex-grow-1">{{ error }}</span>
+    <button type="button" class="btn-close ms-2" (click)="clearError()"></button>
   </div>
 
-  <!-- Fehler -->
-  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
-    {{ error }}
-    <button type="button" class="btn-close" (click)="clearError()"></button>
-  </div>
-
-  <!-- Desktop Tabelle (ab md) -->
-  <div class="table-responsive d-none d-md-block" *ngIf="filteredCustomers.length > 0">
-    <table class="table table-hover table-bordered">
-      <thead class="table-light">
-        <tr>
-          <th>Kundennummer</th>
-          <th>Vorname</th>
-          <th>Nachname</th>
-          <th>Telefon</th>
-          <th>Wohnadresse</th>
-          <th>Aktionen</th>
+  <!-- Desktop Tabelle -->
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredCustomers.length > 0 && !loading">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="border-bottom border-2">
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Kundennr.</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Name</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Telefon</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Adresse</th>
+          <th class="border-0" style="width: 80px;"></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let customer of filteredCustomers">
-          <td>{{ customer.customerNumber }}</td>
-          <td>{{ customer.firstName }}</td>
-          <td>{{ customer.lastName }}</td>
-          <td>{{ customer.tel }}</td>
-          <td>
+          <td class="fw-bold text-primary">{{ customer.customerNumber }}</td>
+          <td class="fw-medium">{{ customer.firstName }} {{ customer.lastName }}</td>
+          <td class="text-muted small">{{ customer.tel }}</td>
+          <td class="text-muted small">
             {{ customer.residentialAddress?.street || '-' }},
             {{ customer.residentialAddress?.postalCode || '' }}
             {{ customer.residentialAddress?.city || '' }}
           </td>
-          <td class="d-flex gap-1 flex-wrap">
-            <button class="btn btn-sm btn-primary" (click)="openEditModal(customer)">Bearbeiten</button>
-            <button class="btn btn-sm btn-danger" (click)="deleteCustomer(customer.id)">Löschen</button>
+          <td>
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(customer)" title="Bearbeiten">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteCustomer(customer.id)" title="Löschen">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Mobile Cards (unter md) -->
-  <div class="d-block d-md-none">
-    <div *ngFor="let customer of filteredCustomers" class="card mb-3 shadow-sm">
+  <!-- Mobile Cards -->
+  <div class="d-md-none" *ngIf="!loading">
+    <div *ngFor="let customer of filteredCustomers" class="card border-0 shadow-sm mb-3">
       <div class="card-body">
-        <h5 class="card-title">{{ customer.firstName }} {{ customer.lastName }}</h5>
-        <h6 class="card-subtitle mb-2 text-muted">
-          Kundennummer: {{ customer.customerNumber }}
-        </h6>
-        <p class="card-text">
-          <strong>Telefon:</strong> {{ customer.tel }}<br>
-          <strong>Adresse:</strong>
-          {{ customer.residentialAddress?.street || '-' }},
-          {{ customer.residentialAddress?.postalCode || '' }}
-          {{ customer.residentialAddress?.city || '' }}
-        </p>
-        <div class="d-flex flex-wrap gap-2">
-          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(customer)">Bearbeiten</button>
-          <button class="btn btn-sm btn-danger flex-grow-1" (click)="deleteCustomer(customer.id)">Löschen</button>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="fw-bold text-primary small">{{ customer.customerNumber }}</div>
+            <h6 class="mb-0 fw-semibold">{{ customer.firstName }} {{ customer.lastName }}</h6>
+          </div>
+          <span *ngIf="customer.tel" class="text-muted small">
+            <i class="fas fa-phone me-1"></i>{{ customer.tel }}
+          </span>
+        </div>
+        <div class="text-muted small mb-3" *ngIf="customer.residentialAddress?.street">
+          <i class="fas fa-map-marker-alt me-1"></i>
+          {{ customer.residentialAddress?.street }},
+          {{ customer.residentialAddress?.postalCode }}
+          {{ customer.residentialAddress?.city }}
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(customer)">
+            <i class="fas fa-edit me-1"></i>Bearbeiten
+          </button>
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteCustomer(customer.id)" title="Löschen">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Keine Kunden Hinweis -->
-  <div *ngIf="filteredCustomers.length === 0 && !loading" class="text-center mt-3">
-    Keine Kunden gefunden.
+  <!-- Leerzustand -->
+  <div *ngIf="filteredCustomers.length === 0 && !loading" class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+    <i class="fas fa-users fa-3x mb-3 opacity-25"></i>
+    <h6 class="mb-1">Keine Kunden gefunden</h6>
+    <small>Versuchen Sie andere Suchbegriffe oder legen Sie einen neuen Kunden an.</small>
   </div>
 
-  <!-- Neuer Kunde Modal -->
-  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Neuer Kunde</h5>
-          <button type="button" class="btn-close" (click)="closeNewModal()"></button>
-        </div>
-        <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="newCustomer.firstName">
-          <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="newCustomer.lastName">
-          <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="newCustomer.tel">
-          <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="newCustomer.email">
-          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newCustomer.residentialAddress.street">
-          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newCustomer.residentialAddress.postalCode">
-          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newCustomer.residentialAddress.city">
-          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newCustomer.residentialAddress.country">
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="createCustomer()">Erstellen</button>
-        </div>
+</div>
+
+<!-- Neuer Kunde Modal -->
+<div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Neuer Kunde</h5>
+        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="newCustomer.firstName">
+        <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="newCustomer.lastName">
+        <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="newCustomer.tel">
+        <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="newCustomer.email">
+        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newCustomer.residentialAddress.street">
+        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newCustomer.residentialAddress.postalCode">
+        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newCustomer.residentialAddress.city">
+        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newCustomer.residentialAddress.country">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="createCustomer()">Erstellen</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Bearbeiten Kunde Modal -->
-  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Kunde bearbeiten</h5>
-          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
-        </div>
-        <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="editCustomer.firstName">
-          <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="editCustomer.lastName">
-          <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="editCustomer.tel">
-          <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="editCustomer.email">
-          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editCustomer.residentialAddress.street">
-          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editCustomer.residentialAddress.postalCode">
-          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editCustomer.residentialAddress.city">
-          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editCustomer.residentialAddress.country">
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="updateCustomer()">Speichern</button>
-        </div>
+<!-- Bearbeiten Kunde Modal -->
+<div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Kunde bearbeiten</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="editCustomer.firstName">
+        <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="editCustomer.lastName">
+        <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="editCustomer.tel">
+        <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="editCustomer.email">
+        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editCustomer.residentialAddress.street">
+        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editCustomer.residentialAddress.postalCode">
+        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editCustomer.residentialAddress.city">
+        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editCustomer.residentialAddress.country">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="updateCustomer()">Speichern</button>
       </div>
     </div>
   </div>
-
 </div>

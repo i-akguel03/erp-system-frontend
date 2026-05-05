@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  position: relative;
+  z-index: 0;
+}
+
 .status-active { background-color: green; color: white; }
 .status-paused { background-color: orange; color: white; }
 .status-suspended { background-color: gray; color: white; }

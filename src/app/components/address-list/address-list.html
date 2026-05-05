@@ -1,48 +1,65 @@
-<div class="container mt-3 address-container">
+<!-- Sticky Toolbar -->
+<div class="position-sticky bg-white shadow-sm border-bottom px-3 px-md-4 py-3" style="top: 0; z-index: 10;">
+  <div class="d-flex gap-2 align-items-center">
+    <div class="input-group">
+      <span class="input-group-text bg-transparent border-end-0 text-muted">
+        <i class="fas fa-search"></i>
+      </span>
+      <input type="text" class="form-control border-start-0 ps-0"
+             placeholder="Straße, Stadt oder PLZ suchen..."
+             [(ngModel)]="searchTerm" (ngModelChange)="filterAddresses()">
+    </div>
+    <button class="btn btn-outline-secondary flex-shrink-0" (click)="loadAddresses()" title="Alle anzeigen">
+      <i class="fas fa-sync-alt"></i>
+    </button>
+    <button class="btn btn-primary flex-shrink-0" (click)="openNewModal()">
+      <i class="fas fa-plus me-1"></i><span class="d-none d-sm-inline">Neue Adresse</span>
+    </button>
+  </div>
+</div>
 
-  <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
-    <input type="text" class="form-control flex-grow-1" placeholder="Adresse suchen..."
-           [(ngModel)]="searchTerm" (ngModelChange)="filterAddresses()">
+<!-- Inhalt -->
+<div class="px-3 px-md-4 py-3">
 
-    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
-      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadAddresses()">Alle Anzeigen</button>
-      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">Neue Adresse</button>
+  <div *ngIf="loading" class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Wird geladen...</span>
     </div>
   </div>
 
-  <!-- Ladeanzeige & Fehlermeldung -->
-  <div *ngIf="loading" class="text-center my-3">
-    <div class="spinner-border text-primary"></div>
-  </div>
-  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
-    {{ error }}
-    <button type="button" class="btn-close" (click)="clearError()"></button>
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center mb-3">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <span class="flex-grow-1">{{ error }}</span>
+    <button type="button" class="btn-close ms-2" (click)="clearError()"></button>
   </div>
 
   <!-- Desktop Tabelle -->
-  <div class="table-responsive d-none d-md-block" *ngIf="filteredAddresses.length > 0">
-    <table class="table table-hover table-bordered">
-      <thead class="table-light">
-        <tr>
-          <th>ID</th>
-          <th>Straße</th>
-          <th>PLZ</th>
-          <th>Stadt</th>
-          <th>Land</th>
-          <th>Aktionen</th>
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredAddresses.length > 0 && !loading">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="border-bottom border-2">
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Straße</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">PLZ</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Stadt</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Land</th>
+          <th class="border-0" style="width: 80px;"></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let address of filteredAddresses">
-          <td>{{ address.id }}</td>
-          <td>{{ address.street }}</td>
-          <td>{{ address.postalCode }}</td>
-          <td>{{ address.city }}</td>
-          <td>{{ address.country }}</td>
-          <td class="d-flex gap-1 flex-wrap">
-            <button class="btn btn-sm btn-primary" (click)="openEditModal(address)">Bearbeiten</button>
-            <button class="btn btn-sm btn-danger" (click)="deleteAddress(address.id)">Löschen</button>
+          <td class="fw-medium">{{ address.street }}</td>
+          <td class="text-muted small">{{ address.postalCode }}</td>
+          <td class="text-muted small">{{ address.city }}</td>
+          <td class="text-muted small">{{ address.country }}</td>
+          <td>
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(address)" title="Bearbeiten">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteAddress(address.id)" title="Löschen">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -50,70 +67,74 @@
   </div>
 
   <!-- Mobile Cards -->
-  <div class="d-block d-md-none">
-    <div *ngFor="let address of filteredAddresses" class="card mb-3 shadow-sm">
+  <div class="d-md-none" *ngIf="!loading">
+    <div *ngFor="let address of filteredAddresses" class="card border-0 shadow-sm mb-3">
       <div class="card-body">
-        <h5 class="card-title">Adresse ID: {{ address.id }}</h5>
-        <p class="card-text">
-          <strong>Straße:</strong> {{ address.street }}<br>
-          <strong>PLZ:</strong> {{ address.postalCode }}<br>
-          <strong>Stadt:</strong> {{ address.city }}<br>
-          <strong>Land:</strong> {{ address.country }}
-        </p>
-        <div class="d-flex flex-wrap gap-2">
-          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(address)">Bearbeiten</button>
-          <button class="btn btn-sm btn-danger flex-grow-1" (click)="deleteAddress(address.id)">Löschen</button>
+        <div class="fw-semibold mb-1">{{ address.street }}</div>
+        <div class="text-muted small mb-3">
+          {{ address.postalCode }} {{ address.city }}, {{ address.country }}
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(address)">
+            <i class="fas fa-edit me-1"></i>Bearbeiten
+          </button>
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteAddress(address.id)" title="Löschen">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="filteredAddresses.length === 0 && !loading" class="text-center mt-3">
-    Keine Adressen gefunden.
+  <!-- Leerzustand -->
+  <div *ngIf="filteredAddresses.length === 0 && !loading" class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+    <i class="fas fa-map-marker-alt fa-3x mb-3 opacity-25"></i>
+    <h6 class="mb-1">Keine Adressen gefunden</h6>
+    <small>Versuchen Sie andere Suchbegriffe oder erstellen Sie eine neue Adresse.</small>
   </div>
 
-  <!-- Neuer Adresse Modal -->
-  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Neue Adresse erstellen</h5>
-          <button type="button" class="btn-close" (click)="closeNewModal()"></button>
-        </div>
-        <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newAddress.street">
-          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newAddress.postalCode">
-          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newAddress.city">
-          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newAddress.country">
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="createAddress()">Erstellen</button>
-        </div>
+</div>
+
+<!-- Neue Adresse Modal -->
+<div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Neue Adresse erstellen</h5>
+        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newAddress.street">
+        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newAddress.postalCode">
+        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newAddress.city">
+        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newAddress.country">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="createAddress()">Erstellen</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Bearbeiten Modal -->
-  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Adresse bearbeiten</h5>
-          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
-        </div>
-        <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editAddress.street">
-          <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editAddress.postalCode">
-          <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editAddress.city">
-          <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editAddress.country">
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="updateAddress()">Speichern</button>
-        </div>
+<!-- Adresse bearbeiten Modal -->
+<div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Adresse bearbeiten</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editAddress.street">
+        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editAddress.postalCode">
+        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editAddress.city">
+        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editAddress.country">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="updateAddress()">Speichern</button>
       </div>
     </div>
   </div>
-
 </div>

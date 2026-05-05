@@ -1,56 +1,75 @@
-<div class="container mt-3">
+<!-- Sticky Toolbar -->
+<div class="position-sticky bg-white shadow-sm border-bottom px-3 px-md-4 py-3" style="top: 0; z-index: 10;">
+  <div class="d-flex gap-2 align-items-center">
+    <div class="input-group">
+      <span class="input-group-text bg-transparent border-end-0 text-muted">
+        <i class="fas fa-search"></i>
+      </span>
+      <input type="text" class="form-control border-start-0 ps-0"
+             placeholder="Produkt suchen..."
+             [(ngModel)]="searchTerm" (ngModelChange)="filterProducts()">
+    </div>
+    <button class="btn btn-outline-secondary flex-shrink-0" (click)="loadProducts()" title="Alle anzeigen">
+      <i class="fas fa-sync-alt"></i>
+    </button>
+    <button class="btn btn-primary flex-shrink-0" (click)="openNewModal()">
+      <i class="fas fa-plus me-1"></i><span class="d-none d-sm-inline">Neues Produkt</span>
+    </button>
+  </div>
+</div>
 
-  <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
-    <input type="text" class="form-control flex-grow-1" placeholder="Produkt suchen..."
-           [(ngModel)]="searchTerm" (ngModelChange)="filterProducts()">
+<!-- Inhalt -->
+<div class="px-3 px-md-4 py-3">
 
-    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
-      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadProducts()">Alle Anzeigen</button>
-      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">Neues Produkt</button>
+  <div *ngIf="loading" class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Wird geladen...</span>
     </div>
   </div>
 
-  <div *ngIf="loading" class="text-center my-3">
-    <div class="spinner-border text-primary"></div>
-  </div>
-
-  <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center">
-    {{ error }}
-    <button type="button" class="btn-close" (click)="clearError()"></button>
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center mb-3">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <span class="flex-grow-1">{{ error }}</span>
+    <button type="button" class="btn-close ms-2" (click)="clearError()"></button>
   </div>
 
   <!-- Desktop Tabelle -->
-  <div class="table-responsive d-none d-md-block" *ngIf="filteredProducts.length > 0">
-    <table class="table table-hover table-bordered">
-      <thead class="table-light">
-        <tr>
-          <th>Nr.</th>
-          <th>Name</th>
-          <th>Beschreibung</th>
-          <th>Preis</th>
-          <th>Einheit</th>
-          <th>Typ</th>
-          <th>Status</th>
-          <th>Aktionen</th>
+  <div class="table-responsive d-none d-md-block" *ngIf="filteredProducts.length > 0 && !loading">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="border-bottom border-2">
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Nr.</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Name</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Beschreibung</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Preis</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Einheit</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Typ</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
+          <th class="border-0" style="width: 80px;"></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let product of filteredProducts">
-          <td>{{ product.productNumber }}</td>
-          <td>{{ product.name }}</td>
-          <td>{{ product.description }}</td>
-          <td>{{ product.price | currency }}</td>
-          <td>{{ product.unit }}</td>
-          <td>{{ product.productType }}</td>
+          <td class="fw-bold text-primary">{{ product.productNumber }}</td>
+          <td class="fw-medium">{{ product.name }}</td>
+          <td class="text-muted small">{{ product.description }}</td>
+          <td class="fw-medium">{{ product.price | currency:'EUR':'symbol':'1.2-2':'de' }}</td>
+          <td class="text-muted small">{{ product.unit }}</td>
+          <td class="text-muted small">{{ product.productType }}</td>
           <td>
-            <span class="badge" [ngClass]="product.active ? 'bg-success' : 'bg-secondary'">
-              {{ product.active ? 'AKTIV' : 'INAKTIV' }}
+            <span class="badge rounded-pill" [ngClass]="product.active ? 'bg-success' : 'bg-secondary'">
+              {{ product.active ? 'Aktiv' : 'Inaktiv' }}
             </span>
           </td>
-          <td class="d-flex gap-1 flex-wrap">
-            <button class="btn btn-sm btn-primary" (click)="openEditModal(product)">Bearbeiten</button>
-            <button class="btn btn-sm btn-danger" (click)="deleteProduct(product.id)">Löschen</button>
+          <td>
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(product)" title="Bearbeiten">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteProduct(product.id)" title="Löschen">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -58,85 +77,95 @@
   </div>
 
   <!-- Mobile Cards -->
-  <div class="d-block d-md-none">
-    <div *ngFor="let product of filteredProducts" class="card mb-3 shadow-sm">
+  <div class="d-md-none" *ngIf="!loading">
+    <div *ngFor="let product of filteredProducts" class="card border-0 shadow-sm mb-3">
       <div class="card-body">
-        <h5 class="card-title">{{ product.name }}</h5>
-        <h6 class="card-subtitle mb-2 text-muted">Nr.: {{ product.productNumber }}</h6>
-        <p class="card-text">
-          <strong>Beschreibung:</strong> {{ product.description }}<br>
-          <strong>Preis:</strong> {{ product.price | currency }}<br>
-          <strong>Einheit:</strong> {{ product.unit }}<br>
-          <strong>Typ:</strong> {{ product.productType }}<br>
-          <strong>Status:</strong>
-          <span class="badge" [ngClass]="product.active ? 'bg-success' : 'bg-secondary'">
-            {{ product.active ? 'AKTIV' : 'INAKTIV' }}
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="fw-bold text-primary small">{{ product.productNumber }}</div>
+            <h6 class="mb-0 fw-semibold">{{ product.name }}</h6>
+            <div class="text-muted small">{{ product.productType }}</div>
+          </div>
+          <span class="badge rounded-pill" [ngClass]="product.active ? 'bg-success' : 'bg-secondary'">
+            {{ product.active ? 'Aktiv' : 'Inaktiv' }}
           </span>
-        </p>
-        <div class="d-flex flex-wrap gap-2">
-          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openEditModal(product)">Bearbeiten</button>
-          <button class="btn btn-sm btn-danger flex-grow-1" (click)="deleteProduct(product.id)">Löschen</button>
+        </div>
+        <div class="text-muted small mb-2" *ngIf="product.description">{{ product.description }}</div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="fw-semibold">{{ product.price | currency:'EUR':'symbol':'1.2-2':'de' }}</span>
+          <span class="text-muted small">{{ product.unit }}</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(product)">
+            <i class="fas fa-edit me-1"></i>Bearbeiten
+          </button>
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteProduct(product.id)" title="Löschen">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="filteredProducts.length === 0 && !loading" class="text-center mt-3">
-    Keine Produkte gefunden.
+  <!-- Leerzustand -->
+  <div *ngIf="filteredProducts.length === 0 && !loading" class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+    <i class="fas fa-box fa-3x mb-3 opacity-25"></i>
+    <h6 class="mb-1">Keine Produkte gefunden</h6>
+    <small>Versuchen Sie andere Suchbegriffe oder erstellen Sie ein neues Produkt.</small>
   </div>
 
-  <!-- Neues Produkt Modal -->
-  <div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Neues Produkt erstellen</h5>
-          <button type="button" class="btn-close" (click)="closeNewModal()"></button>
-        </div>
-        <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Name" [(ngModel)]="newProduct.name">
-          <input type="text" class="form-control mb-2" placeholder="Beschreibung" [(ngModel)]="newProduct.description">
-          <input type="number" class="form-control mb-2" placeholder="Preis" [(ngModel)]="newProduct.price">
-          <input type="text" class="form-control mb-2" placeholder="Einheit" [(ngModel)]="newProduct.unit">
-          <input type="text" class="form-control mb-2" placeholder="Typ" [(ngModel)]="newProduct.productType">
-          <select class="form-select mb-2" [(ngModel)]="newProduct.active">
-            <option [ngValue]="true">AKTIV</option>
-            <option [ngValue]="false">INAKTIV</option>
-          </select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="createProduct()">Erstellen</button>
-        </div>
+</div>
+
+<!-- Neues Produkt Modal -->
+<div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Neues Produkt erstellen</h5>
+        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" placeholder="Name" [(ngModel)]="newProduct.name">
+        <input type="text" class="form-control mb-2" placeholder="Beschreibung" [(ngModel)]="newProduct.description">
+        <input type="number" class="form-control mb-2" placeholder="Preis" [(ngModel)]="newProduct.price">
+        <input type="text" class="form-control mb-2" placeholder="Einheit" [(ngModel)]="newProduct.unit">
+        <input type="text" class="form-control mb-2" placeholder="Typ" [(ngModel)]="newProduct.productType">
+        <select class="form-select mb-2" [(ngModel)]="newProduct.active">
+          <option [ngValue]="true">AKTIV</option>
+          <option [ngValue]="false">INAKTIV</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="createProduct()">Erstellen</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Bearbeiten Produkt Modal -->
-  <div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Produkt bearbeiten</h5>
-          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
-        </div>
-        <div class="modal-body">
-          <input type="text" class="form-control mb-2" placeholder="Name" [(ngModel)]="editProduct.name">
-          <input type="text" class="form-control mb-2" placeholder="Beschreibung" [(ngModel)]="editProduct.description">
-          <input type="number" class="form-control mb-2" placeholder="Preis" [(ngModel)]="editProduct.price">
-          <input type="text" class="form-control mb-2" placeholder="Einheit" [(ngModel)]="editProduct.unit">
-          <input type="text" class="form-control mb-2" placeholder="Typ" [(ngModel)]="editProduct.productType">
-          <select class="form-select mb-2" [(ngModel)]="editProduct.active">
-            <option [ngValue]="true">AKTIV</option>
-            <option [ngValue]="false">INAKTIV</option>
-          </select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-          <button class="btn btn-primary" (click)="updateProduct()">Speichern</button>
-        </div>
+<!-- Bearbeiten Produkt Modal -->
+<div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Produkt bearbeiten</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" placeholder="Name" [(ngModel)]="editProduct.name">
+        <input type="text" class="form-control mb-2" placeholder="Beschreibung" [(ngModel)]="editProduct.description">
+        <input type="number" class="form-control mb-2" placeholder="Preis" [(ngModel)]="editProduct.price">
+        <input type="text" class="form-control mb-2" placeholder="Einheit" [(ngModel)]="editProduct.unit">
+        <input type="text" class="form-control mb-2" placeholder="Typ" [(ngModel)]="editProduct.productType">
+        <select class="form-select mb-2" [(ngModel)]="editProduct.active">
+          <option [ngValue]="true">AKTIV</option>
+          <option [ngValue]="false">INAKTIV</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="updateProduct()">Speichern</button>
       </div>
     </div>
   </div>
-
 </div>
