@@ -1,6 +1,6 @@
 <!-- Contract Center -->
-<div class="container-fluid p-0 d-flex flex-column position-absolute top-0 start-0 end-0 bottom-0"
-     style="overflow: hidden !important;">
+<div class="container-fluid p-0 d-flex flex-column"
+     style="height: 100%; overflow: hidden;">
 
   <!-- Mobile Top Header -->
   <div class="d-md-none d-flex align-items-center bg-white border-bottom flex-shrink-0 px-2"
@@ -507,12 +507,9 @@
 :host {
   display: block;
   height: 100%;
-  overflow: hidden !important;
+  overflow: hidden;
   position: relative;
-}
-
-:host ::ng-deep .app-main-container {
-  overflow: hidden !important;
+  z-index: 0;
 }
 
 .overflow-auto::-webkit-scrollbar { width: 6px; height: 6px; }
