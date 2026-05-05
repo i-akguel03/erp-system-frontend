@@ -90,8 +90,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
         filter(event => event instanceof NavigationEnd)
       )
-      .subscribe((event: NavigationEnd) => {
-        this.showNavbar = !event.url.includes('/login') && !event.url.includes('/register');
+      .subscribe((_event: NavigationEnd) => {
+        this.showNavbar = true;
         // Mobile navbar nach Navigation schließen
         if (window.innerWidth < 992 && !this.isCollapsed) {
           this.closeNavbar();
