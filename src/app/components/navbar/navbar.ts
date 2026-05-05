@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/services/auth';
+import { NotificationService } from '../../services/notification.service';
+import { ConfirmationService } from 'primeng/api';
 import { Subject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
 
@@ -69,7 +71,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private notification: NotificationService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
@@ -82,7 +86,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
         filter(event => event instanceof NavigationEnd)
       )
       .subscribe((event: NavigationEnd) => {
-        this.showNavbar = !event.url.includes('/login');
+        this.showNavbar = !event.url.includes('/login') && !event.url.includes('/register');
         // Mobile navbar nach Navigation schließen
         if (window.innerWidth < 992 && !this.isCollapsed) {
           this.closeNavbar();
@@ -191,19 +195,31 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    if (confirm('Möchten Sie sich wirklich abmelden?')) {
-      this.closeAllDropdowns();
-      document.body.classList.remove('navbar-open');
-      
-      this.authService.logoutComplete().subscribe({
-        next: () => this.router.navigate(['/login']),
-        error: (error) => {
-          console.error('Logout error:', error);
-          this.authService.logout();
-          this.router.navigate(['/login']);
-        }
-      });
-    }
+    this.confirmationService.confirm({
+      message: 'Möchten Sie sich wirklich abmelden?',
+      header: 'Abmelden',
+      icon: 'bi bi-box-arrow-right',
+      acceptLabel: 'Abmelden',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.closeAllDropdowns();
+        document.body.classList.remove('navbar-open');
+
+        this.authService.logoutComplete().subscribe({
+          next: () => {
+            this.notification.success('Sie wurden erfolgreich abgemeldet.');
+            this.router.navigate(['/dashboard']);
+          },
+          error: (error) => {
+            console.error('Logout error:', error);
+            this.authService.logout();
+            this.notification.success('Sie wurden erfolgreich abgemeldet.');
+            this.router.navigate(['/dashboard']);
+          }
+        });
+      }
+    });
   }
 
   private loadCurrentUser(): void {
@@ -214,11 +230,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.authService.isLoggedIn();
   }
 
-  trackByFn(index: number, item: NavItem): string {
+  trackByFn(_index: number, item: NavItem): string {
     return item.label;
   }
 
-  trackByChildFn(index: number, item: NavItem): string {
+  trackByChildFn(_index: number, item: NavItem): string {
     return item.routerLink || item.label;
   }
 

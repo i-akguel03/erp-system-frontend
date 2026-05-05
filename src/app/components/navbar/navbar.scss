@@ -489,6 +489,13 @@
   }
 }
 
+// ====== DISABLED NAV ITEMS (nicht eingeloggt) ======
+.nav-link.disabled {
+  opacity: 0.4 !important;
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
 // ====== ACCESSIBILITY IMPROVEMENTS ======
 @media (prefers-reduced-motion: reduce) {
   * {

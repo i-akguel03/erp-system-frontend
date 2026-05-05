@@ -5,7 +5,7 @@
 <div *ngIf="backendReady()" class="app-root-container d-flex flex-column vh-100">
 
   <!-- Navbar oben, sticky -->
-  <app-navbar *ngIf="auth.authStatus$ | async"></app-navbar>
+  <app-navbar></app-navbar>
 
   <!-- Main Content Bereich: fill the rest of the viewport -->
   <div class="app-main-wrapper flex-fill d-flex flex-column overflow-hidden">

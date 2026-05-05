@@ -1,15 +1,14 @@
-<!-- Navbar nur anzeigen, wenn showNavbar = true -->
 <nav *ngIf="showNavbar" class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
   <div class="container-fluid">
-    
+
     <!-- Brand/Logo -->
     <a class="navbar-brand" routerLink="/dashboard" (click)="closeNavbar(); closeAllDropdowns()">
       <i class="bi bi-building me-2"></i>
       <span class="brand-text">ERP System</span>
     </a>
-    
+
     <!-- Toggle Button für Mobile -->
-    <button 
+    <button
       class="navbar-toggler border-0"
       type="button"
       (click)="toggleNavbar()"
@@ -17,49 +16,51 @@
       [attr.aria-label]="isCollapsed ? 'Navigation öffnen' : 'Navigation schließen'">
       <span class="navbar-toggler-icon"></span>
     </button>
-    
+
     <!-- Navbar Content -->
     <div class="navbar-collapse" [class.collapse]="isCollapsed" [class.show]="!isCollapsed">
-      
-      <!-- Navigation Links nur wenn eingeloggt -->
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0" *ngIf="isLoggedIn()">
-        
-        <!-- Normale Menüeinträge -->
+
+      <!-- Navigation Links - immer sichtbar, disabled wenn nicht eingeloggt -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
         <li class="nav-item" *ngFor="let item of items; trackBy: trackByFn">
-          
-          <!-- Falls kein children -> normaler Link -->
+
+          <!-- Normaler Link (kein Dropdown) -->
           <a *ngIf="!item.children"
             class="nav-link"
-            [routerLink]="item.routerLink"
+            [class.disabled]="!isLoggedIn()"
+            [routerLink]="isLoggedIn() ? item.routerLink : null"
             routerLinkActive="active"
-            (click)="navigateAndClose(item.routerLink)"
-            [attr.aria-label]="item.label">
+            [routerLinkActiveOptions]="{ exact: false }"
+            (click)="isLoggedIn() && navigateAndClose(item.routerLink)"
+            [attr.aria-label]="item.label"
+            [attr.aria-disabled]="!isLoggedIn()">
             <i [class]="'bi ' + item.icon + ' me-2'"></i>
             <span>{{ item.label }}</span>
           </a>
-          
-          <!-- Falls children -> Dropdown (manuell gesteuert) -->
+
+          <!-- Dropdown -->
           <div *ngIf="item.children" class="nav-item dropdown">
             <a class="nav-link dropdown-toggle-custom"
+              [class.disabled]="!isLoggedIn()"
               role="button"
-              (click)="toggleNavDropdown(item.label)"
-              [class.active]="isNavDropdownOpen(item.label)"
-              [class.show]="isNavDropdownOpen(item.label)"
-              [attr.aria-expanded]="isNavDropdownOpen(item.label)"
-              [attr.aria-label]="item.label + ' Menü ' + (isNavDropdownOpen(item.label) ? 'schließen' : 'öffnen')"
+              (click)="isLoggedIn() && toggleNavDropdown(item.label)"
+              [class.active]="isLoggedIn() && isNavDropdownOpen(item.label)"
+              [class.show]="isLoggedIn() && isNavDropdownOpen(item.label)"
+              [attr.aria-expanded]="isLoggedIn() && isNavDropdownOpen(item.label)"
+              [attr.aria-disabled]="!isLoggedIn()"
               style="cursor: pointer;">
               <span class="nav-content">
                 <i [class]="'bi ' + item.icon + ' me-2'"></i>
                 <span>{{ item.label }}</span>
               </span>
-              <i class="bi bi-chevron-down dropdown-arrow" 
-                [class.rotated]="isNavDropdownOpen(item.label)"></i>
+              <i class="bi bi-chevron-down dropdown-arrow"
+                [class.rotated]="isLoggedIn() && isNavDropdownOpen(item.label)"></i>
             </a>
-            
-            <!-- Dropdown Menu -->
-            <ul class="dropdown-menu" 
-              [class.show]="isNavDropdownOpen(item.label)"
-              [attr.aria-hidden]="!isNavDropdownOpen(item.label)">
+
+            <ul class="dropdown-menu"
+              [class.show]="isLoggedIn() && isNavDropdownOpen(item.label)"
+              [attr.aria-hidden]="!isLoggedIn() || !isNavDropdownOpen(item.label)">
               <li *ngFor="let child of item.children; trackBy: trackByChildFn">
                 <a class="dropdown-item"
                   [routerLink]="child.routerLink"
@@ -74,27 +75,27 @@
           </div>
         </li>
       </ul>
-      
-      <!-- User Info & Dropdown -->
-      <div class="navbar-nav ms-auto user-dropdown" *ngIf="isLoggedIn()">
-        <div class="nav-item dropdown">
-          <a 
+
+      <!-- Rechts: User-Dropdown wenn eingeloggt, sonst Anmelden-Button -->
+      <div class="navbar-nav ms-auto">
+
+        <!-- Eingeloggt: User-Dropdown -->
+        <div class="nav-item dropdown user-dropdown" *ngIf="isLoggedIn()">
+          <a
             class="nav-link dropdown-toggle-custom user-link"
             (click)="toggleDropdown()"
             [class.active]="isDropdownOpen"
             [class.show]="isDropdownOpen"
             [attr.aria-expanded]="isDropdownOpen"
-            [attr.aria-label]="'Benutzermenü ' + (isDropdownOpen ? 'schließen' : 'öffnen')"
             style="cursor: pointer;">
             <span class="nav-content">
               <i class="bi bi-person-circle me-2"></i>
               <span class="user-name">{{ currentUser || 'Benutzer' }}</span>
             </span>
-            <i class="bi bi-chevron-down dropdown-arrow" 
-              [class.rotated]="isDropdownOpen"></i>
+            <i class="bi bi-chevron-down dropdown-arrow" [class.rotated]="isDropdownOpen"></i>
           </a>
-          
-          <ul class="dropdown-menu dropdown-menu-end" 
+
+          <ul class="dropdown-menu dropdown-menu-end"
             [class.show]="isDropdownOpen"
             [attr.aria-hidden]="!isDropdownOpen">
             <li>
@@ -104,24 +105,35 @@
               </span>
             </li>
             <li>
-              <a class="dropdown-item logout-item" 
-                (click)="logout()" 
-                style="cursor: pointer;"
-                aria-label="Abmelden">
+              <a class="dropdown-item logout-item"
+                (click)="logout()"
+                style="cursor: pointer;">
                 <i class="bi bi-box-arrow-right me-2"></i>
                 <span>Abmelden</span>
               </a>
             </li>
           </ul>
         </div>
+
+        <!-- Nicht eingeloggt: Anmelden-Button -->
+        <div class="nav-item" *ngIf="!isLoggedIn()">
+          <a class="nav-link btn btn-outline-light btn-sm px-3 ms-lg-2"
+            routerLink="/login"
+            (click)="closeNavbar()"
+            style="font-weight: 500;">
+            <i class="bi bi-box-arrow-in-right me-1"></i>
+            Anmelden
+          </a>
+        </div>
+
       </div>
     </div>
   </div>
 </nav>
 
-<!-- Mobile Overlay für bessere UX -->
-<div class="navbar-overlay" 
-  [class.show]="!isCollapsed" 
+<!-- Mobile Overlay -->
+<div class="navbar-overlay"
+  [class.show]="!isCollapsed"
   (click)="closeNavbar()"
   *ngIf="showNavbar && !isCollapsed">
 </div>

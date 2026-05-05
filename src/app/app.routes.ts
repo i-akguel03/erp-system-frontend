@@ -21,8 +21,10 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
+  // Dashboard öffentlich zugänglich
+  { path: 'dashboard', component: Dashboard },
+
   // geschützte Routen
-  { path: 'dashboard', component: Dashboard, canActivate: [AuthGuard] },
   { path: 'test', component: TestDashboardComponent, canActivate: [AuthGuard] },
   { path: 'customer', component: CustomerListComponent, canActivate: [AuthGuard] },
   { path: 'contract', component: ContractListComponent, canActivate: [AuthGuard] },
@@ -39,6 +41,6 @@ export const routes: Routes = [
 
 
   // Weiterleitungen
-  { path: '', pathMatch: 'full', redirectTo: 'customer' },
+  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: '' }
 ];
