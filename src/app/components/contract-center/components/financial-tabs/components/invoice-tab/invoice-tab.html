@@ -59,55 +59,46 @@
     <div *ngIf="invoices.length > 0; else noInvoices" class="h-100 overflow-auto">
       
       <!-- Desktop Tabelle -->
-      <div class="d-none d-md-block h-100 px-1">
-        <table class="table table-hover table-sm mb-0" style="font-size: 0.875rem;">
-          <thead class="table-light position-sticky bg-light" style="top: 0; z-index: 10;">
-            <tr style="line-height: 1.2;">
-              <th class="bg-light py-2" style="font-size: 0.75rem;">Nummer</th>
-              <th class="bg-light py-2" style="font-size: 0.75rem;">Datum</th>
-              <th class="bg-light py-2" style="font-size: 0.75rem;">Fällig</th>
-              <th class="bg-light py-2" style="font-size: 0.75rem;">Status</th>
-              <th class="bg-light py-2" style="font-size: 0.75rem;">Betrag</th>
-              <th class="bg-light py-2" style="font-size: 0.75rem; width: 120px;"></th>
+      <div class="d-none d-md-block h-100 overflow-auto">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
+            <tr>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Nummer</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Datum</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Fällig</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Betrag</th>
+              <th style="width: 110px;"></th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let invoice of invoices" 
-                class="table-row-hover"
-                style="cursor: pointer; line-height: 1.3;"
+            <tr *ngFor="let invoice of invoices"
+                style="cursor: pointer;"
                 (click)="openInvoiceDetails(invoice)">
-              <td class="fw-bold text-primary py-2">{{ invoice.invoiceNumber }}</td>
-              <td class="py-2">{{ invoice.invoiceDate | date:'dd.MM.yy' }}</td>
-              <td class="py-2">
-                <div>{{ invoice.dueDate | date:'dd.MM.yy' }}</div>
+              <td class="fw-bold text-primary">{{ invoice.invoiceNumber }}</td>
+              <td class="text-muted small text-nowrap">{{ invoice.invoiceDate | date:'dd.MM.yy' }}</td>
+              <td>
+                <div class="text-nowrap text-muted small">{{ invoice.dueDate | date:'dd.MM.yy' }}</div>
                 <small *ngIf="invoice.status === 'OVERDUE'" class="text-danger" style="font-size: 0.65rem;">
                   ({{ getDaysOverdue(invoice.dueDate!) }}d überfällig)
                 </small>
               </td>
-              <td class="py-2">
-                <span [ngClass]="getInvoiceStatusBadgeClass(invoice.status!)" class="badge badge-sm">
+              <td>
+                <span [ngClass]="getInvoiceStatusBadgeClass(invoice.status!)" class="badge rounded-pill">
                   {{ getInvoiceStatusLabel(invoice.status!) }}
                 </span>
               </td>
-              <td class="fw-bold py-2">{{ invoice.totalAmount | currency:'EUR':'symbol':'1.0-0' }}</td>
-              <td class="py-2">
-                <div class="btn-group btn-group-sm" role="group" (click)="$event.stopPropagation()">
-                  <button class="btn btn-outline-info btn-sm px-2 py-1" 
-                          (click)="openInvoiceDetails(invoice)" 
-                          title="Details">
-                    <i class="fas fa-eye" style="font-size: 0.7rem;"></i>
+              <td class="fw-medium">{{ invoice.totalAmount | currency:'EUR':'symbol':'1.0-0' }}</td>
+              <td (click)="$event.stopPropagation()">
+                <div class="d-flex gap-1 justify-content-end">
+                  <button class="btn btn-sm btn-outline-secondary" (click)="openInvoiceDetails(invoice)" title="Details">
+                    <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-outline-primary btn-sm px-2 py-1" 
-                          (click)="editInvoice(invoice)" 
-                          [disabled]="!canEditInvoice(invoice)"
-                          title="Bearbeiten">
-                    <i class="fas fa-edit" style="font-size: 0.7rem;"></i>
+                  <button class="btn btn-sm btn-outline-primary" (click)="editInvoice(invoice)" [disabled]="!canEditInvoice(invoice)" title="Bearbeiten">
+                    <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-outline-success btn-sm px-2 py-1" 
-                          (click)="sendInvoice(invoice)" 
-                          [disabled]="!canSendInvoice(invoice)"
-                          title="Senden">
-                    <i class="fas fa-paper-plane" style="font-size: 0.7rem;"></i>
+                  <button class="btn btn-sm btn-outline-success" (click)="sendInvoice(invoice)" [disabled]="!canSendInvoice(invoice)" title="Senden">
+                    <i class="fas fa-paper-plane"></i>
                   </button>
                 </div>
               </td>
@@ -395,6 +386,12 @@
   display: block;
   height: 100%;
   width: 100%;
+}
+
+thead.position-sticky th {
+  background-color: #f8f9fa;
+  border-top: 0 !important;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
 }
 
 /* Status Badges mit Bootstrap Farben */

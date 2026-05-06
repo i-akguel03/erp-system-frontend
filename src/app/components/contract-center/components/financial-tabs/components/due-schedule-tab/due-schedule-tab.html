@@ -14,22 +14,22 @@
   <!-- Desktop Tabelle -->
   <div class="flex-fill overflow-hidden d-none d-md-block" *ngIf="dueSchedules.length > 0">
     <div class="h-100 overflow-auto">
-      <table class="table table-hover table-bordered mb-0">
-        <thead class="table-light position-sticky" style="top: 0; z-index: 10;">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
           <tr>
-            <th class="bg-light">Nr.</th>
-            <th class="bg-light">Abonnement</th>
-            <th class="bg-light">Fälligkeitsdatum</th>
-            <th class="bg-light">Status</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Nr.</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Abonnement</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Fälligkeitsdatum</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let schedule of dueSchedules" class="table-row-hover">
-            <td>{{ schedule.dueNumber }}</td>
-            <td>{{ schedule.subscriptionNumber || schedule.subscriptionId }}</td>
-            <td>{{ schedule.dueDate | date:'dd.MM.yyyy' }}</td>
+          <tr *ngFor="let schedule of dueSchedules">
+            <td class="fw-bold text-primary">{{ schedule.dueNumber }}</td>
+            <td class="fw-medium">{{ schedule.subscriptionNumber || schedule.subscriptionId }}</td>
+            <td class="text-muted small text-nowrap">{{ schedule.dueDate | date:'dd.MM.yyyy' }}</td>
             <td>
-              <span class="badge" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
+              <span class="badge rounded-pill" [ngClass]="getStatusClass(schedule.status!, isOverdue(schedule.dueDate!))">
                 {{ getStatusLabel(schedule.status!, isOverdue(schedule.dueDate!)) }}
               </span>
             </td>
@@ -128,6 +128,12 @@
   display: block;
   height: 100%;
   width: 100%;
+}
+
+thead.position-sticky th {
+  background-color: #f8f9fa;
+  border-top: 0 !important;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
 }
 
 /* Entfernt den doppelten Container-Scrollbalken */

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
@@ -67,6 +67,15 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   error: string | null = null;
 
+  // Resize state
+  topPanelPercent = 60;
+  isResizing = false;
+  private resizeStartY = 0;
+  private resizeStartPercent = 0;
+  private resizeContainerHeight = 0;
+  private readonly RESIZE_MIN = 20;
+  private readonly RESIZE_MAX = 80;
+
   // Contract modal state
   showContractModal = false;
   contractModalTitle = '';
@@ -100,6 +109,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
+    private el: ElementRef,
     private contractService: ContractService,
     private customerService: CustomerService,
     private subscriptionService: SubscriptionService,
@@ -138,6 +148,31 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     if (this.isMobile) {
       this.navigateBack();
     }
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(event: MouseEvent): void {
+    if (!this.isResizing) return;
+    const delta = event.clientY - this.resizeStartY;
+    const deltaPercent = (delta / this.resizeContainerHeight) * 100;
+    this.topPanelPercent = Math.min(
+      this.RESIZE_MAX,
+      Math.max(this.RESIZE_MIN, this.resizeStartPercent + deltaPercent)
+    );
+  }
+
+  @HostListener('document:mouseup')
+  onMouseUp(): void {
+    this.isResizing = false;
+  }
+
+  startResize(event: MouseEvent): void {
+    event.preventDefault();
+    const container = this.el.nativeElement.querySelector('.desktop-split-container') as HTMLElement;
+    this.resizeContainerHeight = container?.clientHeight ?? 600;
+    this.isResizing = true;
+    this.resizeStartY = event.clientY;
+    this.resizeStartPercent = this.topPanelPercent;
   }
 
   // Mobile detection and management

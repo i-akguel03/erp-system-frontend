@@ -30,16 +30,16 @@
   </div>
   
   <!-- Desktop: Normal Layout - Fixed Height Layout -->
-  <div class="d-none d-md-flex flex-column flex-fill p-3 gap-3 overflow-hidden" *ngIf="!isMobile">
-    
-    <!-- Oben: Vertragsliste (60%) - Fixed Height Container -->
-    <div class="d-flex flex-column overflow-hidden" style="flex: 0 0 60%; min-height: 0;">
+  <div class="d-none d-md-flex flex-column flex-fill p-3 overflow-hidden desktop-split-container" *ngIf="!isMobile">
+
+    <!-- Oben: Vertragsliste (dynamisch) -->
+    <div class="d-flex flex-column overflow-hidden" [style.flex]="topPanelPercent + ' 1 0'" style="min-height: 0;">
       <div class="card h-100 d-flex flex-column overflow-hidden">
-        <div class="card-header bg-primary-subtle flex-shrink-0" style="position: relative; z-index: 20;">
+        <div class="card-header bg-light flex-shrink-0 py-3" style="position: relative; z-index: 20;">
           <div class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
-              <i class="fas fa-file-contract me-2 text-primary"></i>
-              <span class="fw-semibold">Verträge</span>
+              <i class="fas fa-file-contract me-2 text-primary fs-5"></i>
+              <span class="fw-semibold fs-6">Verträge</span>
               <span class="badge bg-primary ms-2" *ngIf="contracts?.length">{{ contracts.length }}</span>
             </div>
             <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
@@ -65,22 +65,29 @@
       </div>
     </div>
 
-    <!-- Unten: Abos & Finanzdetails (40%) - Fixed Height Container -->
-    <div class="d-flex gap-3 overflow-hidden" style="flex: 0 0 40%; min-height: 0;">
-      
-      <!-- Abonnements Panel (50%) - Fixed Height -->
+    <!-- Resize Handle -->
+    <div class="resize-handle flex-shrink-0 d-flex align-items-center justify-content-center"
+         [class.is-resizing]="isResizing"
+         (mousedown)="startResize($event)">
+      <div class="resize-handle-grip"></div>
+    </div>
+
+    <!-- Unten: Abos & Finanzdetails (dynamisch) -->
+    <div class="d-flex gap-3 overflow-hidden" [style.flex]="(100 - topPanelPercent) + ' 1 0'" style="min-height: 0;">
+
+      <!-- Abonnements Panel (50%) -->
       <div class="d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
         <div class="card h-100 d-flex flex-column overflow-hidden">
-          <div class="card-header bg-info-subtle flex-shrink-0">
+          <div class="card-header bg-light flex-shrink-0 py-3">
             <div class="d-flex align-items-center justify-content-between">
               <div class="d-flex align-items-center">
-                <i class="fas fa-sync-alt me-2 text-info"></i>
-                <span class="fw-semibold">
-                  Abonnements {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+                <i class="fas fa-sync-alt me-2 text-primary fs-5"></i>
+                <span class="fw-semibold fs-6">
+                  Abonnements <span class="text-muted fw-normal fs-6" *ngIf="selectedContract">— {{ selectedContract.contractTitle }}</span>
                 </span>
-                <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">{{ subscriptions.length }}</span>
+                <span class="badge bg-primary ms-2" *ngIf="subscriptions?.length">{{ subscriptions.length }}</span>
               </div>
-              <button class="btn btn-info btn-sm d-flex align-items-center gap-1"
+              <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
                       *ngIf="selectedContract"
                       (click)="openSubscriptionModal()">
                 <i class="fas fa-plus"></i>
@@ -101,14 +108,14 @@
         </div>
       </div>
 
-      <!-- Finanz-Tabs Panel (50%) - Fixed Height -->
+      <!-- Finanz-Tabs Panel (50%) -->
       <div class="d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
         <div class="card h-100 d-flex flex-column overflow-hidden">
-          <div class="card-header bg-success-subtle flex-shrink-0">
+          <div class="card-header bg-light flex-shrink-0 py-3">
             <div class="d-flex align-items-center">
-              <i class="fas fa-euro-sign me-2 text-success"></i>
-              <span class="fw-semibold">
-                Finanzdetails {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
+              <i class="fas fa-euro-sign me-2 text-primary fs-5"></i>
+              <span class="fw-semibold fs-6">
+                Finanzdetails <span class="text-muted fw-normal fs-6" *ngIf="selectedContract">— {{ selectedContract.contractTitle }}</span>
               </span>
             </div>
           </div>

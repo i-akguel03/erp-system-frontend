@@ -1,0 +1,27 @@
+.resize-handle {
+  height: 12px;
+  cursor: row-resize;
+  background: transparent;
+  transition: background 0.15s;
+  margin: 2px 0;
+  user-select: none;
+
+  &:hover,
+  &.is-resizing {
+    background: rgba(var(--bs-primary-rgb), 0.08);
+  }
+}
+
+.resize-handle-grip {
+  width: 48px;
+  height: 4px;
+  background: #dee2e6;
+  border-radius: 2px;
+  transition: background 0.15s;
+  pointer-events: none;
+
+  .resize-handle:hover &,
+  .resize-handle.is-resizing & {
+    background: var(--bs-primary);
+  }
+}

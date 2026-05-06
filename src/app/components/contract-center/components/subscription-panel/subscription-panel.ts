@@ -19,21 +19,6 @@ export class SubscriptionPanelComponent {
   @Output() subscriptionSelected = new EventEmitter<Subscription>();
   @Output() createSubscription = new EventEmitter<void>();
 
-  readonly Math = Math;
-  hoveredId: string | null = null;
-
-  onMouseEnter(subscription: Subscription): void {
-    this.hoveredId = subscription.id ?? null;
-  }
-
-  onMouseLeave(): void {
-    this.hoveredId = null;
-  }
-
-  isHovered(subscription: Subscription): boolean {
-    return this.hoveredId === subscription.id;
-  }
-
   selectSubscription(subscription: Subscription): void {
     this.subscriptionSelected.emit(subscription);
   }
@@ -42,49 +27,44 @@ export class SubscriptionPanelComponent {
     return this.selectedSubscription?.id === subscription.id;
   }
 
-  getSubscriptionStatusClass(subscription: Subscription): string {
+  getStatusBadgeClass(subscription: Subscription): string {
     switch (subscription.subscriptionStatus?.toUpperCase()) {
-      case 'ACTIVE':
-        return 'badge bg-success';
-      case 'PAUSED':
-        return 'badge bg-warning text-dark';
-      case 'CANCELLED':
-        return 'badge bg-danger';
-      case 'SUSPENDED':
-        return 'badge bg-secondary';
-      default:
-        return 'badge bg-light text-dark';
+      case 'ACTIVE':    return 'bg-success';
+      case 'PAUSED':    return 'bg-warning text-dark';
+      case 'CANCELLED': return 'bg-danger';
+      case 'SUSPENDED': return 'bg-secondary';
+      default:          return 'bg-light text-dark';
     }
   }
 
   getSubscriptionStatusText(subscription: Subscription): string {
     switch (subscription.subscriptionStatus?.toUpperCase()) {
-      case 'ACTIVE':
-        return 'Aktiv';
-      case 'PAUSED':
-        return 'Pausiert';
-      case 'CANCELLED':
-        return 'Gekündigt';
-      case 'SUSPENDED':
-        return 'Ausgesetzt';
-      default:
-        return subscription.subscriptionStatus || 'Unbekannt';
+      case 'ACTIVE':    return 'Aktiv';
+      case 'PAUSED':    return 'Pausiert';
+      case 'CANCELLED': return 'Gekündigt';
+      case 'SUSPENDED': return 'Ausgesetzt';
+      default:          return subscription.subscriptionStatus || 'Unbekannt';
     }
   }
 
   getDaysUntilExpiry(subscription: Subscription): number | null {
     if (!subscription.endDate) return null;
-    
-    const endDate = new Date(subscription.endDate);
-    const today = new Date();
-    const diffTime = endDate.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diff = new Date(subscription.endDate).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
-  getExpiryWarningClass(days: number | null): string {
-    if (days === null) return '';
-    if (days < 0) return 'text-danger';
-    if (days <= 30) return 'text-warning';
-    return 'text-success';
+  getExpiryText(days: number | null): string {
+    if (days === null)  return '∞ Unbegrenzt';
+    if (days > 0)       return `${days} Tage`;
+    if (days === 0)     return 'Läuft heute ab';
+    return `Abgelaufen`;
+  }
+
+  getExpiryClass(days: number | null): string {
+    if (days === null)    return 'text-muted';
+    if (days <= 0)        return 'text-danger fw-semibold';
+    if (days <= 30)       return 'text-warning fw-semibold';
+    if (days <= 90)       return 'text-body';
+    return 'text-muted';
   }
 }

@@ -1,89 +1,64 @@
-<div class="subscription-content d-flex flex-column flex-fill p-0 overflow-auto">
-  <!-- Abonnements-Liste -->
-  <div *ngIf="subscriptions.length > 0; else noSubscriptions">
-    <div *ngFor="let subscription of subscriptions"
-         class="subscription-item p-3 border-bottom cursor-pointer position-relative"
-         [class.bg-primary-subtle]="isSelectedSubscription(subscription) || isHovered(subscription)"
-         [class.border-start]="isSelectedSubscription(subscription) || isHovered(subscription)"
-         [class.border-primary]="isSelectedSubscription(subscription) || isHovered(subscription)"
-         [class.border-4]="isSelectedSubscription(subscription)"
-         [class.border-3]="!isSelectedSubscription(subscription) && isHovered(subscription)"
-         [class.shadow-sm]="isSelectedSubscription(subscription)"
-         (click)="selectSubscription(subscription)"
-         (mouseenter)="onMouseEnter(subscription)"
-         (mouseleave)="onMouseLeave()"
-         style="transition: all 0.2s ease-in-out;">
-                 
-      <div class="subscription-header mb-2">
-        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-          <strong class="text-body">{{ subscription.productName || 'Unbenanntes Produkt' }}</strong>
-          <span [ngClass]="getSubscriptionStatusClass(subscription)" class="badge">
-            {{ getSubscriptionStatusText(subscription) }}
-          </span>
-        </div>
-        <div class="text-muted small font-monospace">
-          {{ subscription.subscriptionNumber }}
-        </div>
-      </div>
+<div class="h-100 d-flex flex-column">
 
-      <div class="subscription-details mb-3">
-        <div class="row g-3">
-          <div class="col-sm-6">
-            <small class="text-muted d-block">Laufzeit:</small>
-            <span class="fw-bold">
-              <span *ngIf="subscription.startDate">{{ subscription.startDate | date:'dd.MM.yyyy' }}</span>
-              <span *ngIf="!subscription.startDate" class="text-muted">Nicht definiert</span>
-              <span class="mx-1">-</span>
-              <span *ngIf="subscription.endDate">{{ subscription.endDate | date:'dd.MM.yyyy' }}</span>
-              <span *ngIf="!subscription.endDate" class="text-muted">Unbegrenzt</span>
+  <!-- Tabelle -->
+  <div class="flex-fill overflow-auto" *ngIf="subscriptions.length > 0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
+        <tr>
+          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Produkt</th>
+          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
+          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Laufzeit</th>
+          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Verbleibend</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let subscription of subscriptions"
+            (click)="selectSubscription(subscription)"
+            style="cursor: pointer;"
+            [class.table-primary]="isSelectedSubscription(subscription)">
+          <td>
+            <div class="fw-medium">{{ subscription.productName || 'Unbekanntes Produkt' }}</div>
+            <div class="text-muted font-monospace" style="font-size: 0.72rem;">{{ subscription.subscriptionNumber }}</div>
+          </td>
+          <td>
+            <span class="badge rounded-pill" [ngClass]="getStatusBadgeClass(subscription)">
+              {{ getSubscriptionStatusText(subscription) }}
             </span>
-          </div>
-          <div class="col-sm-6">
-            <small class="text-muted d-block">Verbleibendes Zeit:</small>
-            <span [ngClass]="getExpiryWarningClass(getDaysUntilExpiry(subscription))">
-              <ng-container *ngIf="getDaysUntilExpiry(subscription) as days; else unlimited">
-                <span *ngIf="days > 0" class="text-success">{{ days }} Tage</span>
-                <span *ngIf="days === 0" class="text-warning fw-bold">Läuft heute ab</span>
-                <span *ngIf="days < 0" class="text-danger fw-bold">Abgelaufen vor {{ Math.abs(days) }} Tagen</span>
-              </ng-container>
-              <ng-template #unlimited>
-                <span class="text-success">Unbegrenzt</span>
-              </ng-template>
+          </td>
+          <td class="text-muted small text-nowrap">
+            {{ subscription.startDate | date:'dd.MM.yy' }}
+            <span class="mx-1 text-muted">—</span>
+            <span *ngIf="subscription.endDate">{{ subscription.endDate | date:'dd.MM.yy' }}</span>
+            <span *ngIf="!subscription.endDate" class="text-muted">∞</span>
+          </td>
+          <td class="text-nowrap">
+            <span [ngClass]="getExpiryClass(getDaysUntilExpiry(subscription))" style="font-size: 0.8rem;">
+              {{ getExpiryText(getDaysUntilExpiry(subscription)) }}
             </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Zusätzliche Produktinformationen -->
-      <div *ngIf="subscription.productCode || subscription.subscriptionType"
-           class="subscription-meta pt-2 border-top border-light">
-        <div class="row g-3">
-          <div class="col-sm-6" *ngIf="subscription.productCode">
-            <small class="text-muted d-block">Produktcode:</small>
-            <code class="bg-light text-dark px-2 py-1 rounded small">{{ subscription.productCode }}</code>
-          </div>
-          <div class="col-sm-6" *ngIf="subscription.subscriptionType">
-            <small class="text-muted d-block">Typ:</small>
-            <span class="small text-body">{{ subscription.subscriptionType }}</span>
-          </div>
-        </div>
-      </div>
-     
-    </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
-  <!-- Keine Abonnements -->
-  <ng-template #noSubscriptions>
-    <div class="text-center py-5 text-muted">
-      <i class="fas fa-sync-alt display-4 mb-3 text-muted opacity-50"></i>
-      <div class="h6 mb-3">Keine Abonnements vorhanden</div>
-      <small class="text-muted" *ngIf="selectedContract">
-        Für den ausgewählten Vertrag "{{ selectedContract.contractTitle }}" sind keine Abonnements hinterlegt.
-      </small>
-      <small class="text-muted" *ngIf="!selectedContract">
-        Wählen Sie einen Vertrag aus, um die zugehörigen Abonnements anzuzeigen.
-      </small>
-    </div>
-  </ng-template>
+  <!-- Leerzustand -->
+  <div *ngIf="subscriptions.length === 0"
+       class="flex-fill d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+    <i class="fas fa-sync-alt fa-3x mb-3 opacity-25"></i>
+    <h6 class="mb-1" *ngIf="selectedContract">Keine Abonnements</h6>
+    <h6 class="mb-1" *ngIf="!selectedContract">Kein Vertrag ausgewählt</h6>
+    <small *ngIf="selectedContract">Für „{{ selectedContract.contractTitle }}" sind keine Abonnements hinterlegt.</small>
+    <small *ngIf="!selectedContract">Wählen Sie einen Vertrag aus der Liste oben.</small>
+  </div>
+
 </div>
 
+<style>
+:host { display: block; height: 100%; }
+
+thead.position-sticky th {
+  background-color: #f8f9fa;
+  border-top: 0 !important;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
+}
+</style>
