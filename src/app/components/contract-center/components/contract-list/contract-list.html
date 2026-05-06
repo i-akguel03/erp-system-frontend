@@ -39,17 +39,17 @@
         <table class="table table-hover table-sm mb-0">
           <thead class="table-light position-sticky top-0" style="z-index: 2;">
             <tr>
-              <th scope="col" class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Nr.</th>
-              <th scope="col" class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Titel</th>
+              <th scope="col" class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('contractNumber')">Nr. <i class="fas ms-1" [ngClass]="sort.icon('contractNumber')" style="font-size: 0.55rem;"></i></th>
+              <th scope="col" class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('contractTitle')">Titel <i class="fas ms-1" [ngClass]="sort.icon('contractTitle')" style="font-size: 0.55rem;"></i></th>
               <th scope="col" class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Kunde</th>
-              <th scope="col" class="fw-semibold text-muted text-uppercase d-none d-md-table-cell" style="font-size: 0.7rem; letter-spacing: 0.05em;">Start</th>
-              <th scope="col" class="fw-semibold text-muted text-uppercase d-none d-md-table-cell" style="font-size: 0.7rem; letter-spacing: 0.05em;">Ende</th>
-              <th scope="col" class="fw-semibold text-muted text-uppercase d-none d-md-table-cell" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
+              <th scope="col" class="fw-semibold text-muted text-uppercase d-none d-md-table-cell" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('startDate')">Start <i class="fas ms-1" [ngClass]="sort.icon('startDate')" style="font-size: 0.55rem;"></i></th>
+              <th scope="col" class="fw-semibold text-muted text-uppercase d-none d-md-table-cell" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('endDate')">Ende <i class="fas ms-1" [ngClass]="sort.icon('endDate')" style="font-size: 0.55rem;"></i></th>
+              <th scope="col" class="fw-semibold text-muted text-uppercase d-none d-md-table-cell" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('contractStatus')">Status <i class="fas ms-1" [ngClass]="sort.icon('contractStatus')" style="font-size: 0.55rem;"></i></th>
               <th scope="col" style="width: 40px;"></th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let contract of filteredContracts"
+            <tr *ngFor="let contract of filteredContracts | sort:sort.key:sort.dir"
                 (click)="selectContract(contract)"
                 (contextmenu)="onContractRightClick($event, contract)"
                 [class]="{'table-active bg-primary bg-opacity-10': isSelectedContract(contract)}"

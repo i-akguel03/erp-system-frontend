@@ -1,5 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SortPipe } from '../../../../shared/pipes/sort.pipe';
+import { SortState } from '../../../../shared/utils/sort-state';
 
 import { Subscription } from '../../../../models/Subscription';
 import { Contract } from '../../../../models/Contract';
@@ -7,11 +9,12 @@ import { Contract } from '../../../../models/Contract';
 @Component({
   selector: 'app-subscription-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SortPipe],
   templateUrl: './subscription-panel.html',
   styleUrls: ['./subscription-panel.scss']
 })
 export class SubscriptionPanelComponent {
+  sort = new SortState();
   @Input() subscriptions: Subscription[] = [];
   @Input() selectedContract: Contract | null = null;
   @Input() selectedSubscription: Subscription | null = null;

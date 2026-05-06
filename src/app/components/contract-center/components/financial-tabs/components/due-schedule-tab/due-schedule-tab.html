@@ -17,14 +17,14 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
           <tr>
-            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Nr.</th>
-            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Abonnement</th>
-            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Fälligkeitsdatum</th>
-            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('dueNumber')">Nr. <i class="fas ms-1" [ngClass]="sort.icon('dueNumber')" style="font-size: 0.55rem;"></i></th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('subscriptionNumber')">Abonnement <i class="fas ms-1" [ngClass]="sort.icon('subscriptionNumber')" style="font-size: 0.55rem;"></i></th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('dueDate')">Fälligkeitsdatum <i class="fas ms-1" [ngClass]="sort.icon('dueDate')" style="font-size: 0.55rem;"></i></th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('status')">Status <i class="fas ms-1" [ngClass]="sort.icon('status')" style="font-size: 0.55rem;"></i></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let schedule of dueSchedules">
+          <tr *ngFor="let schedule of dueSchedules | sort:sort.key:sort.dir">
             <td class="fw-bold text-primary">{{ schedule.dueNumber }}</td>
             <td class="fw-medium">{{ schedule.subscriptionNumber || schedule.subscriptionId }}</td>
             <td class="text-muted small text-nowrap">{{ schedule.dueDate | date:'dd.MM.yyyy' }}</td>

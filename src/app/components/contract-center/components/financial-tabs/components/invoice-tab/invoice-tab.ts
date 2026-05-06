@@ -1,5 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SortPipe } from '../../../../../../shared/pipes/sort.pipe';
+import { SortState } from '../../../../../../shared/utils/sort-state';
 import { Invoice } from '../../../../../../models/Invoice';
 import { Customer } from '../../../../../../models/Customer';
 
@@ -11,11 +13,12 @@ interface InvoiceActionEvent {
 @Component({
   selector: 'app-invoice-tab',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SortPipe],
   templateUrl: './invoice-tab.html',
   styleUrls: ['./invoice-tab.scss']
 })
 export class InvoiceTabComponent {
+  sort = new SortState();
   @Input() invoices: Invoice[] = [];
   @Input() customers: { [id: string]: Customer } = {};
 

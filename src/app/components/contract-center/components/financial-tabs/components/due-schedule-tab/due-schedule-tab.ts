@@ -1,17 +1,20 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../../../../../shared/pipes/sort.pipe';
+import { SortState } from '../../../../../../shared/utils/sort-state';
 import { DueSchedule, ScheduleStatus } from '../../../../../../models/DueSchedule';
 import { DueScheduleService } from '../../../../../../services/due-schedule-service';
 
 @Component({
   selector: 'app-due-schedule-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SortPipe],
   templateUrl: './due-schedule-tab.html',
   styleUrls: ['./due-schedule-tab.scss']
 })
 export class DueScheduleTabComponent {
+  sort = new SortState();
   @Input() dueSchedules: DueSchedule[] = [];
 
   loading = false;

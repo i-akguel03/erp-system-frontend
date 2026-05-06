@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../shared/pipes/sort.pipe';
+import { SortState } from '../../shared/utils/sort-state';
 import { Contract } from '../../models/Contract';
 import { ContractService } from '../../services/contract-service';
 import { Customer } from '../../models/Customer';
@@ -12,11 +14,12 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-contract-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe],
   templateUrl: './contract-list.html',
   styleUrls: ['./contract-list.scss'],
 })
 export class ContractListComponent implements OnInit {
+  sort = new SortState();
   contracts: Contract[] = [];
   filteredContracts: Contract[] = [];
   loading = false;

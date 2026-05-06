@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../shared/pipes/sort.pipe';
+import { SortState } from '../../shared/utils/sort-state';
 import { AddressService } from '../../services/address-service';
 import { Address } from '../../models/Address';
 import { ConfirmationService } from 'primeng/api';
@@ -10,11 +12,12 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-address-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe],
   templateUrl: './address-list.html',
   styleUrls: ['./address-list.scss'],
 })
 export class AddressListComponent implements OnInit {
+  sort = new SortState();
   addresses: Address[] = [];
   filteredAddresses: Address[] = [];
   loading = false;

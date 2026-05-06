@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../shared/pipes/sort.pipe';
+import { SortState } from '../../shared/utils/sort-state';
 import { ProductService } from '../../services/product-service';
 import { Product } from '../../models/Product';
 import { ConfirmationService } from 'primeng/api';
@@ -10,11 +12,12 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe],
   templateUrl: './product-list.html',
   styleUrls: ['./product-list.scss'],
 })
 export class ProductListComponent implements OnInit {
+  sort = new SortState();
   products: Product[] = [];
   filteredProducts: Product[] = [];
   loading = false;

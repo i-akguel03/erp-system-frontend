@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, OnDestroy, HostListener, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../../../shared/pipes/sort.pipe';
+import { SortState } from '../../../../shared/utils/sort-state';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { Contract } from '../../../../models/Contract';
@@ -14,11 +16,12 @@ interface ContractActionEvent {
 @Component({
   selector: 'app-contract-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SortPipe],
   templateUrl: './contract-list.html',
   styleUrls: ['./contract-list.scss']
 })
 export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
+  sort = new SortState();
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 

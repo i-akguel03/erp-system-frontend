@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../shared/pipes/sort.pipe';
+import { SortState } from '../../shared/utils/sort-state';
 import { Subscription, SubscriptionStatus, BillingCycle } from '../../models/Subscription';
 import { SubscriptionService } from '../../services/subscription-service';
 import { Contract } from '../../models/Contract';
@@ -14,11 +16,12 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-subscription-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe],
   templateUrl: './subscription-list.html',
   styleUrls: ['./subscription-list.scss'],
 })
 export class SubscriptionListComponent implements OnInit {
+  sort = new SortState();
   subscriptions: Subscription[] = [];
   filteredSubscriptions: Subscription[] = [];
   loading = false;

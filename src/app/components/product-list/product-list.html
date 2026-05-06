@@ -38,18 +38,18 @@
     <table class="table table-hover align-middle mb-0">
       <thead>
         <tr class="border-bottom border-2">
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Nr.</th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Name</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('productNumber')">Nr. <i class="fas ms-1" [ngClass]="sort.icon('productNumber')" style="font-size: 0.55rem;"></i></th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('name')">Name <i class="fas ms-1" [ngClass]="sort.icon('name')" style="font-size: 0.55rem;"></i></th>
           <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Beschreibung</th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Preis</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('price')">Preis <i class="fas ms-1" [ngClass]="sort.icon('price')" style="font-size: 0.55rem;"></i></th>
           <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Einheit</th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Typ</th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('productType')">Typ <i class="fas ms-1" [ngClass]="sort.icon('productType')" style="font-size: 0.55rem;"></i></th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('active')">Status <i class="fas ms-1" [ngClass]="sort.icon('active')" style="font-size: 0.55rem;"></i></th>
           <th class="border-0" style="width: 80px;"></th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let product of filteredProducts">
+        <tr *ngFor="let product of filteredProducts | sort:sort.key:sort.dir">
           <td class="fw-bold text-primary">{{ product.productNumber }}</td>
           <td class="fw-medium">{{ product.name }}</td>
           <td class="text-muted small">{{ product.description }}</td>

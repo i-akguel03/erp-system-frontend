@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../shared/pipes/sort.pipe';
+import { SortState } from '../../shared/utils/sort-state';
 import { DueScheduleService } from '../../services/due-schedule-service';
 import { DueSchedule, ScheduleStatus } from '../../models/DueSchedule';
 import { Dialog } from 'primeng/dialog';
@@ -8,11 +10,12 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-due-schedule-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe],
   templateUrl: './schedule-list.html',
   styleUrls: ['./schedule-list.scss'],
 })
 export class DueScheduleListComponent implements OnInit {
+  sort = new SortState();
   schedules: DueSchedule[] = [];
   filteredSchedules: DueSchedule[] = [];
   loading = false;

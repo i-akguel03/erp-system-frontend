@@ -63,16 +63,16 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
             <tr>
-              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Nummer</th>
-              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Datum</th>
-              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Fällig</th>
-              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
-              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Betrag</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('invoiceNumber')">Nummer <i class="fas ms-1" [ngClass]="sort.icon('invoiceNumber')" style="font-size: 0.55rem;"></i></th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('invoiceDate')">Datum <i class="fas ms-1" [ngClass]="sort.icon('invoiceDate')" style="font-size: 0.55rem;"></i></th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('dueDate')">Fällig <i class="fas ms-1" [ngClass]="sort.icon('dueDate')" style="font-size: 0.55rem;"></i></th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('status')">Status <i class="fas ms-1" [ngClass]="sort.icon('status')" style="font-size: 0.55rem;"></i></th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('totalAmount')">Betrag <i class="fas ms-1" [ngClass]="sort.icon('totalAmount')" style="font-size: 0.55rem;"></i></th>
               <th style="width: 110px;"></th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let invoice of invoices"
+            <tr *ngFor="let invoice of invoices | sort:sort.key:sort.dir"
                 style="cursor: pointer;"
                 (click)="openInvoiceDetails(invoice)">
               <td class="fw-bold text-primary">{{ invoice.invoiceNumber }}</td>

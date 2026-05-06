@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { SortPipe } from '../../shared/pipes/sort.pipe';
+import { SortState } from '../../shared/utils/sort-state';
 import { Router } from '@angular/router';
 import { Customer } from '../../models/Customer';
 import { CustomerService } from '../../services/customer-service';
@@ -17,12 +19,14 @@ import { Dialog } from 'primeng/dialog';
     CommonModule,
     HttpClientModule,
     FormsModule,
-    Dialog
+    Dialog,
+    SortPipe
   ],
   templateUrl: './customer-list.html',
   styleUrls: ['./customer-list.scss'],
 })
 export class CustomerListComponent implements OnInit {
+  sort = new SortState();
   customers: Customer[] = [];
   filteredCustomers: Customer[] = [];
   loading = false;

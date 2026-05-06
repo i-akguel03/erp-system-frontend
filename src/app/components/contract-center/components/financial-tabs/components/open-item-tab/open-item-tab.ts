@@ -1,5 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SortPipe } from '../../../../../../shared/pipes/sort.pipe';
+import { SortState } from '../../../../../../shared/utils/sort-state';
 import { OpenItem, OpenItemStatus } from '../../../../../../models/OpenItem';
 import { Customer } from '../../../../../../models/Customer';
 import { ConfirmationService } from 'primeng/api';
@@ -12,11 +14,12 @@ interface OpenItemActionEvent {
 @Component({
   selector: 'app-open-items-tab',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SortPipe],
   templateUrl: './open-item-tab.html',
   styleUrls: ['./open-item-tab.scss']
 })
 export class OpenItemsTabComponent implements OnChanges {
+  sort = new SortState();
   constructor(private confirmationService: ConfirmationService) {}
   @Input() openItems: OpenItem[] = [];
   @Input() customers: { [id: string]: Customer } = {};

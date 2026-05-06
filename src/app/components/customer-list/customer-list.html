@@ -38,15 +38,15 @@
     <table class="table table-hover align-middle mb-0">
       <thead>
         <tr class="border-bottom border-2">
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Kundennr.</th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Name</th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Telefon</th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em;">Adresse</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('customerNumber')">Kundennr. <i class="fas ms-1" [ngClass]="sort.icon('customerNumber')" style="font-size: 0.55rem;"></i></th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('lastName')">Name <i class="fas ms-1" [ngClass]="sort.icon('lastName')" style="font-size: 0.55rem;"></i></th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('tel')">Telefon <i class="fas ms-1" [ngClass]="sort.icon('tel')" style="font-size: 0.55rem;"></i></th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('residentialAddress.city')">Adresse <i class="fas ms-1" [ngClass]="sort.icon('residentialAddress.city')" style="font-size: 0.55rem;"></i></th>
           <th class="border-0" style="width: 80px;"></th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let customer of filteredCustomers">
+        <tr *ngFor="let customer of filteredCustomers | sort:sort.key:sort.dir">
           <td class="fw-bold text-primary">{{ customer.customerNumber }}</td>
           <td class="fw-medium">{{ customer.firstName }} {{ customer.lastName }}</td>
           <td class="text-muted small">{{ customer.tel }}</td>
