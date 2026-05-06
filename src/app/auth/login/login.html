@@ -6,7 +6,12 @@
 
       <!-- Normales Login-Formular -->
       <ng-container *ngIf="!showOverlay">
-        <h3 class="card-title text-center mb-4">Anmelden</h3>
+        <h3 class="card-title text-center mb-3">Anmelden</h3>
+
+        <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 mb-3" style="font-size: 0.85rem;">
+          <i class="fas fa-circle-info flex-shrink-0"></i>
+          <span>Testbenutzer <strong>admin / admin</strong> bereits vorausgefüllt.</span>
+        </div>
 
         <form (ngSubmit)="login()">
           <div class="mb-3">

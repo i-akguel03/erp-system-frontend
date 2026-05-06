@@ -14,8 +14,8 @@ import { BackendCheckComponent } from '../../shared/backend-check/backend-check/
   styleUrls: ['./login.scss']
 })
 export class LoginComponent {
-  username = '';
-  password = '';
+  username = 'admin';
+  password = 'admin';
   error = '';
   isLoading = false;
 
