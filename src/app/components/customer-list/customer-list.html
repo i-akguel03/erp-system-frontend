@@ -110,54 +110,54 @@
 
 </div>
 
-<!-- Neuer Kunde Modal -->
-<div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Neuer Kunde</h5>
-        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
-      </div>
-      <div class="modal-body">
-        <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="newCustomer.firstName">
-        <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="newCustomer.lastName">
-        <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="newCustomer.tel">
-        <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="newCustomer.email">
-        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newCustomer.residentialAddress.street">
-        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newCustomer.residentialAddress.postalCode">
-        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newCustomer.residentialAddress.city">
-        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newCustomer.residentialAddress.country">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-        <button class="btn btn-primary" (click)="createCustomer()">Erstellen</button>
-      </div>
+<!-- Neuer Kunde Dialog -->
+<p-dialog
+  header="Neuer Kunde"
+  [(visible)]="showNewModal"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="false"
+  [style]="{ width: '480px', maxWidth: '95vw' }"
+  (onHide)="closeNewModal()">
+  <div class="d-flex flex-column gap-2 py-2">
+    <input type="text" class="form-control" placeholder="Vorname" [(ngModel)]="newCustomer.firstName">
+    <input type="text" class="form-control" placeholder="Nachname" [(ngModel)]="newCustomer.lastName">
+    <input type="text" class="form-control" placeholder="Telefon" [(ngModel)]="newCustomer.tel">
+    <input type="text" class="form-control" placeholder="E-Mail" [(ngModel)]="newCustomer.email">
+    <hr class="my-1">
+    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="$any(newCustomer.residentialAddress).street">
+    <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="$any(newCustomer.residentialAddress).postalCode">
+    <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="$any(newCustomer.residentialAddress).city">
+    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="$any(newCustomer.residentialAddress).country">
+    <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
+      <button class="btn btn-outline-secondary" (click)="closeNewModal()">Abbrechen</button>
+      <button class="btn btn-primary" (click)="createCustomer()">Erstellen</button>
     </div>
   </div>
-</div>
+</p-dialog>
 
-<!-- Bearbeiten Kunde Modal -->
-<div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Kunde bearbeiten</h5>
-        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
-      </div>
-      <div class="modal-body">
-        <input type="text" class="form-control mb-2" placeholder="Vorname" [(ngModel)]="editCustomer.firstName">
-        <input type="text" class="form-control mb-2" placeholder="Nachname" [(ngModel)]="editCustomer.lastName">
-        <input type="text" class="form-control mb-2" placeholder="Telefon" [(ngModel)]="editCustomer.tel">
-        <input type="text" class="form-control mb-2" placeholder="E-Mail" [(ngModel)]="editCustomer.email">
-        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editCustomer.residentialAddress.street">
-        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editCustomer.residentialAddress.postalCode">
-        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editCustomer.residentialAddress.city">
-        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editCustomer.residentialAddress.country">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-        <button class="btn btn-primary" (click)="updateCustomer()">Speichern</button>
-      </div>
+<!-- Bearbeiten Kunde Dialog -->
+<p-dialog
+  header="Kunde bearbeiten"
+  [(visible)]="showEditModal"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="false"
+  [style]="{ width: '480px', maxWidth: '95vw' }"
+  (onHide)="closeEditModal()">
+  <div class="d-flex flex-column gap-2 py-2">
+    <input type="text" class="form-control" placeholder="Vorname" [(ngModel)]="editCustomer.firstName">
+    <input type="text" class="form-control" placeholder="Nachname" [(ngModel)]="editCustomer.lastName">
+    <input type="text" class="form-control" placeholder="Telefon" [(ngModel)]="editCustomer.tel">
+    <input type="text" class="form-control" placeholder="E-Mail" [(ngModel)]="editCustomer.email">
+    <hr class="my-1">
+    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="$any(editCustomer.residentialAddress).street">
+    <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="$any(editCustomer.residentialAddress).postalCode">
+    <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="$any(editCustomer.residentialAddress).city">
+    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="$any(editCustomer.residentialAddress).country">
+    <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
+      <button class="btn btn-outline-secondary" (click)="closeEditModal()">Abbrechen</button>
+      <button class="btn btn-primary" (click)="updateCustomer()">Speichern</button>
     </div>
   </div>
-</div>
+</p-dialog>

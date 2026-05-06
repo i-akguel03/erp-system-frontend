@@ -134,119 +134,118 @@
 
 </div>
 
-<!-- Neues Abo Modal -->
-<div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Neues Abonnement erstellen</h5>
-        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+<!-- Neues Abonnement Dialog -->
+<p-dialog
+  header="Neues Abonnement erstellen"
+  [(visible)]="showNewModal"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="false"
+  [style]="{ width: '500px', maxWidth: '95vw' }"
+  (onHide)="closeNewModal()">
+  <div class="d-flex flex-column gap-3 py-2">
+    <div>
+      <label class="form-label fw-semibold">Produkt *</label>
+      <select class="form-select" [(ngModel)]="newSubscription.productId" required>
+        <option value="">-- Produkt auswählen --</option>
+        <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="form-label fw-semibold">Vertrag *</label>
+      <select class="form-select" [(ngModel)]="newSubscription.contractId" required>
+        <option value="">-- Vertrag auswählen --</option>
+        <option *ngFor="let contract of contracts" [value]="contract.id">
+          {{ contract.contractTitle }} ({{ contract.contractNumber }})
+        </option>
+      </select>
+    </div>
+    <div>
+      <label class="form-label fw-semibold">Status</label>
+      <select class="form-select" [(ngModel)]="newSubscription.subscriptionStatus">
+        <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
+      </select>
+    </div>
+    <div class="row g-2">
+      <div class="col">
+        <label class="form-label fw-semibold">Startdatum</label>
+        <input type="date" class="form-control" [(ngModel)]="newStartDateString">
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Produkt *</label>
-          <select class="form-select" [(ngModel)]="newSubscription.productId" required>
-            <option value="">-- Produkt auswählen --</option>
-            <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Vertrag *</label>
-          <select class="form-select" [(ngModel)]="newSubscription.contractId" required>
-            <option value="">-- Vertrag auswählen --</option>
-            <option *ngFor="let contract of contracts" [value]="contract.id">
-              {{ contract.contractTitle }} ({{ contract.contractNumber }})
-            </option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" [(ngModel)]="newSubscription.subscriptionStatus">
-            <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Startdatum</label>
-          <input type="date" class="form-control" [(ngModel)]="newStartDateString">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Enddatum (optional)</label>
-          <input type="date" class="form-control" [(ngModel)]="newEndDateString">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-        <button class="btn btn-primary" (click)="createSubscription()" [disabled]="!newSubscription.contractId || !newSubscription.productId">Erstellen</button>
+      <div class="col">
+        <label class="form-label fw-semibold">Enddatum <span class="text-muted fw-normal">(optional)</span></label>
+        <input type="date" class="form-control" [(ngModel)]="newEndDateString">
       </div>
     </div>
+    <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
+      <button class="btn btn-outline-secondary" (click)="closeNewModal()">Abbrechen</button>
+      <button class="btn btn-primary" (click)="createSubscription()" [disabled]="!newSubscription.contractId || !newSubscription.productId">Erstellen</button>
+    </div>
   </div>
-</div>
+</p-dialog>
 
-<!-- Bearbeiten Modal -->
-<div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Abonnement bearbeiten</h5>
-        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+<!-- Abonnement Bearbeiten Dialog -->
+<p-dialog
+  header="Abonnement bearbeiten"
+  [(visible)]="showEditModal"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="false"
+  [style]="{ width: '500px', maxWidth: '95vw' }"
+  (onHide)="closeEditModal()">
+  <div class="d-flex flex-column gap-3 py-2">
+    <div>
+      <label class="form-label fw-semibold">Produkt *</label>
+      <select class="form-select" [(ngModel)]="editSubscription.productId" required>
+        <option value="">-- Produkt auswählen --</option>
+        <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="form-label fw-semibold">Vertrag *</label>
+      <select class="form-select" [(ngModel)]="editSubscription.contractId" required>
+        <option value="">-- Vertrag auswählen --</option>
+        <option *ngFor="let contract of contracts" [value]="contract.id">
+          {{ contract.contractTitle }} ({{ contract.contractNumber }})
+        </option>
+      </select>
+    </div>
+    <div>
+      <label class="form-label fw-semibold">Status</label>
+      <select class="form-select" [(ngModel)]="editSubscription.subscriptionStatus">
+        <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
+      </select>
+    </div>
+    <div class="row g-2">
+      <div class="col">
+        <label class="form-label fw-semibold">Startdatum</label>
+        <input type="date" class="form-control" [(ngModel)]="editStartDateString">
       </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Produkt *</label>
-          <select class="form-select" [(ngModel)]="editSubscription.productId" required>
-            <option value="">-- Produkt auswählen --</option>
-            <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Vertrag *</label>
-          <select class="form-select" [(ngModel)]="editSubscription.contractId" required>
-            <option value="">-- Vertrag auswählen --</option>
-            <option *ngFor="let contract of contracts" [value]="contract.id">
-              {{ contract.contractTitle }} ({{ contract.contractNumber }})
-            </option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" [(ngModel)]="editSubscription.subscriptionStatus">
-            <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Startdatum</label>
-          <input type="date" class="form-control" [(ngModel)]="editStartDateString">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Enddatum (optional)</label>
-          <input type="date" class="form-control" [(ngModel)]="editEndDateString">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-        <button class="btn btn-primary" (click)="updateSubscription()" [disabled]="!editSubscription.contractId || !editSubscription.productId">Speichern</button>
+      <div class="col">
+        <label class="form-label fw-semibold">Enddatum <span class="text-muted fw-normal">(optional)</span></label>
+        <input type="date" class="form-control" [(ngModel)]="editEndDateString">
       </div>
     </div>
+    <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
+      <button class="btn btn-outline-secondary" (click)="closeEditModal()">Abbrechen</button>
+      <button class="btn btn-primary" (click)="updateSubscription()" [disabled]="!editSubscription.contractId || !editSubscription.productId">Speichern</button>
+    </div>
   </div>
-</div>
+</p-dialog>
 
-<!-- Kündigen Modal -->
-<div *ngIf="showPauseModal" class="modal show d-block" tabindex="-1" (click)="showPauseModal=false">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Abonnement kündigen</h5>
-        <button type="button" class="btn-close" (click)="showPauseModal=false"></button>
-      </div>
-      <div class="modal-body">
-        <p>Möchten Sie das Abonnement <strong>{{ subscriptionToPause?.productName }}</strong> wirklich kündigen?</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="showPauseModal=false">Abbrechen</button>
-        <button class="btn btn-danger" (click)="cancelSubscription(subscriptionToPause!.id!); showPauseModal=false">
-          Kündigen
-        </button>
-      </div>
+<!-- Abonnement Kündigen Dialog -->
+<p-dialog
+  header="Abonnement kündigen"
+  [(visible)]="showPauseModal"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="false"
+  [style]="{ width: '400px', maxWidth: '95vw' }"
+  (onHide)="showPauseModal=false">
+  <div class="d-flex flex-column gap-3 py-2">
+    <p class="mb-0">Möchten Sie das Abonnement <strong>{{ subscriptionToPause?.productName }}</strong> wirklich kündigen?</p>
+    <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
+      <button class="btn btn-outline-secondary" (click)="showPauseModal=false">Abbrechen</button>
+      <button class="btn btn-danger" (click)="cancelSubscription(subscriptionToPause!.id!); showPauseModal=false">Kündigen</button>
     </div>
   </div>
-</div>
+</p-dialog>

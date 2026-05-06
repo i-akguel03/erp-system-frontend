@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DueScheduleService } from '../../services/due-schedule-service';
 import { DueSchedule, ScheduleStatus } from '../../models/DueSchedule';
+import { Dialog } from 'primeng/dialog';
 
 @Component({
   selector: 'app-due-schedule-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Dialog],
   templateUrl: './schedule-list.html',
   styleUrls: ['./schedule-list.scss'],
 })

@@ -6,6 +6,9 @@ import { Router } from '@angular/router';
 import { Customer } from '../../models/Customer';
 import { CustomerService } from '../../services/customer-service';
 import { ErpService } from '../../services/testservice';
+import { ConfirmationService } from 'primeng/api';
+import { NotificationService } from '../../services/notification.service';
+import { Dialog } from 'primeng/dialog';
 
 @Component({
   selector: 'app-customer-list',
@@ -13,7 +16,8 @@ import { ErpService } from '../../services/testservice';
   imports: [
     CommonModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    Dialog
   ],
   templateUrl: './customer-list.html',
   styleUrls: ['./customer-list.scss'],
@@ -57,7 +61,13 @@ editCustomer: Customer = {
   showEditModal = false;
   message: string | null = null;
 
-  constructor(private customerService: CustomerService, private router: Router, private initService: ErpService) {}
+  constructor(
+    private customerService: CustomerService,
+    private router: Router,
+    private initService: ErpService,
+    private confirmationService: ConfirmationService,
+    private notification: NotificationService
+  ) {}
 
   ngOnInit(): void {
     this.checkTokenAndLoad();
@@ -100,25 +110,34 @@ editCustomer: Customer = {
   }
 
   deleteCustomer(id?: string): void {
-  if (!id) return;
-  if (confirm('Möchten Sie diesen Kunden wirklich löschen?')) {
-    this.customerService.deleteCustomer(id).subscribe({
-      next: () => {
-        this.customers = this.customers.filter(c => c.id !== id);
-        this.filterCustomers();
-      },
-      error: (err) => {
-        if (err.status === 404) {
-          alert('Der Kunde wurde nicht gefunden (evtl. bereits gelöscht).');
-        } else if (err.status === 409) {
-          alert('Der Kunde kann nicht gelöscht werden, da aktive Verträge existieren.');
-        } else {
-          this.handleApiError(err, 'Fehler beim Löschen des Kunden');
-        }
+    if (!id) return;
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diesen Kunden wirklich löschen?',
+      header: 'Kunden löschen',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.customerService.deleteCustomer(id).subscribe({
+          next: () => {
+            this.customers = this.customers.filter(c => c.id !== id);
+            this.filterCustomers();
+            this.notification.success('Kunde wurde erfolgreich gelöscht.');
+          },
+          error: (err) => {
+            if (err.status === 404) {
+              this.notification.warn('Der Kunde wurde nicht gefunden (evtl. bereits gelöscht).');
+            } else if (err.status === 409) {
+              this.notification.error('Der Kunde kann nicht gelöscht werden, da aktive Verträge existieren.');
+            } else {
+              this.handleApiError(err, 'Fehler beim Löschen des Kunden');
+            }
+          }
+        });
       }
     });
   }
-}
 
   initTestData() {
     this.loading = true;
@@ -212,6 +231,10 @@ editCustomer: Customer = {
         error: (err) => this.handleApiError(err, 'Fehler beim Erstellen von Testdaten')
       });
     });
+  }
+
+  clearError(): void {
+    this.error = null;
   }
 
   logout(): void {

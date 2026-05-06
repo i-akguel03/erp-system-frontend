@@ -95,46 +95,56 @@
 
 </div>
 
-<!-- Neue Adresse Modal -->
-<div *ngIf="showNewModal" class="modal show d-block" tabindex="-1" (click)="closeNewModal()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Neue Adresse erstellen</h5>
-        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+<!-- Neue Adresse Dialog -->
+<p-dialog
+  header="Neue Adresse erstellen"
+  [(visible)]="showNewModal"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="false"
+  [style]="{ width: '420px', maxWidth: '95vw' }"
+  (onHide)="closeNewModal()">
+  <div class="d-flex flex-column gap-2 py-2">
+    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="newAddress.street">
+    <div class="row g-2">
+      <div class="col-4">
+        <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="newAddress.postalCode">
       </div>
-      <div class="modal-body">
-        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="newAddress.street">
-        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="newAddress.postalCode">
-        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="newAddress.city">
-        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="newAddress.country">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeNewModal()">Abbrechen</button>
-        <button class="btn btn-primary" (click)="createAddress()">Erstellen</button>
+      <div class="col-8">
+        <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="newAddress.city">
       </div>
     </div>
+    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="newAddress.country">
+    <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
+      <button class="btn btn-outline-secondary" (click)="closeNewModal()">Abbrechen</button>
+      <button class="btn btn-primary" (click)="createAddress()">Erstellen</button>
+    </div>
   </div>
-</div>
+</p-dialog>
 
-<!-- Adresse bearbeiten Modal -->
-<div *ngIf="showEditModal" class="modal show d-block" tabindex="-1" (click)="closeEditModal()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Adresse bearbeiten</h5>
-        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+<!-- Adresse Bearbeiten Dialog -->
+<p-dialog
+  header="Adresse bearbeiten"
+  [(visible)]="showEditModal"
+  [modal]="true"
+  [draggable]="true"
+  [resizable]="false"
+  [style]="{ width: '420px', maxWidth: '95vw' }"
+  (onHide)="closeEditModal()">
+  <div class="d-flex flex-column gap-2 py-2">
+    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="editAddress.street">
+    <div class="row g-2">
+      <div class="col-4">
+        <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="editAddress.postalCode">
       </div>
-      <div class="modal-body">
-        <input type="text" class="form-control mb-2" placeholder="Straße" [(ngModel)]="editAddress.street">
-        <input type="text" class="form-control mb-2" placeholder="PLZ" [(ngModel)]="editAddress.postalCode">
-        <input type="text" class="form-control mb-2" placeholder="Stadt" [(ngModel)]="editAddress.city">
-        <input type="text" class="form-control mb-2" placeholder="Land" [(ngModel)]="editAddress.country">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeEditModal()">Abbrechen</button>
-        <button class="btn btn-primary" (click)="updateAddress()">Speichern</button>
+      <div class="col-8">
+        <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="editAddress.city">
       </div>
     </div>
+    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="editAddress.country">
+    <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
+      <button class="btn btn-outline-secondary" (click)="closeEditModal()">Abbrechen</button>
+      <button class="btn btn-primary" (click)="updateAddress()">Speichern</button>
+    </div>
   </div>
-</div>
+</p-dialog>

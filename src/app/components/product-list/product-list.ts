@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product-service';
 import { Product } from '../../models/Product';
+import { ConfirmationService } from 'primeng/api';
+import { NotificationService } from '../../services/notification.service';
+import { Dialog } from 'primeng/dialog';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Dialog],
   templateUrl: './product-list.html',
   styleUrls: ['./product-list.scss'],
 })
@@ -24,7 +27,11 @@ export class ProductListComponent implements OnInit {
   showNewModal = false;
   showEditModal = false;
 
-  constructor(private productService: ProductService) {}
+  constructor(
+    private productService: ProductService,
+    private confirmationService: ConfirmationService,
+    private notification: NotificationService
+  ) {}
 
   ngOnInit(): void {
     this.loadProducts();
@@ -54,13 +61,24 @@ export class ProductListComponent implements OnInit {
   }
 
   deleteProduct(id?: string): void {
-    if (!id || !confirm('Möchten Sie dieses Produkt wirklich löschen?')) return;
-    this.productService.deleteProduct(id).subscribe({
-      next: () => {
-        this.products = this.products.filter(p => p.id !== id);
-        this.filterProducts();
-      },
-      error: err => this.handleApiError(err, 'Fehler beim Löschen des Produkts')
+    if (!id) return;
+    this.confirmationService.confirm({
+      message: 'Möchten Sie dieses Produkt wirklich löschen?',
+      header: 'Produkt löschen',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.productService.deleteProduct(id).subscribe({
+          next: () => {
+            this.products = this.products.filter(p => p.id !== id);
+            this.filterProducts();
+            this.notification.success('Produkt wurde erfolgreich gelöscht.');
+          },
+          error: err => this.handleApiError(err, 'Fehler beim Löschen des Produkts')
+        });
+      }
     });
   }
 

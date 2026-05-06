@@ -5,11 +5,14 @@ import { Contract } from '../../models/Contract';
 import { ContractService } from '../../services/contract-service';
 import { Customer } from '../../models/Customer';
 import { CustomerService } from '../../services/customer-service';
+import { ConfirmationService } from 'primeng/api';
+import { NotificationService } from '../../services/notification.service';
+import { Dialog } from 'primeng/dialog';
 
 @Component({
   selector: 'app-contract-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Dialog],
   templateUrl: './contract-list.html',
   styleUrls: ['./contract-list.scss'],
 })
@@ -38,8 +41,12 @@ export class ContractListComponent implements OnInit {
   contractToTerminate: Contract | null = null;
   terminationDate: string = '';
 
-  constructor(private contractService: ContractService,
-              private customerService: CustomerService) {}
+  constructor(
+    private contractService: ContractService,
+    private customerService: CustomerService,
+    private confirmationService: ConfirmationService,
+    private notification: NotificationService
+  ) {}
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -83,13 +90,24 @@ export class ContractListComponent implements OnInit {
   }
 
   deleteContract(id?: string): void {
-    if (!id || !confirm('Möchten Sie diesen Vertrag wirklich löschen?')) return;
-    this.contractService.deleteContract(id).subscribe({
-      next: () => {
-        this.contracts = this.contracts.filter(c => c.id !== id);
-        this.filterContracts();
-      },
-      error: err => this.handleApiError(err, 'Fehler beim Löschen des Vertrags')
+    if (!id) return;
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diesen Vertrag wirklich löschen?',
+      header: 'Vertrag löschen',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.contractService.deleteContract(id).subscribe({
+          next: () => {
+            this.contracts = this.contracts.filter(c => c.id !== id);
+            this.filterContracts();
+            this.notification.success('Vertrag wurde erfolgreich gelöscht.');
+          },
+          error: err => this.handleApiError(err, 'Fehler beim Löschen des Vertrags')
+        });
+      }
     });
   }
 

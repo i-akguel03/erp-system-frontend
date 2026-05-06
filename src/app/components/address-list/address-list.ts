@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AddressService } from '../../services/address-service';
 import { Address } from '../../models/Address';
+import { ConfirmationService } from 'primeng/api';
+import { NotificationService } from '../../services/notification.service';
+import { Dialog } from 'primeng/dialog';
 
 @Component({
   selector: 'app-address-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Dialog],
   templateUrl: './address-list.html',
   styleUrls: ['./address-list.scss'],
 })
@@ -24,7 +27,11 @@ export class AddressListComponent implements OnInit {
   showNewModal = false;
   showEditModal = false;
 
-  constructor(private addressService: AddressService) {}
+  constructor(
+    private addressService: AddressService,
+    private confirmationService: ConfirmationService,
+    private notification: NotificationService
+  ) {}
 
   ngOnInit(): void {
     this.loadAddresses();
@@ -55,13 +62,24 @@ export class AddressListComponent implements OnInit {
   }
 
   deleteAddress(id?: number): void {
-    if (!id || !confirm('Möchten Sie diese Adresse wirklich löschen?')) return;
-    this.addressService.deleteAddress(id).subscribe({
-      next: () => {
-        this.addresses = this.addresses.filter(a => a.id !== id);
-        this.filterAddresses();
-      },
-      error: err => this.handleApiError(err, 'Fehler beim Löschen der Adresse')
+    if (!id) return;
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diese Adresse wirklich löschen?',
+      header: 'Adresse löschen',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.addressService.deleteAddress(id).subscribe({
+          next: () => {
+            this.addresses = this.addresses.filter(a => a.id !== id);
+            this.filterAddresses();
+            this.notification.success('Adresse wurde erfolgreich gelöscht.');
+          },
+          error: err => this.handleApiError(err, 'Fehler beim Löschen der Adresse')
+        });
+      }
     });
   }
 

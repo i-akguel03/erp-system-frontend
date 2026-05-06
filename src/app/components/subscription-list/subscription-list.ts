@@ -7,11 +7,14 @@ import { Contract } from '../../models/Contract';
 import { ContractService } from '../../services/contract-service';
 import { ProductService } from '../../services/product-service';
 import { Product } from '../../models/Product';
+import { ConfirmationService } from 'primeng/api';
+import { NotificationService } from '../../services/notification.service';
+import { Dialog } from 'primeng/dialog';
 
 @Component({
   selector: 'app-subscription-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Dialog],
   templateUrl: './subscription-list.html',
   styleUrls: ['./subscription-list.scss'],
 })
@@ -42,7 +45,9 @@ export class SubscriptionListComponent implements OnInit {
   constructor(
     private subscriptionService: SubscriptionService,
     private contractService: ContractService,
-    private productService: ProductService
+    private productService: ProductService,
+    private confirmationService: ConfirmationService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -197,28 +202,34 @@ export class SubscriptionListComponent implements OnInit {
   }
 
   deleteSubscription(id?: string): void {
-  if (!id || !confirm('Möchten Sie dieses Abo wirklich löschen?')) return;
-
-  this.subscriptionService.deleteSubscription(id).subscribe({
-    next: () => {
-      this.subscriptions = this.subscriptions.filter(s => s.id !== id);
-      this.filterSubscriptions();
-    },
-    error: (err) => {
-      if (err.status === 404) {
-        alert('Abonnement nicht gefunden (evtl. bereits gelöscht).');
-      } else if (err.status === 409) {
-        alert('Das Abonnement kann nicht gelöscht werden, da offene Fälligkeiten existieren.');
-      } else if (err.status === 401) {
-        this.error = 'Login abgelaufen. Bitte loggen Sie sich neu ein.';
-      } else if (err.status === 403) {
-        this.error = 'Zugriff verweigert. Sie haben keine Berechtigung für diese Aktion.';
-      } else {
-        this.handleApiError(err, 'Fehler beim Löschen des Abos');
+    if (!id) return;
+    this.confirmationService.confirm({
+      message: 'Möchten Sie dieses Abonnement wirklich löschen?',
+      header: 'Abonnement löschen',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.subscriptionService.deleteSubscription(id).subscribe({
+          next: () => {
+            this.subscriptions = this.subscriptions.filter(s => s.id !== id);
+            this.filterSubscriptions();
+            this.notification.success('Abonnement wurde erfolgreich gelöscht.');
+          },
+          error: (err) => {
+            if (err.status === 404) {
+              this.notification.warn('Abonnement nicht gefunden (evtl. bereits gelöscht).');
+            } else if (err.status === 409) {
+              this.notification.error('Das Abonnement kann nicht gelöscht werden, da offene Fälligkeiten existieren.');
+            } else {
+              this.handleApiError(err, 'Fehler beim Löschen des Abos');
+            }
+          }
+        });
       }
-    }
-  });
-}
+    });
+  }
 
   // --- Helper Methods ---
   private updateLocalSubscription(updated: Subscription): void {
