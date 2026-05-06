@@ -1,65 +1,66 @@
-<!-- login.component.html -->
+<app-backend-check *ngIf="showOverlay"></app-backend-check>
+
 <div class="login-container">
   <div class="login-card shadow-lg">
     <div class="card-body p-4">
-      <h3 class="card-title text-center mb-4">Anmelden</h3>
-      
-      <!-- ✅ Login Form -->
-      <form (ngSubmit)="login()">
-        <div class="mb-3">
-          <label for="username" class="form-label">Username</label>
-          <input 
-            type="text" 
-            id="username" 
-            class="form-control form-control-lg" 
-            [(ngModel)]="username" 
-            name="username" 
-            required
-            [disabled]="isLoading">
+
+      <!-- Normales Login-Formular -->
+      <ng-container *ngIf="!showOverlay">
+        <h3 class="card-title text-center mb-4">Anmelden</h3>
+
+        <form (ngSubmit)="login()">
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input
+              type="text"
+              id="username"
+              class="form-control form-control-lg"
+              [(ngModel)]="username"
+              name="username"
+              required
+              [disabled]="isLoading">
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              id="password"
+              class="form-control form-control-lg"
+              [(ngModel)]="password"
+              name="password"
+              required
+              [disabled]="isLoading">
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary w-100 btn-lg"
+            [disabled]="isLoading || !username || !password">
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            {{ isLoading ? 'Anmelden...' : 'Anmelden' }}
+          </button>
+        </form>
+
+        <div *ngIf="error" class="alert alert-danger mt-3">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          {{ error }}
         </div>
-        
-        <div class="mb-3">
-          <label for="password" class="form-label">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            class="form-control form-control-lg" 
-            [(ngModel)]="password" 
-            name="password" 
-            required
-            [disabled]="isLoading">
+
+        <div class="text-center my-4 divider">
+          <span class="text-muted px-3">oder</span>
         </div>
-        
-        <!-- ✅ Login Button mit Loading State -->
-        <button 
-          type="submit" 
-          class="btn btn-primary w-100 btn-lg"
-          [disabled]="isLoading || !username || !password">
-          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          {{ isLoading ? 'Anmelden...' : 'Anmelden' }}
+
+        <button
+          type="button"
+          class="btn btn-outline-success w-100 btn-lg"
+          (click)="goToRegister()"
+          [disabled]="isLoading">
+          <i class="fas fa-user-plus me-2"></i>
+          Neuen Account erstellen
         </button>
-      </form>
-      
-      <!-- ✅ Fehlermeldung -->
-      <div *ngIf="error" class="alert alert-danger mt-3">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        {{ error }}
-      </div>
-      
-      <!-- ✅ Divider -->
-      <div class="text-center my-4 divider">
-        <span class="text-muted px-3">oder</span>
-      </div>
-      
-      <!-- ✅ Registrierung Button -->
-      <button 
-        type="button" 
-        class="btn btn-outline-success w-100 btn-lg"
-        (click)="goToRegister()"
-        [disabled]="isLoading">
-        <i class="fas fa-user-plus me-2"></i>
-        Neuen Account erstellen
-      </button>
+      </ng-container>
+
     </div>
-  </div>      
+  </div>
 </div>

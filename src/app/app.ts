@@ -3,10 +3,10 @@ import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar';
 import { CardModule } from 'primeng/card';
 import { CommonModule } from '@angular/common';
-import { BackendCheckComponent } from './shared/backend-check/backend-check/backend-check';
 import { AuthService } from './auth/services/auth';
 import { Toast } from 'primeng/toast';
 import { ConfirmDialog } from 'primeng/confirmdialog';
+import { BackendStatusService } from './services/backend-status.service';
 
 @Component({
   selector: 'app-root',
@@ -16,7 +16,6 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
     NavbarComponent,
     CardModule,
     CommonModule,
-    BackendCheckComponent,
     Toast,
     ConfirmDialog
   ],
@@ -25,10 +24,8 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 })
 export class App {
   protected readonly title = signal('erp-system-frontend');
-  protected backendReady = signal(false);
 
-  constructor(private auth: AuthService) {}
+  constructor(private auth: AuthService, _backendStatus: BackendStatusService) {}
 
-  // Computed Signal: ist User eingeloggt?
   protected readonly isLoggedIn = computed(() => this.auth.isAuthenticated());
 }
