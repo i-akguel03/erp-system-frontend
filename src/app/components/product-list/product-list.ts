@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SortPipe } from '../../shared/pipes/sort.pipe';
-import { SortState } from '../../shared/utils/sort-state';
+import { ListBase } from '../../shared/utils/list-base';
+import { ListToolbarComponent } from '../../shared/components/list-toolbar/list-toolbar.component';
+import { ListStatusComponent } from '../../shared/components/list-status/list-status.component';
 import { ProductService } from '../../services/product-service';
 import { Product } from '../../models/Product';
 import { ConfirmationService } from 'primeng/api';
@@ -12,35 +14,29 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
   templateUrl: './product-list.html',
   styleUrls: ['./product-list.scss'],
 })
-export class ProductListComponent implements OnInit {
-  sort = new SortState();
+export class ProductListComponent extends ListBase<Product> implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
-  loading = false;
-  error: string | null = null;
-  searchTerm: string = '';
 
   newProduct: Product = this.createEmptyProduct();
   editProduct: Product = this.createEmptyProduct();
-
-  showNewModal = false;
-  showEditModal = false;
 
   constructor(
     private productService: ProductService,
     private confirmationService: ConfirmationService,
     private notification: NotificationService
-  ) {}
+  ) {
+    super();
+  }
 
   ngOnInit(): void {
     this.loadProducts();
   }
 
-  // --- Load ---
   loadProducts(): void {
     this.loading = true;
     this.error = null;
@@ -85,17 +81,24 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  // --- Modal ---
-  openNewModal(): void { this.showNewModal = true; this.newProduct = this.createEmptyProduct(); this.error = null; }
-  closeNewModal(): void { this.showNewModal = false; }
+  override openNewModal(): void {
+    super.openNewModal();
+    this.newProduct = this.createEmptyProduct();
+  }
 
-  openEditModal(product: Product): void { this.editProduct = { ...product }; this.showEditModal = true; this.error = null; }
-  closeEditModal(): void { this.showEditModal = false; }
+  openEditModal(product: Product): void {
+    this.editProduct = { ...product };
+    this.showEditModal = true;
+    this.error = null;
+  }
 
-  // --- CRUD ---
   createProduct(): void {
     this.productService.createProduct(this.newProduct).subscribe({
-      next: created => { this.products.push(created); this.filteredProducts = [...this.products]; this.closeNewModal(); },
+      next: created => {
+        this.products.push(created);
+        this.filteredProducts = [...this.products];
+        this.closeNewModal();
+      },
       error: err => this.handleApiError(err, 'Fehler beim Erstellen des Produkts')
     });
   }
@@ -111,13 +114,6 @@ export class ProductListComponent implements OnInit {
       },
       error: err => this.handleApiError(err, 'Fehler beim Aktualisieren des Produkts')
     });
-  }
-
-  // --- Helpers ---
-  private handleApiError(err: any, defaultMessage: string): void {
-    console.error('API Error:', err);
-    this.loading = false;
-    this.error = err.error?.message || defaultMessage;
   }
 
   private createEmptyProduct(): Product {

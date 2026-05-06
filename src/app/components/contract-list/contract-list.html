@@ -1,37 +1,16 @@
-<!-- Sticky Toolbar -->
-<div class="position-sticky bg-white shadow-sm border-bottom px-3 px-md-4 py-3" style="top: 0; z-index: 10;">
-  <div class="d-flex gap-2 align-items-center">
-    <div class="input-group">
-      <span class="input-group-text bg-transparent border-end-0 text-muted">
-        <i class="fas fa-search"></i>
-      </span>
-      <input type="text" class="form-control border-start-0 ps-0"
-             placeholder="Vertrag, Kunde oder Nummer suchen..."
-             [(ngModel)]="searchTerm" (ngModelChange)="filterContracts()">
-    </div>
-    <button class="btn btn-outline-secondary flex-shrink-0" (click)="loadContracts()" title="Alle anzeigen">
-      <i class="fas fa-sync-alt"></i>
-    </button>
-    <button class="btn btn-primary flex-shrink-0" (click)="openNewModal()">
-      <i class="fas fa-plus me-1"></i><span class="d-none d-sm-inline">Neuer Vertrag</span>
-    </button>
-  </div>
-</div>
+<app-list-toolbar
+  [(searchTerm)]="searchTerm"
+  placeholder="Vertrag, Kunde oder Nummer suchen..."
+  newLabel="Neuer Vertrag"
+  (search)="filterContracts()"
+  (refresh)="loadContracts()"
+  (newClick)="openNewModal()">
+</app-list-toolbar>
 
 <!-- Inhalt -->
 <div class="px-3 px-md-4 py-3">
 
-  <div *ngIf="loading" class="d-flex justify-content-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Wird geladen...</span>
-    </div>
-  </div>
-
-  <div *ngIf="error" class="alert alert-danger d-flex align-items-center mb-3">
-    <i class="fas fa-exclamation-triangle me-2"></i>
-    <span class="flex-grow-1">{{ error }}</span>
-    <button type="button" class="btn-close ms-2" (click)="clearError()"></button>
-  </div>
+  <app-list-status [loading]="loading" [error]="error" (dismiss)="clearError()"></app-list-status>
 
   <!-- Desktop Tabelle -->
   <div class="table-responsive d-none d-md-block" *ngIf="filteredContracts.length > 0 && !loading">

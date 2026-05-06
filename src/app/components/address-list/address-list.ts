@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SortPipe } from '../../shared/pipes/sort.pipe';
-import { SortState } from '../../shared/utils/sort-state';
+import { ListBase } from '../../shared/utils/list-base';
+import { ListToolbarComponent } from '../../shared/components/list-toolbar/list-toolbar.component';
+import { ListStatusComponent } from '../../shared/components/list-status/list-status.component';
 import { AddressService } from '../../services/address-service';
 import { Address } from '../../models/Address';
 import { ConfirmationService } from 'primeng/api';
@@ -12,35 +14,29 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-address-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
   templateUrl: './address-list.html',
   styleUrls: ['./address-list.scss'],
 })
-export class AddressListComponent implements OnInit {
-  sort = new SortState();
+export class AddressListComponent extends ListBase<Address> implements OnInit {
   addresses: Address[] = [];
   filteredAddresses: Address[] = [];
-  loading = false;
-  error: string | null = null;
-  searchTerm: string = '';
 
   newAddress: Address = this.createEmptyAddress();
   editAddress: Address = this.createEmptyAddress();
-
-  showNewModal = false;
-  showEditModal = false;
 
   constructor(
     private addressService: AddressService,
     private confirmationService: ConfirmationService,
     private notification: NotificationService
-  ) {}
+  ) {
+    super();
+  }
 
   ngOnInit(): void {
     this.loadAddresses();
   }
 
-  // --- Load Methods ---
   loadAddresses(): void {
     this.loading = true;
     this.error = null;
@@ -56,7 +52,7 @@ export class AddressListComponent implements OnInit {
 
   filterAddresses(): void {
     const term = this.searchTerm.toLowerCase();
-    this.filteredAddresses = this.addresses.filter(addr => 
+    this.filteredAddresses = this.addresses.filter(addr =>
       addr.street.toLowerCase().includes(term) ||
       addr.city.toLowerCase().includes(term) ||
       addr.postalCode.toLowerCase().includes(term) ||
@@ -86,14 +82,10 @@ export class AddressListComponent implements OnInit {
     });
   }
 
-  // --- Modal Management ---
-  openNewModal(): void {
-    this.showNewModal = true;
-    this.error = null;
+  override openNewModal(): void {
+    super.openNewModal();
     this.newAddress = this.createEmptyAddress();
   }
-
-  closeNewModal(): void { this.showNewModal = false; }
 
   openEditModal(address: Address): void {
     this.editAddress = { ...address };
@@ -101,9 +93,6 @@ export class AddressListComponent implements OnInit {
     this.error = null;
   }
 
-  closeEditModal(): void { this.showEditModal = false; }
-
-  // --- CRUD Operations ---
   createAddress(): void {
     this.addressService.createAddress(this.newAddress).subscribe({
       next: created => {
@@ -126,13 +115,6 @@ export class AddressListComponent implements OnInit {
       },
       error: err => this.handleApiError(err, 'Fehler beim Aktualisieren der Adresse')
     });
-  }
-
-  // --- Helper Methods ---
-  private handleApiError(err: any, defaultMessage: string): void {
-    console.error('API Error:', err);
-    this.loading = false;
-    this.error = err.error?.message || defaultMessage;
   }
 
   private createEmptyAddress(): Address {

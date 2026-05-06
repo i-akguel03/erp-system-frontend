@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SortPipe } from '../../shared/pipes/sort.pipe';
-import { SortState } from '../../shared/utils/sort-state';
+import { ListBase } from '../../shared/utils/list-base';
+import { ListToolbarComponent } from '../../shared/components/list-toolbar/list-toolbar.component';
+import { ListStatusComponent } from '../../shared/components/list-status/list-status.component';
 import { DueScheduleService } from '../../services/due-schedule-service';
 import { DueSchedule, ScheduleStatus } from '../../models/DueSchedule';
 import { Dialog } from 'primeng/dialog';
@@ -10,33 +12,25 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-due-schedule-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
   templateUrl: './schedule-list.html',
   styleUrls: ['./schedule-list.scss'],
 })
-export class DueScheduleListComponent implements OnInit {
-  sort = new SortState();
+export class DueScheduleListComponent extends ListBase<DueSchedule> implements OnInit {
   schedules: DueSchedule[] = [];
   filteredSchedules: DueSchedule[] = [];
-  loading = false;
-  error: string | null = null;
-  searchTerm: string = '';
 
-  // Modal für neue Fälligkeit
   showNewScheduleModal = false;
   newSchedule: Partial<DueSchedule> = {};
 
-  constructor(private scheduleService: DueScheduleService) {}
+  constructor(private scheduleService: DueScheduleService) {
+    super();
+  }
 
   ngOnInit(): void {
     this.loadSchedules();
   }
 
-  clearError(): void {
-    this.error = null;
-  }
-
-  // --- Load ---
   loadSchedules(): void {
     this.loading = true;
     this.error = null;
@@ -50,7 +44,6 @@ export class DueScheduleListComponent implements OnInit {
     });
   }
 
-  // --- Filter ---
   filterSchedules(): void {
     const term = this.searchTerm.toLowerCase();
     this.filteredSchedules = this.schedules.filter(s =>
@@ -65,7 +58,6 @@ export class DueScheduleListComponent implements OnInit {
     this.filteredSchedules = [...this.schedules];
   }
 
-  // --- Neue Fälligkeit Modal ---
   openNewScheduleModal(): void {
     this.newSchedule = {};
     this.showNewScheduleModal = true;
@@ -87,7 +79,6 @@ export class DueScheduleListComponent implements OnInit {
     });
   }
 
-  // --- Helpers ---
   getStatusLabel(status: ScheduleStatus, overdue: boolean): string {
     if (overdue) return 'ÜBERFÄLLIG';
     switch (status) {
@@ -108,11 +99,5 @@ export class DueScheduleListComponent implements OnInit {
       case 'COMPLETED': return 'status-completed';
       default: return '';
     }
-  }
-
-  private handleApiError(err: any, defaultMessage: string): void {
-    console.error('API Error:', err);
-    this.loading = false;
-    this.error = err.error?.message || defaultMessage;
   }
 }

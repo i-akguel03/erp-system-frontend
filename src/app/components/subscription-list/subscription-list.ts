@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SortPipe } from '../../shared/pipes/sort.pipe';
-import { SortState } from '../../shared/utils/sort-state';
+import { ListBase } from '../../shared/utils/list-base';
+import { ListToolbarComponent } from '../../shared/components/list-toolbar/list-toolbar.component';
+import { ListStatusComponent } from '../../shared/components/list-status/list-status.component';
 import { Subscription, SubscriptionStatus, BillingCycle } from '../../models/Subscription';
 import { SubscriptionService } from '../../services/subscription-service';
 import { Contract } from '../../models/Contract';
@@ -16,17 +18,13 @@ import { Dialog } from 'primeng/dialog';
 @Component({
   selector: 'app-subscription-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
   templateUrl: './subscription-list.html',
   styleUrls: ['./subscription-list.scss'],
 })
-export class SubscriptionListComponent implements OnInit {
-  sort = new SortState();
+export class SubscriptionListComponent extends ListBase<Subscription> implements OnInit {
   subscriptions: Subscription[] = [];
   filteredSubscriptions: Subscription[] = [];
-  loading = false;
-  error: string | null = null;
-  searchTerm: string = '';
 
   contracts: Contract[] = [];
   products: Product[] = [];
@@ -34,15 +32,12 @@ export class SubscriptionListComponent implements OnInit {
   newSubscription: Subscription = this.createEmptySubscription();
   editSubscription: Subscription = this.createEmptySubscription();
 
-  newStartDateString: string = '';
-  newEndDateString: string = '';
-  editStartDateString: string = '';
-  editEndDateString: string = '';
+  newStartDateString = '';
+  newEndDateString = '';
+  editStartDateString = '';
+  editEndDateString = '';
 
-  showNewModal = false;
-  showEditModal = false;
   showPauseModal = false;
-
   subscriptionToPause: Subscription | null = null;
 
   constructor(
@@ -51,7 +46,9 @@ export class SubscriptionListComponent implements OnInit {
     private productService: ProductService,
     private confirmationService: ConfirmationService,
     private notification: NotificationService
-  ) {}
+  ) {
+    super();
+  }
 
   ngOnInit(): void {
     this.loadContracts();
@@ -59,7 +56,6 @@ export class SubscriptionListComponent implements OnInit {
     this.loadSubscriptions();
   }
 
-  // --- Load Methods ---
   loadSubscriptions(): void {
     this.loading = true;
     this.error = null;
@@ -99,16 +95,12 @@ export class SubscriptionListComponent implements OnInit {
     });
   }
 
-  // --- Modal Management ---
-  openNewModal(): void {
-    this.showNewModal = true;
-    this.error = null;
+  override openNewModal(): void {
+    super.openNewModal();
     this.newSubscription = this.createEmptySubscription();
     this.newStartDateString = this.formatDateForInput(this.newSubscription.startDate);
     this.newEndDateString = '';
   }
-
-  closeNewModal(): void { this.showNewModal = false; }
 
   openEditModal(subscription: Subscription): void {
     this.editSubscription = { ...subscription };
@@ -118,24 +110,11 @@ export class SubscriptionListComponent implements OnInit {
     this.editEndDateString = subscription.endDate ? this.formatDateForInput(subscription.endDate) : '';
   }
 
-  closeEditModal(): void { this.showEditModal = false; }
-
-  // --- CRUD ---
   createSubscription(): void {
-    if (!this.newSubscription.contractId) {
-      this.error = 'Bitte wählen Sie einen Vertrag aus.';
-      return;
-    }
-    if (!this.newSubscription.productId) {
-      this.error = 'Bitte wählen Sie ein Produkt aus.';
-      return;
-    }
-
+    if (!this.newSubscription.contractId) { this.error = 'Bitte wählen Sie einen Vertrag aus.'; return; }
+    if (!this.newSubscription.productId) { this.error = 'Bitte wählen Sie ein Produkt aus.'; return; }
     const selectedProduct = this.getProductById(this.newSubscription.productId);
-    if (!selectedProduct) {
-      this.error = 'Ausgewähltes Produkt existiert nicht.';
-      return;
-    }
+    if (!selectedProduct) { this.error = 'Ausgewähltes Produkt existiert nicht.'; return; }
 
     const subscriptionToSend: Subscription = {
       ...this.newSubscription,
@@ -143,7 +122,6 @@ export class SubscriptionListComponent implements OnInit {
       startDate: new Date(this.newStartDateString),
       endDate: this.newEndDateString ? new Date(this.newEndDateString) : undefined,
     };
-
     this.subscriptionService.createSubscription(subscriptionToSend).subscribe({
       next: created => {
         this.subscriptions.push(created);
@@ -156,16 +134,9 @@ export class SubscriptionListComponent implements OnInit {
 
   updateSubscription(): void {
     if (!this.editSubscription.id) return;
-    if (!this.editSubscription.productId) {
-      this.error = 'Bitte wählen Sie ein Produkt aus.';
-      return;
-    }
-
+    if (!this.editSubscription.productId) { this.error = 'Bitte wählen Sie ein Produkt aus.'; return; }
     const selectedProduct = this.getProductById(this.editSubscription.productId);
-    if (!selectedProduct) {
-      this.error = 'Ausgewähltes Produkt existiert nicht.';
-      return;
-    }
+    if (!selectedProduct) { this.error = 'Ausgewähltes Produkt existiert nicht.'; return; }
 
     const subscriptionToUpdate: Subscription = {
       ...this.editSubscription,
@@ -173,12 +144,8 @@ export class SubscriptionListComponent implements OnInit {
       startDate: new Date(this.editStartDateString),
       endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
     };
-
     this.subscriptionService.updateSubscription(this.editSubscription.id, subscriptionToUpdate).subscribe({
-      next: updated => {
-        this.updateLocalSubscription(updated);
-        this.closeEditModal();
-      },
+      next: updated => { this.updateLocalSubscription(updated); this.closeEditModal(); },
       error: err => this.handleApiError(err, 'Fehler beim Aktualisieren')
     });
   }
@@ -234,7 +201,6 @@ export class SubscriptionListComponent implements OnInit {
     });
   }
 
-  // --- Helper Methods ---
   private updateLocalSubscription(updated: Subscription): void {
     const index = this.subscriptions.findIndex(s => s.id === updated.id);
     if (index >= 0) {
@@ -243,28 +209,22 @@ export class SubscriptionListComponent implements OnInit {
     }
   }
 
-  private handleApiError(err: any, defaultMessage: string): void {
-    console.error(err);
-    this.loading = false;
-    this.error = err.error?.message || defaultMessage;
-  }
-
   private createEmptySubscription(): Subscription {
     return {
       subscriptionNumber: '',
-      productId: '',           // ✅ immer String
+      productId: '',
       productName: '',
       startDate: new Date(),
       subscriptionStatus: SubscriptionStatus.ACTIVE,
       billingCycle: BillingCycle.MONTHLY,
-      contractId: '',          // ✅ immer String
+      contractId: '',
       autoRenewal: true
     };
   }
 
   private formatDateForInput(date: Date | undefined): string {
     if (!date) return '';
-    return date.toISOString().split('T')[0];
+    return date instanceof Date ? date.toISOString().split('T')[0] : new Date(date).toISOString().split('T')[0];
   }
 
   getContractById(contractId?: string): Contract | undefined {
@@ -296,6 +256,4 @@ export class SubscriptionListComponent implements OnInit {
     return subscription.subscriptionStatus === SubscriptionStatus.ACTIVE ||
            subscription.subscriptionStatus === SubscriptionStatus.PAUSED;
   }
-
-  clearError(): void { this.error = null; }
 }
