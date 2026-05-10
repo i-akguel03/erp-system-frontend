@@ -33,6 +33,7 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
 
   @Output() contractSelected = new EventEmitter<Contract>();
   @Output() contractAction = new EventEmitter<ContractActionEvent>();
+  @Output() retry = new EventEmitter<void>();
 
   filteredContracts: Contract[] = [];
   searchTerm: string = '';
@@ -148,7 +149,7 @@ getContractStatusClass(contract: Contract): string {
   }
 
   private calcMenuY(triggerBottom: number, triggerTop: number): number {
-    const menuH = 252;
+    const menuH = 300;
     const isMobile = window.innerWidth <= 768;
     // On mobile the sliding panel has transform:translateX(0) which makes
     // position:fixed children relative to the panel, not the viewport.

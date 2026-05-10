@@ -136,7 +136,7 @@ export class OpenItemsTabComponent implements OnChanges {
   // Statistik-Methoden
   getTotalOpenAmount(): number {
     const result = this.filteredOpenItems.reduce((total, item) => total + (item.outstandingAmount || 0), 0);
-    console.log('🔍 Total open amount:', result);
+    //console.log('🔍 Total open amount:', result);
     return result;
   }
 

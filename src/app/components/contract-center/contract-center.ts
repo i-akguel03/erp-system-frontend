@@ -25,7 +25,7 @@ import { FinancialTabsComponent } from './components/financial-tabs/financial-ta
 import { ContractListComponent } from './components/contract-list/contract-list';
 
 interface ContractActionEvent {
-  action: 'neu' | 'edit' | 'duplicate' | 'kündigen' | 'stornieren';
+  action: 'neu' | 'edit' | 'duplicate' | 'kündigen' | 'stornieren' | 'verlängern';
   contract: Contract;
 }
 
@@ -66,6 +66,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   // UI state
   loading: boolean = false;
   error: string | null = null;
+  renewalBatchLoading = false;
 
   // Resize state
   topPanelPercent = 60;
@@ -317,7 +318,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       });
   }
 
-  private loadContracts(): void {
+  loadContracts(): void {
     this.loading = true;
     this.error = null;
 
@@ -330,7 +331,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
         },
         error: err => {
           console.error('Fehler beim Laden der Verträge:', err);
-          this.error = 'Fehler beim Laden der Verträge.';
+          this.error = err.error?.message || `Fehler beim Laden der Verträge (HTTP ${err.status}).`;
           this.loading = false;
         }
       });
@@ -407,6 +408,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
         break;
       case 'stornieren':
         this.cancelContract(contract);
+        break;
+      case 'verlängern':
+        this.renewContract(contract);
         break;
     }
   }
@@ -607,6 +611,54 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
           });
       }
     });
+  }
+
+  private renewContract(contract: Contract): void {
+    if (!contract.id) return;
+    this.confirmationService.confirm({
+      message: `Möchten Sie den Vertrag "${contract.contractTitle}" verlängern?`,
+      header: 'Vertrag verlängern',
+      icon: 'pi pi-refresh',
+      acceptLabel: 'Verlängern',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        this.contractService.renewContract(contract.id!)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: result => {
+              if (result?.renewedContract) {
+                this.updateLocalContract(result.renewedContract);
+              } else {
+                this.loadContracts();
+              }
+              this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde verlängert`);
+            },
+            error: err => {
+              this.notificationService.error('Fehler beim Verlängern des Vertrags');
+              console.error(err);
+            }
+          });
+      }
+    });
+  }
+
+  runRenewalBatch(): void {
+    this.renewalBatchLoading = true;
+    this.contractService.runRenewalBatch()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: result => {
+          this.renewalBatchLoading = false;
+          const count = result?.renewedCount ?? result?.processed ?? '?';
+          this.notificationService.success(`Verlängerungslauf abgeschlossen — ${count} Vertrag/Verträge verlängert`);
+          this.loadContracts();
+        },
+        error: err => {
+          this.renewalBatchLoading = false;
+          this.notificationService.error('Fehler beim Verlängerungslauf');
+          console.error(err);
+        }
+      });
   }
 
   private updateLocalContract(updated: Contract): void {

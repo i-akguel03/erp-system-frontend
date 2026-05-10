@@ -28,9 +28,14 @@
 
       <!-- Fehler-Anzeige -->
       <div *ngIf="error && !loading" class="p-3">
-        <div class="alert alert-danger" role="alert">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          {{ error }}
+        <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+          <i class="fas fa-exclamation-triangle mt-1 flex-shrink-0"></i>
+          <div class="flex-grow-1">
+            <div>{{ error }}</div>
+            <button class="btn btn-sm btn-outline-danger mt-2" (click)="retry.emit()">
+              <i class="fas fa-redo me-1"></i>Erneut versuchen
+            </button>
+          </div>
         </div>
       </div>
 
@@ -138,11 +143,17 @@
   </button>
   
   <div class="dropdown-divider"></div>
-  
+
+  <button class="dropdown-item text-success" (click)="onContractAction('verlängern')">
+    <i class="fas fa-redo me-2"></i>Verlängern
+  </button>
+
+  <div class="dropdown-divider"></div>
+
   <button class="dropdown-item text-warning" (click)="onContractAction('kündigen')">
     <i class="fas fa-ban me-2"></i>Kündigen
   </button>
-  
+
   <button class="dropdown-item text-danger" (click)="onContractAction('stornieren')">
     <i class="fas fa-times me-2"></i>Stornieren
   </button>

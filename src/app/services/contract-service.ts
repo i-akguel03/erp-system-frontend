@@ -84,6 +84,15 @@ terminateContract(contractId: string, terminationDate?: string): Observable<Cont
 }
 
 
+  // --- Renewal ---
+  renewContract(id: string, request: Record<string, unknown> = {}): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/renew`, request, { headers: this.getAuthHeaders() });
+  }
+
+  runRenewalBatch(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/renewal-run`, {}, { headers: this.getAuthHeaders() });
+  }
+
   // --- Filter & Queries ---
   getContractsByStatus(status: string): Observable<Contract[]> {
     return this.http.get<Contract[]>(`${this.apiUrl}/status/${status}`, { headers: this.getAuthHeaders() });

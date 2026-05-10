@@ -42,11 +42,21 @@
               <span class="fw-semibold fs-6">Verträge</span>
               <span class="badge bg-primary ms-2" *ngIf="contracts?.length">{{ contracts.length }}</span>
             </div>
-            <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                    (click)="openContractModal('create')">
-              <i class="fas fa-plus"></i>
-              <span>Neu</span>
-            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                      (click)="runRenewalBatch()"
+                      [disabled]="renewalBatchLoading"
+                      title="Alle fälligen Verträge automatisch verlängern">
+                <span *ngIf="renewalBatchLoading" class="spinner-border spinner-border-sm" role="status"></span>
+                <i *ngIf="!renewalBatchLoading" class="fas fa-redo"></i>
+                <span class="d-none d-lg-inline">Verlängerungslauf</span>
+              </button>
+              <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                      (click)="openContractModal('create')">
+                <i class="fas fa-plus"></i>
+                <span>Neu</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
@@ -58,7 +68,8 @@
               [error]="error"
               [selectedContract]="selectedContract"
               (contractSelected)="onContractSelected($event)"
-              (contractAction)="onContractAction($event)">
+              (contractAction)="onContractAction($event)"
+              (retry)="loadContracts()">
             </app-contract-list>
           </div>
         </div>
@@ -152,11 +163,20 @@
                 {{ contracts.length }}
               </span>
             </div>
-            <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                    (click)="openContractModal('create')">
-              <i class="fas fa-plus"></i>
-              <span>Neu</span>
-            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                      (click)="runRenewalBatch()"
+                      [disabled]="renewalBatchLoading"
+                      title="Verlängerungslauf">
+                <span *ngIf="renewalBatchLoading" class="spinner-border spinner-border-sm" role="status"></span>
+                <i *ngIf="!renewalBatchLoading" class="fas fa-redo"></i>
+              </button>
+              <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                      (click)="openContractModal('create')">
+                <i class="fas fa-plus"></i>
+                <span>Neu</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
@@ -168,7 +188,8 @@
               [error]="error"
               [selectedContract]="selectedContract"
               (contractSelected)="onContractSelected($event)"
-              (contractAction)="onContractAction($event)">
+              (contractAction)="onContractAction($event)"
+              (retry)="loadContracts()">
             </app-contract-list>
           </div>
         </div>
