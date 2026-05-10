@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 import { HttpParams } from '@angular/common/http';
 import { VorgangDTO, VorgangStatistik, VorgangTyp, VorgangStatus } from '../models/Vorgang';
+import { Invoice } from '../models/Invoice';
 
 // Interface für paginierte Antworten
 export interface PageResponse<T> {
@@ -127,6 +128,13 @@ export class VorgangService extends BaseApiService {
       params,
       responseType: 'text' as 'json'
     });
+  }
+
+  /**
+   * Alle Rechnungen eines Vorgangs (z.B. Rechnungslauf)
+   */
+  getRechnungenByVorgang(id: string): Observable<Invoice[]> {
+    return this.http.get<Invoice[]>(`${this.apiUrl}/${id}/rechnungen`, { headers: this.getAuthHeaders() });
   }
 
   /**

@@ -7,6 +7,7 @@ import {
   InvoiceBatchStatus
 } from '../../models/InvoiceBatch';
 import { VorgangDTO, VorgangTyp, VorgangStatus, VorgangHelper } from '../../models/Vorgang';
+import { Invoice } from '../../models/Invoice';
 import { Subject, takeUntil, interval } from 'rxjs';
 import { InvoiceBatchService } from '../../services/invoice-batch-service';
 import { VorgangService } from '../../services/vorgang-service';
@@ -378,5 +379,57 @@ export class InvoiceBatchListComponent implements OnInit, OnDestroy {
   /** TrackBy für Performance */
   trackByVorgangId(index: number, vorgang: VorgangDTO): string {
     return vorgang?.id || index.toString();
+  }
+
+  // ===============================================================================================
+  // PROTOKOLL-MODAL
+  // ===============================================================================================
+
+  protokollVisible = false;
+  protokollVorgang: VorgangDTO | null = null;
+  protokollRechnungen: Invoice[] = [];
+  protokollLoading = false;
+  protokollError = '';
+
+  showProtokoll(vorgang: VorgangDTO): void {
+    this.protokollVorgang = vorgang;
+    this.protokollRechnungen = [];
+    this.protokollError = '';
+    this.protokollLoading = true;
+    this.protokollVisible = true;
+
+    this.vorgangService.getRechnungenByVorgang(vorgang.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (rechnungen) => {
+          this.protokollRechnungen = rechnungen;
+          this.protokollLoading = false;
+        },
+        error: (err) => {
+          this.protokollError = this.extractErrorMessage(err);
+          this.protokollLoading = false;
+        }
+      });
+  }
+
+  closeProtokoll(): void {
+    this.protokollVisible = false;
+    this.protokollVorgang = null;
+    this.protokollRechnungen = [];
+    this.protokollError = '';
+  }
+
+  getInvoiceStatusClass(status?: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'bg-success text-white';
+      case 'SENT': return 'bg-primary text-white';
+      case 'DRAFT': return 'bg-warning text-dark';
+      case 'CANCELLED': return 'bg-danger text-white';
+      default: return 'bg-secondary text-white';
+    }
+  }
+
+  getProtokollTotal(field: 'subtotal' | 'taxAmount' | 'totalAmount'): number {
+    return this.protokollRechnungen.reduce((sum, inv) => sum + (inv[field] ?? 0), 0);
   }
 }

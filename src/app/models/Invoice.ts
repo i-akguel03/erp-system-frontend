@@ -32,6 +32,7 @@ export interface Invoice {
   invoiceBatchId?: string;
   invoiceType?: 'MANUAL' | 'AUTO_GENERATED' | 'RECURRING' | 'CREDIT_NOTE';
   customerId?: string;
+  customerName?: string;
   billingAddressId?: string;
   invoiceItems?: InvoiceItem[];
 }

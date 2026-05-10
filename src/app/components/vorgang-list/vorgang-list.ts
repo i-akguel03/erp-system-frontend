@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { VorgangDTO, VorgangStatus, VorgangTyp, VorgangHelper, VorgangStatistik } from '../../models/Vorgang';
+import { Invoice } from '../../models/Invoice';
 import { VorgangService } from '../../services/vorgang-service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -77,18 +78,13 @@ export class VorgaengeListComponent implements OnInit {
     
     this.vorgangService.getAllVorgaengeOhnePaging().subscribe({
       next: (data) => {
-        console.log('Geladene Vorgänge:', data);
         this.vorgaenge = data;
         this.applyFiltersAndSort();
-        
-        // Nach dem Laden der Vorgänge Statistiken laden/berechnen
         this.loadStatistiken();
-        
         this.loading = false;
       },
-      error: (err) => {
+      error: () => {
         this.errorMsg = 'Fehler beim Laden der Vorgänge';
-        console.error('Fehler beim Laden der Vorgänge:', err);
         this.loading = false;
       }
     });
@@ -101,29 +97,22 @@ export class VorgaengeListComponent implements OnInit {
     this.vorgangService.getVorgangStatistiken().subscribe({
       next: (stats) => {
         this.statistiken = stats;
-        console.log('Statistiken vom Server:', stats);
       },
-      error: (err) => {
-        console.error('Fehler beim Laden der Statistiken:', err);
-        // Fallback: Statistiken aus den geladenen Vorgängen berechnen
+      error: () => {
         if (this.vorgaenge.length > 0) {
           this.statistiken = this.berechneStatistiken(this.vorgaenge);
-          console.log('Fallback-Statistiken berechnet:', this.statistiken);
         }
       }
     });
   }
-  berechneStatistiken(vorgaenge: VorgangDTO[]): VorgangStatistik | null {
-    throw new Error('Method not implemented.');
+  berechneStatistiken(vorgaenge: VorgangDTO[]): VorgangStatistik {
+    return this.vorgangService.berechneStatistiken(vorgaenge);
   }
 
   /**
    * Filter und Sortierung anwenden
    */
   applyFiltersAndSort(): void {
-    console.log('Anwenden Filter auf', this.vorgaenge.length, 'Vorgänge');
-    
-    // Filter anwenden
     this.filteredVorgaenge = this.vorgangService.filterVorgaenge(this.vorgaenge, {
       typ: this.selectedTyp || undefined,
       status: this.selectedStatus || undefined,
@@ -131,16 +120,11 @@ export class VorgaengeListComponent implements OnInit {
       suchtext: this.searchText || undefined
     });
 
-    console.log('Nach Filter:', this.filteredVorgaenge.length, 'Vorgänge');
-
-    // Sortierung anwenden
     this.filteredVorgaenge = this.vorgangService.sortVorgaenge(
       this.filteredVorgaenge,
       this.sortBy,
       this.sortDirection
     );
-    
-    console.log('Finale gefilterte Vorgänge:', this.filteredVorgaenge);
   }
 
   /**
@@ -222,14 +206,8 @@ export class VorgaengeListComponent implements OnInit {
     if (!grund) return;
 
     this.vorgangService.vorgangAbbrechen(vorgang.id, grund).subscribe({
-      next: (message) => {
-        console.log(message);
-        this.loadVorgaenge(); // Neu laden
-      },
-      error: (err) => {
-        console.error('Fehler beim Abbrechen:', err);
-        alert('Fehler beim Abbrechen des Vorgangs');
-      }
+      next: () => this.loadVorgaenge(),
+      error: () => alert('Fehler beim Abbrechen des Vorgangs')
     });
   }
 
@@ -241,14 +219,10 @@ export class VorgaengeListComponent implements OnInit {
     
     this.vorgangService.korrigiereHaengengebliebene(stundenSchwellwert).subscribe({
       next: (message) => {
-        console.log(message);
         alert(message);
-        this.loadVorgaenge(); // Neu laden
+        this.loadVorgaenge();
       },
-      error: (err) => {
-        console.error('Fehler beim Korrigieren:', err);
-        alert('Fehler beim Korrigieren hängengebliebener Vorgänge');
-      }
+      error: () => alert('Fehler beim Korrigieren hängengebliebener Vorgänge')
     });
   }
 
@@ -364,5 +338,55 @@ export class VorgaengeListComponent implements OnInit {
    */
   trackByVorgangId(index: number, vorgang: VorgangDTO): string {
     return vorgang?.id || index.toString();
+  }
+
+  // ===============================================================================================
+  // PROTOKOLL-MODAL
+  // ===============================================================================================
+
+  protokollVisible = false;
+  protokollVorgang: VorgangDTO | null = null;
+  protokollRechnungen: Invoice[] = [];
+  protokollLoading = false;
+  protokollError = '';
+
+  showProtokoll(vorgang: VorgangDTO): void {
+    this.protokollVorgang = vorgang;
+    this.protokollRechnungen = [];
+    this.protokollError = '';
+    this.protokollLoading = true;
+    this.protokollVisible = true;
+
+    this.vorgangService.getRechnungenByVorgang(vorgang.id).subscribe({
+      next: (rechnungen) => {
+        this.protokollRechnungen = rechnungen;
+        this.protokollLoading = false;
+      },
+      error: (err) => {
+        this.protokollError = err?.error?.message || err?.message || 'Fehler beim Laden der Rechnungen';
+        this.protokollLoading = false;
+      }
+    });
+  }
+
+  closeProtokoll(): void {
+    this.protokollVisible = false;
+    this.protokollVorgang = null;
+    this.protokollRechnungen = [];
+    this.protokollError = '';
+  }
+
+  getInvoiceStatusClass(status?: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'bg-success text-white';
+      case 'SENT': return 'bg-primary text-white';
+      case 'DRAFT': return 'bg-warning text-dark';
+      case 'CANCELLED': return 'bg-danger text-white';
+      default: return 'bg-secondary text-white';
+    }
+  }
+
+  getProtokollTotal(field: 'subtotal' | 'taxAmount' | 'totalAmount'): number {
+    return this.protokollRechnungen.reduce((sum, inv) => sum + (inv[field] ?? 0), 0);
   }
 }
