@@ -369,8 +369,10 @@ export class AuthService {
       const token = this.getAccessToken();
       if (!token) return [];
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const roles: string[] = payload.roles || payload.authorities || [];
-      return roles.map((r: string) => r.replace('ROLE_', ''));
+      const raw: any[] = payload.roles || payload.authorities || [];
+      return raw.map((r: any) =>
+        (typeof r === 'string' ? r : r.authority ?? '').replace('ROLE_', '')
+      );
     } catch {
       return [];
     }
