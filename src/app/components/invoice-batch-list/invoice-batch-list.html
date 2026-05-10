@@ -1,378 +1,368 @@
-<div class="invoice-batch-container">
+<div class="p-3 p-md-4">
+
   <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h2 class="d-flex align-items-center">
-        <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
-        Rechnungsläufe verwalten
-      </h2>
-      <p class="text-muted">Neue Rechnungsläufe starten und bestehende überwachen</p>
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold">
+        <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Rechnungsläufe
+      </h4>
+      <small class="text-muted">Rechnungsläufe starten und überwachen</small>
     </div>
   </div>
 
-  <!-- Batch-Steuerung -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">
-            <i class="fas fa-play-circle me-2"></i>
-            Neuen Rechnungslauf starten
-          </h5>
+  <!-- Steuerung -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-primary text-white py-2">
+      <h6 class="mb-0"><i class="fas fa-play-circle me-2"></i>Neuen Rechnungslauf starten</h6>
+    </div>
+    <div class="card-body">
+
+      <!-- Datum + Vorschau -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-sm-6 col-md-4">
+          <label class="form-label small fw-semibold">
+            <i class="fas fa-calendar me-1"></i>Abrechnungsdatum
+          </label>
+          <input id="billingDate" type="date" class="form-control"
+                 [(ngModel)]="billingDate" required>
         </div>
-        <div class="card-body">
-          <!-- Datum-Eingabe -->
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label for="billingDate" class="form-label">
-                <i class="fas fa-calendar me-1"></i>
-                Abrechnungsdatum
-              </label>
-              <input 
-                id="billingDate"
-                type="date"
-                class="form-control"
-                [(ngModel)]="billingDate"
-                required>
-              <div class="form-text">
-                Datum für das die Abrechnung durchgeführt werden soll
-              </div>
-            </div>
-            <div class="col-md-6 d-flex align-items-end">
-              <button 
-                class="btn btn-outline-info me-2" 
-                (click)="loadPreview()" 
+        <div class="col-12 col-sm-6 col-md-auto d-flex align-items-end">
+          <button class="btn btn-outline-info w-100"
+                  (click)="loadPreview()"
+                  [disabled]="loading || !billingDate">
+            <i class="fas fa-eye me-1"></i>Vorschau
+          </button>
+        </div>
+      </div>
+
+      <!-- Aktions-Buttons -->
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <button class="btn btn-success"
+                (click)="runForDate()"
+                [disabled]="loading || !billingDate">
+          <span *ngIf="!loading"><i class="fas fa-play me-1"></i>Gewähltes Datum abrechnen</span>
+          <span *ngIf="loading"><i class="fas fa-spinner fa-spin me-1"></i>Läuft...</span>
+        </button>
+        <button class="btn btn-primary"
+                (click)="runToday()"
+                [disabled]="loading">
+          <i class="fas fa-calendar-day me-1"></i>Heute abrechnen
+        </button>
+        <button class="btn btn-outline-warning"
+                (click)="runTestMode()"
                 [disabled]="loading || !billingDate"
-                title="Vorschau der zu erstellenden Rechnungen">
-                <i class="fas fa-eye me-1"></i>
-                Vorschau laden
-              </button>
+                title="Test-Modus – keine echten Rechnungen">
+          <i class="fas fa-vial me-1"></i>Test-Lauf
+        </button>
+      </div>
+
+      <!-- Ergebnis -->
+      <div *ngIf="progress" class="alert alert-info border-0 mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-info-circle"></i>
+          <div>
+            <strong>{{ progress.message }}</strong>
+            <div *ngIf="progress.result" class="mt-1">
+              <small class="text-muted">
+                Batch-ID: {{ progress.batchId }} · Status: {{ progress.status }}
+                <span *ngIf="progress.result.invoicesCreated"> · Erstellt: {{ progress.result.invoicesCreated }}</span>
+              </small>
             </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="d-flex flex-wrap gap-2 mb-3">
-            <button 
-              class="btn btn-success" 
-              (click)="runForDate()" 
-              [disabled]="loading || !billingDate"
-              title="Produktiver Rechnungslauf">
-              <i class="fas fa-play me-1"></i>
-              <span *ngIf="!loading">Für gewähltes Datum abrechnen</span>
-              <span *ngIf="loading">
-                <i class="fas fa-spinner fa-spin me-1"></i>
-                Läuft...
-              </span>
-            </button>
-            
-            <button 
-              class="btn btn-primary" 
-              (click)="runToday()" 
-              [disabled]="loading"
-              title="Schnellstart für heutiges Datum">
-              <i class="fas fa-calendar-day me-1"></i>
-              Heute abrechnen
-            </button>
-            
-            <button 
-              class="btn btn-outline-warning" 
-              (click)="runTestMode()" 
-              [disabled]="loading || !billingDate"
-              title="Test-Modus (keine echten Rechnungen)">
-              <i class="fas fa-vial me-1"></i>
-              Test-Lauf
-            </button>
-          </div>
-
-          <!-- Status/Ergebnis Anzeigen -->
-          <div *ngIf="progress" class="alert alert-info border-0 shadow-sm">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-info-circle me-2"></i>
-              <div class="flex-grow-1">
-                <strong>{{ progress.message }}</strong>
-                <div *ngIf="progress.result" class="mt-2">
-                  <small class="text-muted">
-                    Batch-ID: {{ progress.batchId }} | 
-                    Status: {{ progress.status }} |
-                    <span *ngIf="progress.result.invoicesCreated">
-                      Rechnungen erstellt: {{ progress.result.invoicesCreated }}
-                    </span>
-                  </small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Vorschau -->
-          <div *ngIf="preview" class="alert alert-light border border-info shadow-sm">
-            <div class="row">
-              <div class="col-md-6">
-                <h6 class="text-info mb-2">
-                  <i class="fas fa-chart-bar me-1"></i>
-                  Vorschau-Analyse
-                </h6>
-                <ul class="list-unstyled mb-0">
-                  <li><i class="fas fa-calendar-check me-2 text-success"></i>Fällige Pläne: <strong>{{ preview.analysis.totalDueSchedules }}</strong></li>
-                  <li><i class="fas fa-users me-2 text-info"></i>Betroffene Kunden: <strong>{{ preview.analysis.affectedCustomers }}</strong></li>
-                  <li><i class="fas fa-euro-sign me-2 text-warning"></i>Geschätzter Betrag: <strong>{{ preview.estimatedTotal | currency:'EUR':'symbol':'1.2-2' }}</strong></li>
-                </ul>
-              </div>
-              <div class="col-md-6" *ngIf="preview.warnings && preview.warnings.length > 0">
-                <h6 class="text-warning mb-2">
-                  <i class="fas fa-exclamation-triangle me-1"></i>
-                  Warnungen
-                </h6>
-                <ul class="list-unstyled mb-0">
-                  <li *ngFor="let warning of preview.warnings" class="text-warning">
-                    <i class="fas fa-dot-circle me-2"></i>{{ warning }}
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Fehler -->
-          <div *ngIf="error" class="alert alert-danger border-0 shadow-sm">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            {{ error }}
           </div>
         </div>
       </div>
+
+      <!-- Vorschau -->
+      <div *ngIf="preview" class="alert alert-light border border-info mb-2">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <h6 class="text-info mb-2"><i class="fas fa-chart-bar me-1"></i>Vorschau-Analyse</h6>
+            <ul class="list-unstyled mb-0 small">
+              <li><i class="fas fa-calendar-check me-2 text-success"></i>Fällige Pläne: <strong>{{ preview.analysis.totalDueSchedules }}</strong></li>
+              <li><i class="fas fa-users me-2 text-info"></i>Betroffene Kunden: <strong>{{ preview.analysis.affectedCustomers }}</strong></li>
+              <li><i class="fas fa-euro-sign me-2 text-warning"></i>Geschätzter Betrag: <strong>{{ preview.estimatedTotal | currency:'EUR':'symbol':'1.2-2' }}</strong></li>
+            </ul>
+          </div>
+          <div class="col-12 col-md-6" *ngIf="preview.warnings?.length">
+            <h6 class="text-warning mb-2"><i class="fas fa-exclamation-triangle me-1"></i>Warnungen</h6>
+            <ul class="list-unstyled mb-0 small">
+              <li *ngFor="let w of preview.warnings" class="text-warning">
+                <i class="fas fa-circle me-2" style="font-size:.5rem; vertical-align:middle;"></i>{{ w }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fehler -->
+      <div *ngIf="error" class="alert alert-danger border-0 mb-0">
+        <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+      </div>
+
     </div>
   </div>
 
   <!-- Vorgänge-Liste -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-header bg-light">
-          <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-              <i class="fas fa-list me-2"></i>
-              Rechnungslauf-Vorgänge
-              <span class="badge bg-secondary ms-2">{{ filteredVorgaenge.length }}</span>
-            </h5>
-            <div class="d-flex align-items-center gap-2">
-              <div class="form-check form-switch">
-                <input 
-                  class="form-check-input" 
-                  type="checkbox" 
-                  id="autoRefresh"
-                  [(ngModel)]="autoRefresh"
-                  (change)="toggleAutoRefresh()">
-                <label class="form-check-label" for="autoRefresh">
-                  <small>Auto-Update</small>
-                </label>
-              </div>
-              <button 
-                class="btn btn-outline-primary btn-sm" 
-                (click)="loadRechnungsVorgaenge()"
-                [disabled]="vorgaengeLoading">
-                <i class="fas fa-sync-alt" [class.fa-spin]="vorgaengeLoading"></i>
-              </button>
-            </div>
-          </div>
+  <div class="card border-0 shadow-sm">
+
+    <!-- Listen-Header -->
+    <div class="card-header bg-white border-bottom py-2">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="mb-0 fw-semibold">
+            <i class="fas fa-list me-2 text-muted"></i>Rechnungslauf-Vorgänge
+          </h6>
+          <span class="badge bg-secondary">{{ filteredVorgaenge.length }}</span>
         </div>
-
-        <!-- Filter-Bereich -->
-        <div class="card-body border-bottom bg-light">
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label small">Suchtext</label>
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
-                placeholder="Titel, Beschreibung, Nummer..."
-                [(ngModel)]="searchText" 
-                (ngModelChange)="onFilterChange()">
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Status</label>
-              <select 
-                class="form-select form-select-sm" 
-                [(ngModel)]="selectedStatus" 
-                (ngModelChange)="onFilterChange()">
-                <option value="">Alle Status</option>
-                <option *ngFor="let status of getAlleStatus()" [value]="status">
-                  {{ getStatusLabel(status) }}
-                </option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Zeitraum</label>
-              <select 
-                class="form-select form-select-sm" 
-                [(ngModel)]="tageFilter" 
-                (ngModelChange)="onTageFilterChange()">
-                <option [ngValue]="1">Heute</option>
-                <option [ngValue]="7">Letzte 7 Tage</option>
-                <option [ngValue]="30">Letzte 30 Tage</option>
-                <option [ngValue]="90">Letzte 90 Tage</option>
-              </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end gap-2">
-              <div class="form-check">
-                <input 
-                  class="form-check-input" 
-                  type="checkbox" 
-                  id="showOnlyToday"
-                  [(ngModel)]="showOnlyToday"
-                  (ngModelChange)="onFilterChange()">
-                <label class="form-check-label small" for="showOnlyToday">
-                  Nur heute
-                </label>
-              </div>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-              <button 
-                class="btn btn-outline-secondary btn-sm w-100" 
-                (click)="resetVorgaengeFilter()">
-                <i class="fas fa-eraser me-1"></i>
-                Zurücksetzen
-              </button>
-            </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="autoRefresh"
+                   [(ngModel)]="autoRefresh" (change)="toggleAutoRefresh()">
+            <label class="form-check-label small" for="autoRefresh">Auto-Update</label>
           </div>
-        </div>
-
-        <div class="card-body p-0">
-          <!-- Loading Spinner -->
-          <div *ngIf="vorgaengeLoading" class="text-center p-4">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Lädt...</span>
-            </div>
-            <p class="mt-2 text-muted">Vorgänge werden geladen...</p>
-          </div>
-
-          <!-- Fehler -->
-          <div *ngIf="vorgaengeError" class="alert alert-danger m-3">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            {{ vorgaengeError }}
-          </div>
-
-          <!-- Tabelle -->
-          <div *ngIf="!vorgaengeLoading && !vorgaengeError" class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
-              <thead class="table-dark">
-                <tr>
-                  <th scope="col" class="ps-3">Status</th>
-                  <th scope="col">Titel & Details</th>
-                  <th scope="col">Gestartet</th>
-                  <th scope="col">Dauer</th>
-                  <th scope="col">Fortschritt</th>
-                  <th scope="col">Ergebnis</th>
-                  <th scope="col" class="pe-3">Aktionen</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let vorgang of filteredVorgaenge; trackBy: trackByVorgangId">
-                  <!-- Status -->
-                  <td class="ps-3">
-                    <span class="badge rounded-pill" [ngClass]="getBadgeClass(vorgang.status)">
-                      {{ getStatusLabel(vorgang.status) }}
-                    </span>
-                    <br>
-                    <small class="text-muted mt-1" *ngIf="vorgang.automatisch">
-                      🤖 Automatisch
-                    </small>
-                  </td>
-                  
-                  <!-- Titel & Details -->
-                  <td>
-                    <div class="fw-bold">{{ vorgang.titel }}</div>
-                    <small class="text-muted" *ngIf="vorgang.vorgangsnummer">
-                      Nr: {{ vorgang.vorgangsnummer }}
-                    </small>
-                    <small class="text-muted d-block" *ngIf="vorgang.beschreibung">
-                      {{ vorgang.beschreibung }}
-                    </small>
-                  </td>
-                  
-                  <!-- Zeitpunkt -->
-                  <td>
-                    <small>{{ formatDateTime(vorgang.startZeitpunkt) }}</small>
-                    <div *ngIf="vorgang.ausgeloestVon" class="text-muted">
-                      <small>von {{ vorgang.ausgeloestVon }}</small>
-                    </div>
-                  </td>
-                  
-                  <!-- Dauer -->
-                  <td>
-                    <small class="fw-bold">{{ formatDauer(vorgang) }}</small>
-                    <div *ngIf="vorgang.endeZeitpunkt" class="text-muted">
-                      <small>Ende: {{ formatDateTime(vorgang.endeZeitpunkt) }}</small>
-                    </div>
-                  </td>
-                  
-                  <!-- Fortschritt -->
-                  <td>
-                    <div class="progress mb-1" style="height: 16px;">
-                      <div 
-                        class="progress-bar" 
-                        [ngClass]="{
-                          'bg-success': vorgang.status === VorgangStatus.ERFOLGREICH,
-                          'bg-danger': vorgang.status === VorgangStatus.FEHLER,
-                          'bg-warning': vorgang.status === VorgangStatus.ABGEBROCHEN,
-                          'bg-primary': istAbbrechbar(vorgang)
-                        }"
-                        [style.width.%]="getProgress(vorgang)"
-                        [attr.aria-valuenow]="getProgress(vorgang)">
-                      </div>
-                    </div>
-                    <small class="text-muted">{{ getAnzahlText(vorgang) }}</small>
-                  </td>
-                  
-                  <!-- Ergebnis -->
-                  <td>
-                    <div *ngIf="vorgang.anzahlErfolgreich || vorgang.anzahlFehler" class="small">
-                      <div class="text-success" *ngIf="vorgang.anzahlErfolgreich">
-                        ✓ {{ vorgang.anzahlErfolgreich }} erfolgreich
-                      </div>
-                      <div class="text-danger" *ngIf="vorgang.anzahlFehler">
-                        ✗ {{ vorgang.anzahlFehler }} Fehler
-                      </div>
-                    </div>
-                    <div *ngIf="vorgang.gesamtbetrag" class="fw-bold text-success">
-                      {{ vorgang.gesamtbetrag | currency:'EUR':'symbol':'1.2-2' }}
-                    </div>
-                  </td>
-                  
-                  <!-- Aktionen -->
-                  <td class="pe-3">
-                    <div class="btn-group-vertical btn-group-sm">
-                      <button
-                        *ngIf="istAbbrechbar(vorgang)"
-                        class="btn btn-outline-danger btn-sm"
-                        (click)="cancelVorgang(vorgang)"
-                        title="Vorgang abbrechen">
-                        <i class="fas fa-stop"></i>
-                      </button>
-                      <button
-                        class="btn btn-outline-secondary btn-sm"
-                        title="Protokoll anzeigen"
-                        (click)="showProtokoll(vorgang)">
-                        <i class="fas fa-receipt"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                
-                <!-- Keine Daten -->
-                <tr *ngIf="filteredVorgaenge.length === 0">
-                  <td colspan="7" class="text-center text-muted py-4">
-                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                    Keine Rechnungsläufe gefunden
-                    <div *ngIf="searchText || selectedStatus || showOnlyToday" class="mt-2">
-                      <small>Versuchen Sie, die Filter zu ändern</small>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <button class="btn btn-outline-primary btn-sm"
+                  (click)="loadRechnungsVorgaenge()"
+                  [disabled]="vorgaengeLoading"
+                  title="Neu laden">
+            <i class="fas fa-sync-alt" [class.fa-spin]="vorgaengeLoading"></i>
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Filter -->
+    <div class="card-body border-bottom bg-light py-2 px-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-sm-6 col-md-3">
+          <input type="text" class="form-control form-control-sm"
+                 placeholder="Titel, Beschreibung, Nummer..."
+                 [(ngModel)]="searchText" (ngModelChange)="onFilterChange()">
+        </div>
+        <div class="col-6 col-sm-3 col-md-2">
+          <select class="form-select form-select-sm"
+                  [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()">
+            <option value="">Alle Status</option>
+            <option *ngFor="let s of getAlleStatus()" [value]="s">{{ getStatusLabel(s) }}</option>
+          </select>
+        </div>
+        <div class="col-6 col-sm-3 col-md-2">
+          <select class="form-select form-select-sm"
+                  [(ngModel)]="tageFilter" (ngModelChange)="onTageFilterChange()">
+            <option [ngValue]="1">Heute</option>
+            <option [ngValue]="7">7 Tage</option>
+            <option [ngValue]="30">30 Tage</option>
+            <option [ngValue]="90">90 Tage</option>
+          </select>
+        </div>
+        <div class="col-6 col-sm-3 col-md-auto d-flex align-items-center gap-2">
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" id="showOnlyToday"
+                   [(ngModel)]="showOnlyToday" (ngModelChange)="onFilterChange()">
+            <label class="form-check-label small" for="showOnlyToday">Nur heute</label>
+          </div>
+        </div>
+        <div class="col-6 col-sm-3 col-md-auto">
+          <button class="btn btn-outline-secondary btn-sm w-100" (click)="resetVorgaengeFilter()">
+            <i class="fas fa-times me-1"></i>Zurücksetzen
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+
+      <!-- Loading -->
+      <div *ngIf="vorgaengeLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Lädt...</span>
+        </div>
+        <p class="mt-2 text-muted">Vorgänge werden geladen...</p>
+      </div>
+
+      <!-- Fehler -->
+      <div *ngIf="vorgaengeError" class="alert alert-danger m-3">
+        <i class="fas fa-exclamation-circle me-2"></i>{{ vorgaengeError }}
+      </div>
+
+      <!-- Desktop: Tabelle -->
+      <div *ngIf="!vorgaengeLoading && !vorgaengeError" class="d-none d-md-block table-responsive">
+        <table class="table table-hover table-sm mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3 fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Status</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Titel & Details</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Gestartet</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Dauer</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Fortschritt</th>
+              <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Ergebnis</th>
+              <th class="pe-3 fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let vorgang of filteredVorgaenge; trackBy: trackByVorgangId">
+              <td class="ps-3">
+                <span class="badge rounded-pill" [ngClass]="getBadgeClass(vorgang.status)">
+                  {{ getStatusLabel(vorgang.status) }}
+                </span>
+                <div *ngIf="vorgang.automatisch" class="mt-1">
+                  <small class="text-muted"><i class="fas fa-robot me-1"></i>Auto</small>
+                </div>
+              </td>
+              <td>
+                <div class="fw-semibold">{{ vorgang.titel }}</div>
+                <small class="text-muted" *ngIf="vorgang.vorgangsnummer">{{ vorgang.vorgangsnummer }}</small>
+                <small class="text-muted d-block" *ngIf="vorgang.beschreibung">{{ vorgang.beschreibung }}</small>
+              </td>
+              <td>
+                <small>{{ formatDateTime(vorgang.startZeitpunkt) }}</small>
+                <div *ngIf="vorgang.ausgeloestVon" class="text-muted">
+                  <small>{{ vorgang.ausgeloestVon }}</small>
+                </div>
+              </td>
+              <td>
+                <small class="fw-semibold">{{ formatDauer(vorgang) }}</small>
+                <div *ngIf="vorgang.endeZeitpunkt" class="text-muted">
+                  <small>Ende: {{ formatDateTime(vorgang.endeZeitpunkt) }}</small>
+                </div>
+              </td>
+              <td style="min-width:110px;">
+                <div class="progress mb-1" style="height:5px;">
+                  <div class="progress-bar"
+                       [ngClass]="{
+                         'bg-success': vorgang.status === VorgangStatus.ERFOLGREICH,
+                         'bg-danger':  vorgang.status === VorgangStatus.FEHLER,
+                         'bg-warning': vorgang.status === VorgangStatus.ABGEBROCHEN,
+                         'bg-primary': istAbbrechbar(vorgang)
+                       }"
+                       [style.width.%]="getProgress(vorgang)">
+                  </div>
+                </div>
+                <small class="text-muted">{{ getAnzahlText(vorgang) }}</small>
+              </td>
+              <td>
+                <div *ngIf="vorgang.anzahlErfolgreich || vorgang.anzahlFehler" class="small">
+                  <div class="text-success" *ngIf="vorgang.anzahlErfolgreich">
+                    <i class="fas fa-check me-1"></i>{{ vorgang.anzahlErfolgreich }}
+                  </div>
+                  <div class="text-danger" *ngIf="vorgang.anzahlFehler">
+                    <i class="fas fa-times me-1"></i>{{ vorgang.anzahlFehler }}
+                  </div>
+                </div>
+                <div *ngIf="vorgang.gesamtbetrag" class="fw-bold text-success small">
+                  {{ vorgang.gesamtbetrag | currency:'EUR':'symbol':'1.2-2' }}
+                </div>
+              </td>
+              <td class="pe-3">
+                <div class="d-flex gap-1">
+                  <button *ngIf="istAbbrechbar(vorgang)"
+                          class="btn btn-danger btn-sm"
+                          (click)="cancelVorgang(vorgang)"
+                          title="Vorgang abbrechen">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button class="btn btn-outline-primary btn-sm"
+                          (click)="showProtokoll(vorgang)"
+                          title="Rechnungsprotokoll">
+                    <i class="fas fa-receipt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="filteredVorgaenge.length === 0">
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="fas fa-inbox fa-2x mb-2 d-block text-secondary"></i>
+                Keine Rechnungsläufe gefunden
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile: Cards -->
+      <div *ngIf="!vorgaengeLoading && !vorgaengeError" class="d-md-none p-2">
+        <div *ngIf="filteredVorgaenge.length === 0" class="text-center text-muted py-5">
+          <i class="fas fa-inbox fa-2x mb-2 d-block text-secondary"></i>
+          Keine Rechnungsläufe gefunden
+        </div>
+        <div *ngFor="let vorgang of filteredVorgaenge; trackBy: trackByVorgangId"
+             class="card mb-2 shadow-sm border-start border-3"
+             [ngClass]="{
+               'border-success': vorgang.status === VorgangStatus.ERFOLGREICH,
+               'border-danger':  vorgang.status === VorgangStatus.FEHLER,
+               'border-warning': vorgang.status === VorgangStatus.ABGEBROCHEN,
+               'border-primary': istAbbrechbar(vorgang)
+             }">
+          <div class="card-body p-3">
+
+            <!-- Titel + Badge -->
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="flex-grow-1 me-2">
+                <div class="fw-semibold">{{ vorgang.titel }}</div>
+                <small class="text-muted" *ngIf="vorgang.vorgangsnummer">{{ vorgang.vorgangsnummer }}</small>
+              </div>
+              <span class="badge rounded-pill flex-shrink-0" [ngClass]="getBadgeClass(vorgang.status)">
+                {{ getStatusLabel(vorgang.status) }}
+              </span>
+            </div>
+
+            <!-- Meta -->
+            <div class="d-flex flex-wrap gap-3 small text-muted mb-2">
+              <span><i class="fas fa-clock me-1"></i>{{ formatDateTime(vorgang.startZeitpunkt) }}</span>
+              <span><i class="fas fa-hourglass-half me-1"></i>{{ formatDauer(vorgang) }}</span>
+              <span *ngIf="vorgang.ausgeloestVon"><i class="fas fa-user me-1"></i>{{ vorgang.ausgeloestVon }}</span>
+              <span *ngIf="vorgang.automatisch"><i class="fas fa-robot me-1"></i>Auto</span>
+            </div>
+
+            <!-- Fortschritt -->
+            <div class="progress mb-1" style="height:5px;">
+              <div class="progress-bar"
+                   [ngClass]="{
+                     'bg-success': vorgang.status === VorgangStatus.ERFOLGREICH,
+                     'bg-danger':  vorgang.status === VorgangStatus.FEHLER,
+                     'bg-warning': vorgang.status === VorgangStatus.ABGEBROCHEN,
+                     'bg-primary': istAbbrechbar(vorgang)
+                   }"
+                   [style.width.%]="getProgress(vorgang)">
+              </div>
+            </div>
+
+            <!-- Ergebnis + Aktionen -->
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <div class="small">
+                <span class="text-success me-2" *ngIf="vorgang.anzahlErfolgreich">
+                  <i class="fas fa-check me-1"></i>{{ vorgang.anzahlErfolgreich }}
+                </span>
+                <span class="text-danger me-2" *ngIf="vorgang.anzahlFehler">
+                  <i class="fas fa-times me-1"></i>{{ vorgang.anzahlFehler }}
+                </span>
+                <span class="fw-bold text-success" *ngIf="vorgang.gesamtbetrag">
+                  {{ vorgang.gesamtbetrag | currency:'EUR':'symbol':'1.2-2' }}
+                </span>
+                <span *ngIf="!vorgang.anzahlErfolgreich && !vorgang.anzahlFehler && !vorgang.gesamtbetrag"
+                      class="text-muted">{{ getAnzahlText(vorgang) }}</span>
+              </div>
+              <div class="d-flex gap-1">
+                <button *ngIf="istAbbrechbar(vorgang)"
+                        class="btn btn-danger btn-sm"
+                        (click)="cancelVorgang(vorgang)"
+                        title="Abbrechen">
+                  <i class="fas fa-stop"></i>
+                </button>
+                <button class="btn btn-outline-primary btn-sm"
+                        (click)="showProtokoll(vorgang)"
+                        title="Protokoll">
+                  <i class="fas fa-receipt"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
+
 </div>
 
 <!-- Protokoll Modal -->
@@ -394,27 +384,23 @@
 
       <div class="modal-body p-0">
 
-        <!-- Loading -->
         <div *ngIf="protokollLoading" class="d-flex align-items-center justify-content-center py-5">
           <div class="spinner-border text-primary me-3"></div>
           <span class="text-muted">Rechnungen werden geladen...</span>
         </div>
 
-        <!-- Error -->
         <div *ngIf="protokollError && !protokollLoading" class="p-4">
           <div class="alert alert-danger mb-0">
             <i class="fas fa-exclamation-triangle me-2"></i>{{ protokollError }}
           </div>
         </div>
 
-        <!-- Keine Rechnungen -->
         <div *ngIf="!protokollLoading && !protokollError && protokollRechnungen.length === 0"
              class="text-center text-muted py-5">
           <i class="fas fa-inbox fa-2x mb-3 d-block text-secondary"></i>
           Keine Rechnungen für diesen Vorgang gefunden.
         </div>
 
-        <!-- Tabelle -->
         <div *ngIf="!protokollLoading && !protokollError && protokollRechnungen.length > 0">
           <table class="table table-sm table-hover mb-0">
             <thead class="table-light position-sticky top-0">
