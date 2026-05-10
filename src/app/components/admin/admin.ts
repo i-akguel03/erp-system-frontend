@@ -15,6 +15,12 @@ export class AdminComponent implements OnInit {
   loading = false;
   error = '';
 
+  // Suche & Filter
+  searchTerm = '';
+  filterRole = '';
+  sortBy: 'id' | 'username' = 'username';
+  sortDir: 'asc' | 'desc' = 'asc';
+
   // Rollen-Modal
   editUser: UserAdminDto | null = null;
   editRoles: string[] = [];
@@ -60,6 +66,50 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  // ── Suche & Sortierung ─────────────────────────────
+
+  get filteredUsers(): UserAdminDto[] {
+    let result = [...this.users];
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase().trim();
+      result = result.filter(u => u.username.toLowerCase().includes(term));
+    }
+
+    if (this.filterRole) {
+      result = result.filter(u => u.roles.includes(this.filterRole));
+    }
+
+    result.sort((a, b) => {
+      const valA = this.sortBy === 'id' ? a.id : a.username.toLowerCase();
+      const valB = this.sortBy === 'id' ? b.id : b.username.toLowerCase();
+      if (valA < valB) return this.sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }
+
+  toggleSort(field: 'id' | 'username'): void {
+    if (this.sortBy === field) {
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortBy = field;
+      this.sortDir = 'asc';
+    }
+  }
+
+  sortIcon(field: 'id' | 'username'): string {
+    if (this.sortBy !== field) return 'fa-sort';
+    return this.sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  resetFilter(): void {
+    this.searchTerm = '';
+    this.filterRole = '';
+  }
+
   // ── Rollen bearbeiten ──────────────────────────────
 
   openEditRoles(user: UserAdminDto): void {
@@ -78,11 +128,8 @@ export class AdminComponent implements OnInit {
 
   toggleRole(role: string): void {
     const idx = this.editRoles.indexOf(role);
-    if (idx >= 0) {
-      this.editRoles.splice(idx, 1);
-    } else {
-      this.editRoles.push(role);
-    }
+    if (idx >= 0) this.editRoles.splice(idx, 1);
+    else this.editRoles.push(role);
   }
 
   hasRole(role: string): boolean {
@@ -128,11 +175,8 @@ export class AdminComponent implements OnInit {
 
   toggleNewRole(role: string): void {
     const idx = this.newRoles.indexOf(role);
-    if (idx >= 0) {
-      this.newRoles.splice(idx, 1);
-    } else {
-      this.newRoles.push(role);
-    }
+    if (idx >= 0) this.newRoles.splice(idx, 1);
+    else this.newRoles.push(role);
   }
 
   hasNewRole(role: string): boolean {
