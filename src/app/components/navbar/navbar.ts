@@ -13,6 +13,7 @@ interface NavItem {
   routerLink?: string;
   children?: NavItem[];
   public?: boolean;
+  adminOnly?: boolean;
 }
 
 @Component({
@@ -65,6 +66,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
         { label: 'Offene Posten', icon: 'bi-cash-stack', routerLink: '/open-item' },
         { label: 'Vorgänge', icon: 'bi-list-task', routerLink: '/vorgang' }
       ]
+    },
+    {
+      label: 'Administration',
+      icon: 'bi-shield-lock',
+      routerLink: '/admin',
+      public: false,
+      adminOnly: true
     }
   ];
 
@@ -233,6 +241,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
+  }
+
+  isAdmin(): boolean {
+    return this.authService.isAdmin();
   }
 
   trackByFn(_index: number, item: NavItem): string {

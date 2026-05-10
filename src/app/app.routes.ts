@@ -16,6 +16,8 @@ import { InvoiceListComponent } from './components/invoice-list/invoice-list';
 import { OpenItemList } from './components/open-item-list/open-item-list';
 import { VorgaengeListComponent } from './components/vorgang-list/vorgang-list';
 import { InvoiceBatchListComponent } from './components/invoice-batch-list/invoice-batch-list';
+import { AdminComponent } from './components/admin/admin';
+import { AdminGuard } from './auth/guards/admin-guard/admin-guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -38,6 +40,7 @@ export const routes: Routes = [
   { path: 'invoice-batch', component: InvoiceBatchListComponent, canActivate: [AuthGuard] },
 
   { path: 'vorgang', component: VorgaengeListComponent, canActivate: [AuthGuard] },
+  { path: 'admin', component: AdminComponent, canActivate: [AdminGuard] },
 
 
   // Weiterleitungen

@@ -33,7 +33,8 @@
       <!-- Navigation Links - immer sichtbar, disabled wenn nicht eingeloggt -->
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
-        <li class="nav-item" *ngFor="let item of items; trackBy: trackByFn">
+        <ng-container *ngFor="let item of items; trackBy: trackByFn">
+        <li class="nav-item" *ngIf="!item.adminOnly || isAdmin()">
 
           <!-- Normaler Link (kein Dropdown) -->
           <a *ngIf="!item.children"
@@ -84,6 +85,7 @@
             </ul>
           </div>
         </li>
+        </ng-container>
       </ul>
 
       <!-- Rechts: User-Dropdown wenn eingeloggt, sonst Anmelden-Button (Desktop) -->

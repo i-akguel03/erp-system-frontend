@@ -360,4 +360,26 @@ export class AuthService {
   public isLoggedIn(): boolean {
     return this.authStatusSubject.value;
   }
+
+  /**
+   * Rollen aus JWT extrahieren
+   */
+  getRoles(): string[] {
+    try {
+      const token = this.getAccessToken();
+      if (!token) return [];
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const roles: string[] = payload.roles || payload.authorities || [];
+      return roles.map((r: string) => r.replace('ROLE_', ''));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Prüft ob der eingeloggte User die ADMIN-Rolle hat
+   */
+  isAdmin(): boolean {
+    return this.getRoles().includes('ADMIN');
+  }
 }

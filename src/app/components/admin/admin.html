@@ -1,0 +1,287 @@
+<div class="p-3 p-md-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold">
+        <i class="fas fa-shield-alt me-2 text-danger"></i>Benutzerverwaltung
+      </h4>
+      <small class="text-muted">{{ users.length }} Benutzer</small>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-primary btn-sm" (click)="load()" [disabled]="loading" title="Neu laden">
+        <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="openNew()">
+        <i class="fas fa-user-plus me-1"></i>
+        <span class="d-none d-sm-inline">Neuer Benutzer</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center gap-2">
+    <i class="fas fa-exclamation-triangle"></i>{{ error }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">Benutzer werden geladen...</p>
+  </div>
+
+  <!-- Desktop: Tabelle -->
+  <div *ngIf="!loading" class="d-none d-md-block">
+    <div class="card border-0 shadow-sm">
+      <table class="table table-hover table-sm mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3 fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">ID</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Benutzername</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Rollen</th>
+            <th class="pe-3 fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; trackBy: trackById">
+            <td class="ps-3 text-muted">{{ user.id }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                     style="width:32px;height:32px;flex-shrink:0;">
+                  <i class="fas fa-user text-primary" style="font-size:0.75rem;"></i>
+                </div>
+                <span class="fw-semibold">{{ user.username }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex flex-wrap gap-1">
+                <span *ngFor="let role of user.roles"
+                      class="badge"
+                      [ngClass]="getRoleBadgeClass(role)">
+                  {{ role }}
+                </span>
+              </div>
+            </td>
+            <td class="pe-3">
+              <div class="d-flex gap-1">
+                <button class="btn btn-outline-primary btn-sm"
+                        (click)="openEditRoles(user)"
+                        title="Rollen bearbeiten">
+                  <i class="fas fa-user-tag me-1"></i>Rollen
+                </button>
+                <button class="btn btn-outline-danger btn-sm"
+                        (click)="confirmDelete(user)"
+                        title="Benutzer löschen">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="users.length === 0">
+            <td colspan="4" class="text-center text-muted py-5">
+              <i class="fas fa-users fa-2x mb-2 d-block text-secondary"></i>
+              Keine Benutzer gefunden
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mobile: Cards -->
+  <div *ngIf="!loading" class="d-md-none">
+    <div *ngIf="users.length === 0" class="text-center text-muted py-5">
+      <i class="fas fa-users fa-2x mb-2 d-block text-secondary"></i>
+      Keine Benutzer gefunden
+    </div>
+    <div *ngFor="let user of users; trackBy: trackById" class="card mb-2 shadow-sm border-0">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                 style="width:36px;height:36px;flex-shrink:0;">
+              <i class="fas fa-user text-primary"></i>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ user.username }}</div>
+              <small class="text-muted">ID: {{ user.id }}</small>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mb-3">
+          <span *ngFor="let role of user.roles"
+                class="badge"
+                [ngClass]="getRoleBadgeClass(role)">
+            {{ role }}
+          </span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm flex-grow-1"
+                  (click)="openEditRoles(user)">
+            <i class="fas fa-user-tag me-1"></i>Rollen bearbeiten
+          </button>
+          <button class="btn btn-outline-danger btn-sm"
+                  (click)="confirmDelete(user)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Rollen bearbeiten Modal -->
+<div *ngIf="editVisible"
+     class="modal d-block"
+     tabindex="-1"
+     style="background:rgba(0,0,0,.5);"
+     (click)="closeEditRoles()">
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user-tag me-2 text-primary"></i>
+          Rollen: <strong>{{ editUser?.username }}</strong>
+        </h5>
+        <button type="button" class="btn-close" (click)="closeEditRoles()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="editError" class="alert alert-danger py-2">{{ editError }}</div>
+        <p class="text-muted small mb-3">Wählen Sie mindestens eine Rolle aus.</p>
+        <div class="d-flex flex-column gap-2">
+          <div *ngFor="let role of availableRoles"
+               class="form-check form-check-lg border rounded p-3"
+               [class.border-primary]="hasRole(role)"
+               [class.bg-primary]="hasRole(role)"
+               [class.bg-opacity-10]="hasRole(role)"
+               style="cursor:pointer;"
+               (click)="toggleRole(role)">
+            <input class="form-check-input" type="checkbox"
+                   [id]="'role-' + role"
+                   [checked]="hasRole(role)"
+                   (click)="$event.stopPropagation(); toggleRole(role)">
+            <label class="form-check-label fw-semibold ms-2" [for]="'role-' + role" style="cursor:pointer;">
+              <span class="badge me-2" [ngClass]="getRoleBadgeClass(role)">{{ role }}</span>
+              <span class="text-muted small">{{ role === 'ADMIN' ? 'Vollzugriff auf alle Bereiche' : 'Standardzugriff' }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditRoles()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="saveRoles()" [disabled]="editLoading || editRoles.length === 0">
+          <span *ngIf="editLoading"><i class="fas fa-spinner fa-spin me-1"></i></span>
+          Speichern
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Neuer Benutzer Modal -->
+<div *ngIf="newVisible"
+     class="modal d-block"
+     tabindex="-1"
+     style="background:rgba(0,0,0,.5);"
+     (click)="closeNew()">
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user-plus me-2 text-primary"></i>Neuer Benutzer
+        </h5>
+        <button type="button" class="btn-close" (click)="closeNew()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="newError" class="alert alert-danger py-2">{{ newError }}</div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Benutzername</label>
+          <input type="text" class="form-control"
+                 [(ngModel)]="newUsername"
+                 placeholder="z.B. max.mustermann"
+                 autocomplete="off">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Passwort</label>
+          <input type="password" class="form-control"
+                 [(ngModel)]="newPassword"
+                 placeholder="Sicheres Passwort"
+                 autocomplete="new-password">
+        </div>
+
+        <div>
+          <label class="form-label fw-semibold">Rollen</label>
+          <div class="d-flex flex-column gap-2">
+            <div *ngFor="let role of availableRoles"
+                 class="form-check form-check-lg border rounded p-3"
+                 [class.border-primary]="hasNewRole(role)"
+                 [class.bg-primary]="hasNewRole(role)"
+                 [class.bg-opacity-10]="hasNewRole(role)"
+                 style="cursor:pointer;"
+                 (click)="toggleNewRole(role)">
+              <input class="form-check-input" type="checkbox"
+                     [id]="'new-role-' + role"
+                     [checked]="hasNewRole(role)"
+                     (click)="$event.stopPropagation(); toggleNewRole(role)">
+              <label class="form-check-label fw-semibold ms-2" [for]="'new-role-' + role" style="cursor:pointer;">
+                <span class="badge me-2" [ngClass]="getRoleBadgeClass(role)">{{ role }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeNew()">Abbrechen</button>
+        <button class="btn btn-primary" (click)="createUser()" [disabled]="newLoading">
+          <span *ngIf="newLoading"><i class="fas fa-spinner fa-spin me-1"></i></span>
+          Erstellen
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Löschen-Bestätigung Modal -->
+<div *ngIf="deleteTarget"
+     class="modal d-block"
+     tabindex="-1"
+     style="background:rgba(0,0,0,.5);"
+     (click)="cancelDelete()">
+  <div class="modal-dialog modal-dialog-centered modal-sm" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>Benutzer löschen
+        </h5>
+        <button type="button" class="btn-close" (click)="cancelDelete()"></button>
+      </div>
+
+      <div class="modal-body text-center py-3">
+        <p>Benutzer <strong>{{ deleteTarget?.username }}</strong> wirklich löschen?</p>
+        <small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small>
+      </div>
+
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-secondary btn-sm" (click)="cancelDelete()">Abbrechen</button>
+        <button class="btn btn-danger btn-sm" (click)="deleteUser()" [disabled]="deleteLoading">
+          <span *ngIf="deleteLoading"><i class="fas fa-spinner fa-spin me-1"></i></span>
+          Löschen
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
