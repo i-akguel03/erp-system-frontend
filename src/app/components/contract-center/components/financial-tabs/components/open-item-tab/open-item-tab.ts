@@ -32,29 +32,7 @@ export class OpenItemsTabComponent implements OnChanges {
   selectedOpenItem: OpenItem | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
-    // DEBUG: Logging für Input-Changes
-    if (changes['openItems']) {
-      console.log('🔍 OpenItems changed:', {
-        current: changes['openItems'].currentValue,
-        previous: changes['openItems'].previousValue,
-        length: changes['openItems'].currentValue?.length || 0
-      });
-    }
-    
-    if (changes['selectedSubscriptionId']) {
-      console.log('🔍 SelectedSubscriptionId changed:', {
-        current: changes['selectedSubscriptionId'].currentValue,
-        previous: changes['selectedSubscriptionId'].previousValue
-      });
-    }
-    
-    // DEBUG: Filtered items nach Change
-    console.log('🔍 Filtered Open Items:', {
-      total: this.openItems?.length || 0,
-      filtered: this.filteredOpenItems?.length || 0,
-      selectedSubscriptionId: this.selectedSubscriptionId,
-      items: this.filteredOpenItems
-    });
+
   }
 
   // Modal Management
