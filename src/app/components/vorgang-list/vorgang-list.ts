@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { VorgangDTO, VorgangStatus, VorgangTyp, VorgangHelper, VorgangStatistik } from '../../models/Vorgang';
 import { Invoice } from '../../models/Invoice';
+import { Contract } from '../../models/Contract';
 import { VorgangService } from '../../services/vorgang-service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -177,6 +178,9 @@ export class VorgaengeListComponent implements OnInit {
     switch (typ) {
       case VorgangTyp.RECHNUNGSLAUF:
         return '📊';
+      case VorgangTyp.VERLAENGERUNGSLAUF:
+      case VorgangTyp.VERTRAGSERNEUERUNG:
+        return '🔄';
       case VorgangTyp.DATENIMPORT:
         return '📁';
       case VorgangTyp.STATUS_AENDERUNG:
@@ -388,5 +392,52 @@ export class VorgaengeListComponent implements OnInit {
 
   getProtokollTotal(field: 'subtotal' | 'taxAmount' | 'totalAmount'): number {
     return this.protokollRechnungen.reduce((sum, inv) => sum + (inv[field] ?? 0), 0);
+  }
+
+  // ===============================================================================================
+  // VERTRÄGE-MODAL (Verlängerungslauf)
+  // ===============================================================================================
+
+  vertraegeVisible = false;
+  vertraegeVorgang: VorgangDTO | null = null;
+  vertraege: Contract[] = [];
+  vertraegeLoading = false;
+  vertraegeError = '';
+
+  showVertraege(vorgang: VorgangDTO): void {
+    this.vertraegeVorgang = vorgang;
+    this.vertraege = [];
+    this.vertraegeError = '';
+    this.vertraegeLoading = true;
+    this.vertraegeVisible = true;
+
+    this.vorgangService.getVertraegeByVorgang(vorgang.id).subscribe({
+      next: (vertraege) => {
+        this.vertraege = vertraege;
+        this.vertraegeLoading = false;
+      },
+      error: (err) => {
+        this.vertraegeError = err?.error?.message || err?.message || 'Fehler beim Laden der Verträge';
+        this.vertraegeLoading = false;
+      }
+    });
+  }
+
+  closeVertraege(): void {
+    this.vertraegeVisible = false;
+    this.vertraegeVorgang = null;
+    this.vertraege = [];
+    this.vertraegeError = '';
+  }
+
+  getContractStatusClass(status?: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'bg-success text-white';
+      case 'DRAFT': return 'bg-warning text-dark';
+      case 'SUSPENDED': return 'bg-secondary text-white';
+      case 'TERMINATED': return 'bg-dark text-white';
+      case 'EXPIRED': return 'bg-danger text-white';
+      default: return 'bg-light text-dark';
+    }
   }
 }

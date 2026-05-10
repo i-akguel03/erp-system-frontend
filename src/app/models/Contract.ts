@@ -10,5 +10,8 @@ export interface Contract {
   startDate?: string | Date;
   endDate?: string | Date;
   subscriptions?: Subscription[];
+  subscriptionIds?: string[];
   contractStatus?: ContractStatus;
+  renewable?: boolean;
+  notes?: string;
 }

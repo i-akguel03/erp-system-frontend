@@ -4,6 +4,7 @@ import { BaseApiService } from './base-api-service';
 import { HttpParams } from '@angular/common/http';
 import { VorgangDTO, VorgangStatistik, VorgangTyp, VorgangStatus } from '../models/Vorgang';
 import { Invoice } from '../models/Invoice';
+import { Contract } from '../models/Contract';
 
 // Interface für paginierte Antworten
 export interface PageResponse<T> {
@@ -135,6 +136,13 @@ export class VorgangService extends BaseApiService {
    */
   getRechnungenByVorgang(id: string): Observable<Invoice[]> {
     return this.http.get<Invoice[]>(`${this.apiUrl}/${id}/rechnungen`, { headers: this.getAuthHeaders() });
+  }
+
+  /**
+   * Alle verlängerten Verträge eines Verlängerungslauf-Vorgangs
+   */
+  getVertraegeByVorgang(id: string): Observable<Contract[]> {
+    return this.http.get<Contract[]>(`${this.apiUrl}/${id}/vertraege`, { headers: this.getAuthHeaders() });
   }
 
   /**

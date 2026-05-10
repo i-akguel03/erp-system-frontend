@@ -2,6 +2,8 @@
 
 export enum VorgangTyp {
   RECHNUNGSLAUF = 'RECHNUNGSLAUF',
+  VERLAENGERUNGSLAUF = 'VERLAENGERUNGSLAUF',
+  VERTRAGSERNEUERUNG = 'VERTRAGSERNEUERUNG',
   DATENIMPORT = 'DATENIMPORT',
   STATUS_AENDERUNG = 'STATUS_AENDERUNG',
   ZAHLUNGSEINGANG = 'ZAHLUNGSEINGANG',
@@ -110,6 +112,8 @@ export class VorgangHelper {
   static getTypLabel(typ: VorgangTyp): string {
     switch (typ) {
       case VorgangTyp.RECHNUNGSLAUF: return 'Rechnungslauf';
+      case VorgangTyp.VERLAENGERUNGSLAUF: return 'Verlängerungslauf';
+      case VorgangTyp.VERTRAGSERNEUERUNG: return 'Vertragserneuerung';
       case VorgangTyp.DATENIMPORT: return 'Datenimport';
       case VorgangTyp.STATUS_AENDERUNG: return 'Status-Änderung';
       case VorgangTyp.ZAHLUNGSEINGANG: return 'Zahlungseingang';
