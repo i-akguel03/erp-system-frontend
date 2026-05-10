@@ -48,20 +48,12 @@ export class OpenItemsTabComponent implements OnChanges {
 
   // Gefilterte OpenItems basierend auf Subscription
   get filteredOpenItems(): OpenItem[] {
-    console.log('🔍 Getting filtered items:', {
-      openItemsLength: this.openItems?.length || 0,
-      selectedSubscriptionId: this.selectedSubscriptionId,
-      openItems: this.openItems
-    });
-
     if (!this.openItems || this.openItems.length === 0) {
-      console.log('⚠️ No open items available');
       return [];
     }
     
     // Da alle Verknüpfungsfelder undefined sind, nehmen wir an, 
     // dass das Backend bereits gefilterte Daten liefert
-    console.log('✅ No filtering needed - assuming backend provides filtered data');
     return this.openItems;
   }
 
