@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './dashboard.scss'
 })
 export class Dashboard implements OnInit {
-  
+
   githubUrl = 'https://github.com/i-akguel03/erp-system-backend';
   swaggerUrl = 'https://erp-system-backend-yo8w.onrender.com/swagger-ui/index.html';
 

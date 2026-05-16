@@ -39,7 +39,7 @@ export class LoginComponent {
       next: tokens => {
         this.auth.saveTokens(tokens);
         this.isLoading = false;
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/analyse']);
       },
       error: () => {
         this.error = 'Login fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';

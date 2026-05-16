@@ -1,0 +1,358 @@
+<div class="p-3 p-md-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold">
+        <i class="bi bi-bar-chart-line me-2 text-primary"></i>Analyse
+      </h4>
+      <small class="text-muted">Willkommen, <strong>{{ currentUser }}</strong></small>
+    </div>
+    <button class="btn btn-outline-primary btn-sm" (click)="loadAll()"
+            [disabled]="kpiLoading || revenueLoading" title="Neu laden">
+      <i class="bi bi-arrow-clockwise"></i>
+    </button>
+  </div>
+
+  <!-- KPI Tiles -->
+  <div *ngIf="kpiLoading" class="text-center py-4">
+    <div class="spinner-border spinner-border-sm text-primary"></div>
+  </div>
+
+  <div *ngIf="!kpiLoading && kpi" class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="rounded-2 bg-primary bg-opacity-10 p-2">
+              <i class="bi bi-people-fill text-primary fs-5"></i>
+            </div>
+            <small class="text-muted">Kunden</small>
+          </div>
+          <div class="fw-bold fs-4">{{ kpi.totalCustomers | number }}</div>
+          <small class="text-muted">Gesamt</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="rounded-2 bg-success bg-opacity-10 p-2">
+              <i class="bi bi-arrow-repeat text-success fs-5"></i>
+            </div>
+            <small class="text-muted">Abonnements</small>
+          </div>
+          <div class="fw-bold fs-4">{{ kpi.activeSubscriptions | number }}</div>
+          <small class="text-muted">Aktiv</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="rounded-2 bg-info bg-opacity-10 p-2">
+              <i class="bi bi-graph-up-arrow text-info fs-5"></i>
+            </div>
+            <small class="text-muted">MRR</small>
+          </div>
+          <div class="fw-bold fs-5">{{ kpi.monthlyRecurringRevenue | currency:'EUR':'symbol':'1.2-2' }}</div>
+          <small class="text-muted">Monatlich wiederkehrend</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="rounded-2 bg-warning bg-opacity-10 p-2">
+              <i class="bi bi-receipt text-warning fs-5"></i>
+            </div>
+            <small class="text-muted">Offene Rechnungen</small>
+          </div>
+          <div class="fw-bold fs-4">{{ kpi.openInvoicesCount | number }}</div>
+          <small class="text-muted">{{ kpi.openInvoicesTotalAmount | currency:'EUR':'symbol':'1.2-2' }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="rounded-2 bg-secondary bg-opacity-10 p-2">
+              <i class="bi bi-cash-stack text-secondary fs-5"></i>
+            </div>
+            <small class="text-muted">Ausstehend</small>
+          </div>
+          <div class="fw-bold fs-5">{{ kpi.totalOutstandingAmount | currency:'EUR':'symbol':'1.2-2' }}</div>
+          <small class="text-muted">Gesamt ausstehend</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100 border-danger border-opacity-25">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="rounded-2 bg-danger bg-opacity-10 p-2">
+              <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+            </div>
+            <small class="text-muted">Überfällig</small>
+          </div>
+          <div class="fw-bold fs-4 text-danger">{{ kpi.overdueItemsCount | number }}</div>
+          <small class="text-danger fw-semibold">{{ kpi.overdueItemsAmount | currency:'EUR':'symbol':'1.2-2' }}</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Monatsumsatz -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+          <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Monatsumsatz
+          </h6>
+        </div>
+        <select class="form-select form-select-sm w-auto"
+                [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <div *ngIf="revenueLoading" class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+      </div>
+
+      <ng-container *ngIf="!revenueLoading && revenue.length">
+
+        <!-- Summary cards -->
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-4">
+            <div class="rounded-3 bg-primary bg-opacity-10 p-2 text-center">
+              <div class="text-muted small">Jahresumsatz {{ selectedYear }}</div>
+              <div class="fw-bold text-primary">{{ revenueTotal | currency:'EUR':'symbol':'1.2-2' }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="rounded-3 bg-success bg-opacity-10 p-2 text-center">
+              <div class="text-muted small">Stärkstes Monat</div>
+              <div class="fw-bold text-success">{{ revenueMax | currency:'EUR':'symbol':'1.2-2' }}</div>
+            </div>
+          </div>
+          <div class="col-12 col-md-4">
+            <div class="rounded-3 bg-secondary bg-opacity-10 p-2 text-center">
+              <div class="text-muted small">Ø pro Monat</div>
+              <div class="fw-bold text-secondary">{{ (revenueTotal / 12) | currency:'EUR':'symbol':'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SVG Bar Chart -->
+        <div class="overflow-auto">
+          <svg [attr.width]="svgWidth" [attr.height]="svgHeight"
+               style="display:block;min-width:100%;">
+            <!-- Gridlines -->
+            <line x1="0" [attr.y1]="chartTopPad + chartHeight * 0.25" [attr.x2]="svgWidth" [attr.y2]="chartTopPad + chartHeight * 0.25"
+                  stroke="#e9ecef" stroke-width="1"/>
+            <line x1="0" [attr.y1]="chartTopPad + chartHeight * 0.5"  [attr.x2]="svgWidth" [attr.y2]="chartTopPad + chartHeight * 0.5"
+                  stroke="#e9ecef" stroke-width="1"/>
+            <line x1="0" [attr.y1]="chartTopPad + chartHeight * 0.75" [attr.x2]="svgWidth" [attr.y2]="chartTopPad + chartHeight * 0.75"
+                  stroke="#e9ecef" stroke-width="1"/>
+            <!-- Bars + labels -->
+            <g *ngFor="let bar of chartBars">
+              <rect [attr.x]="bar.x" [attr.y]="bar.y"
+                    [attr.width]="barWidth" [attr.height]="bar.height"
+                    fill="#0d6efd" rx="3" opacity="0.85"/>
+              <!-- Amount above bar -->
+              <text [attr.x]="bar.x + barWidth / 2" [attr.y]="bar.amountY"
+                    text-anchor="middle" font-size="9" fill="#0d6efd" font-weight="600">
+                {{ bar.amountStr }}
+              </text>
+              <!-- Month label below -->
+              <text [attr.x]="bar.x + barWidth / 2" [attr.y]="bar.labelY"
+                    text-anchor="middle" font-size="10" fill="#6c757d">
+                {{ bar.label }}
+              </text>
+            </g>
+          </svg>
+        </div>
+
+      </ng-container>
+
+      <div *ngIf="!revenueLoading && revenue.length === 0"
+           class="text-center text-muted py-4">
+        Keine Daten für {{ selectedYear }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Open Items + Outstanding -->
+  <div class="row g-3 mb-4">
+
+    <!-- Offene Posten -->
+    <div class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+          <h6 class="fw-semibold mb-3">
+            <i class="bi bi-list-check me-2 text-warning"></i>Offene Posten
+          </h6>
+          <div *ngIf="openItemsLoading" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+          </div>
+          <ng-container *ngIf="!openItemsLoading && openItems">
+            <div class="row g-2 mb-3">
+              <div class="col-4">
+                <div class="rounded-3 bg-light p-2 text-center">
+                  <div class="text-muted small mb-1">Offen</div>
+                  <div class="fw-bold">{{ openItems.open?.count | number }}</div>
+                  <div class="text-muted small">{{ openItems.open?.amount | currency:'EUR':'symbol':'1.0-0' }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="rounded-3 bg-warning bg-opacity-10 p-2 text-center">
+                  <div class="text-muted small mb-1">Teilzahlung</div>
+                  <div class="fw-bold text-warning">{{ openItems.partiallyPaid?.count | number }}</div>
+                  <div class="text-muted small">{{ openItems.partiallyPaid?.amount | currency:'EUR':'symbol':'1.0-0' }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="rounded-3 bg-danger bg-opacity-10 p-2 text-center">
+                  <div class="text-muted small mb-1">Überfällig</div>
+                  <div class="fw-bold text-danger">{{ openItems.overdue?.count | number }}</div>
+                  <div class="text-muted small text-danger">{{ openItems.overdue?.amount | currency:'EUR':'symbol':'1.0-0' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="openItems.aging">
+              <div class="text-muted small fw-semibold mb-2">Altersstruktur</div>
+              <ng-container *ngFor="let bucket of [
+                { label: 'Aktuell',    value: openItems.aging.current,    cls: 'bg-success' },
+                { label: '1–30 Tage',  value: openItems.aging.days1to30,  cls: 'bg-warning' },
+                { label: '31–60 Tage', value: openItems.aging.days31to60, cls: 'bg-warning' },
+                { label: '61–90 Tage', value: openItems.aging.days61to90, cls: 'bg-danger' },
+                { label: '>90 Tage',   value: openItems.aging.over90days, cls: 'bg-dark' }
+              ]">
+                <div class="mb-2">
+                  <div class="d-flex justify-content-between small mb-1">
+                    <span>{{ bucket.label }}</span>
+                    <span class="fw-semibold">{{ bucket.value | currency:'EUR':'symbol':'1.0-0' }}</span>
+                  </div>
+                  <div class="progress" style="height:6px;">
+                    <div class="progress-bar" [ngClass]="bucket.cls"
+                         [style.width.%]="agingPercent(bucket.value)"></div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ausstehende Zahlungen -->
+    <div class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+          <h6 class="fw-semibold mb-3">
+            <i class="bi bi-cash-coin me-2 text-success"></i>Ausstehende Zahlungen
+          </h6>
+          <div *ngIf="outstandingLoading" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+          </div>
+          <ng-container *ngIf="!outstandingLoading && outstanding">
+
+            <!-- Gesamt -->
+            <div class="rounded-3 bg-light p-3 mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="text-muted small mb-1">Gesamt ausstehend</div>
+                  <div class="fw-bold fs-5">{{ outstanding.totalOutstandingAmount | currency:'EUR':'symbol':'1.2-2' }}</div>
+                </div>
+                <div class="text-end">
+                  <div class="text-muted small mb-1">Posten</div>
+                  <div class="fw-bold fs-5">{{ outstanding.totalOutstandingCount | number }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-2">
+              <!-- Überfällig -->
+              <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center rounded-3 bg-danger bg-opacity-10 p-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-circle-fill text-danger"></i>
+                    <div>
+                      <div class="small text-muted">Überfällig</div>
+                      <div class="fw-bold text-danger">{{ outstanding.overdueAmount | currency:'EUR':'symbol':'1.2-2' }}</div>
+                    </div>
+                  </div>
+                  <span class="badge bg-danger">{{ outstanding.overdueCount | number }} Posten</span>
+                </div>
+              </div>
+
+              <!-- Teilzahlungen -->
+              <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center rounded-3 bg-warning bg-opacity-10 p-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pie-chart-fill text-warning"></i>
+                    <div>
+                      <div class="small text-muted">Teilzahlungen</div>
+                      <div class="fw-bold text-warning">{{ outstanding.partiallyPaidAmount | currency:'EUR':'symbol':'1.2-2' }}</div>
+                    </div>
+                  </div>
+                  <span class="badge bg-warning text-dark">{{ outstanding.partiallyPaidCount | number }} Posten</span>
+                </div>
+              </div>
+
+              <!-- Bereits eingezahlt -->
+              <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center rounded-3 bg-success bg-opacity-10 p-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <div>
+                      <div class="small text-muted">Bereits eingezahlt</div>
+                      <div class="fw-bold text-success">{{ outstanding.totalCollectedAmount | currency:'EUR':'symbol':'1.2-2' }}</div>
+                    </div>
+                  </div>
+                  <i class="bi bi-check2-all text-success fs-5"></i>
+                </div>
+              </div>
+
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Schnellzugriff -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-3">
+      <h6 class="fw-semibold mb-3">
+        <i class="bi bi-grid me-2 text-secondary"></i>Schnellzugriff
+      </h6>
+      <div class="row g-2">
+        <div class="col-6 col-md-4 col-lg-2" *ngFor="let item of quickLinks">
+          <a [routerLink]="item.path"
+             class="d-flex flex-column align-items-center justify-content-center gap-1 p-3 rounded-3 text-decoration-none border h-100"
+             style="min-height:80px;">
+            <i [class]="item.icon + ' fs-4 ' + item.color"></i>
+            <span class="small text-muted text-center">{{ item.label }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
