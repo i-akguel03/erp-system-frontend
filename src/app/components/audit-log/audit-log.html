@@ -1,0 +1,280 @@
+<div class="p-3 p-md-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold">
+        <i class="fas fa-history me-2 text-secondary"></i>Audit-Log
+      </h4>
+      <small class="text-muted">{{ totalElements }} Einträge</small>
+    </div>
+    <button class="btn btn-outline-primary btn-sm" (click)="load()" [disabled]="loading" title="Neu laden">
+      <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-2 mb-3">
+    <div class="col-4">
+      <div class="card border-0 bg-success bg-opacity-10 text-center py-2">
+        <div class="fw-bold text-success fs-5">{{ countCreate }}</div>
+        <div class="text-muted" style="font-size:0.72rem;">Erstellt</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card border-0 bg-warning bg-opacity-10 text-center py-2">
+        <div class="fw-bold text-warning fs-5">{{ countUpdate }}</div>
+        <div class="text-muted" style="font-size:0.72rem;">Geändert</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card border-0 bg-danger bg-opacity-10 text-center py-2">
+        <div class="fw-bold text-danger fs-5">{{ countDelete }}</div>
+        <div class="text-muted" style="font-size:0.72rem;">Gelöscht</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="card border-0 bg-light mb-3">
+    <div class="card-body p-2 p-md-3">
+      <div class="row g-2 align-items-end">
+
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label form-label-sm text-muted mb-1">Aktion</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterAction">
+            <option value="">Alle Aktionen</option>
+            <option *ngFor="let a of actions" [value]="a">{{ actionLabel(a) }}</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label form-label-sm text-muted mb-1">Entitätstyp</label>
+          <input type="text" class="form-control form-control-sm"
+                 placeholder="z.B. Contract"
+                 [(ngModel)]="filterEntity">
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label form-label-sm text-muted mb-1">Benutzer</label>
+          <input type="text" class="form-control form-control-sm"
+                 placeholder="Benutzername"
+                 [(ngModel)]="filterUser">
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label form-label-sm text-muted mb-1">Von</label>
+          <input type="datetime-local" class="form-control form-control-sm"
+                 [(ngModel)]="filterFrom">
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label form-label-sm text-muted mb-1">Bis</label>
+          <input type="datetime-local" class="form-control form-control-sm"
+                 [(ngModel)]="filterTo">
+        </div>
+
+        <div class="col-auto d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="applyFilter()">
+            <i class="fas fa-filter me-1"></i>Filtern
+          </button>
+          <button class="btn btn-outline-secondary btn-sm"
+                  (click)="resetFilter()"
+                  [disabled]="activeFilter === 'none'">
+            <i class="fas fa-times me-1"></i>Reset
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center gap-2">
+    <i class="fas fa-exclamation-triangle"></i>{{ error }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">Audit-Logs werden geladen...</p>
+  </div>
+
+  <!-- Desktop: Tabelle -->
+  <div *ngIf="!loading" class="d-none d-md-block">
+    <div class="card border-0 shadow-sm">
+      <table class="table table-hover table-sm mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3 fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Zeitpunkt</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Aktion</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Entität</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">ID</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Benutzer</th>
+            <th class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Methode</th>
+            <th class="pe-3 fw-semibold text-muted text-uppercase" style="font-size:0.7rem;">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs; trackBy: trackById" style="cursor:pointer;" (click)="openDetail(log)">
+            <td class="ps-3 text-muted" style="white-space:nowrap;">
+              {{ log.changedAt | date:'dd.MM.yy HH:mm:ss' }}
+            </td>
+            <td>
+              <span class="badge" [ngClass]="actionBadgeClass(log.action)">
+                {{ actionLabel(log.action) }}
+              </span>
+            </td>
+            <td class="fw-semibold">{{ log.entityType }}</td>
+            <td class="text-muted" style="font-size:0.8rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ log.entityId || '–' }}
+            </td>
+            <td>
+              <i class="fas fa-user me-1 text-muted" style="font-size:0.75rem;"></i>
+              {{ log.changedBy }}
+            </td>
+            <td class="text-muted" style="font-size:0.8rem;">{{ log.methodName || '–' }}</td>
+            <td class="pe-3">
+              <button class="btn btn-outline-secondary btn-sm py-0" (click)="openDetail(log); $event.stopPropagation()">
+                <i class="fas fa-search-plus"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="logs.length === 0">
+            <td colspan="7" class="text-center text-muted py-5">
+              <i class="fas fa-history fa-2x mb-2 d-block text-secondary"></i>
+              Keine Einträge gefunden
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mobile: Cards -->
+  <div *ngIf="!loading" class="d-md-none">
+    <div *ngIf="logs.length === 0" class="text-center text-muted py-5">
+      <i class="fas fa-history fa-2x mb-2 d-block text-secondary"></i>
+      Keine Einträge gefunden
+    </div>
+    <div *ngFor="let log of logs; trackBy: trackById"
+         class="card mb-2 shadow-sm border-0 border-start border-3"
+         [ngClass]="{
+           'border-success': log.action === 'CREATE',
+           'border-warning': log.action === 'UPDATE',
+           'border-danger':  log.action === 'DELETE'
+         }"
+         (click)="openDetail(log)"
+         style="cursor:pointer;">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <div>
+            <span class="badge me-1" [ngClass]="actionBadgeClass(log.action)">{{ actionLabel(log.action) }}</span>
+            <span class="fw-semibold">{{ log.entityType }}</span>
+          </div>
+          <small class="text-muted">{{ log.changedAt | date:'dd.MM.yy HH:mm' }}</small>
+        </div>
+        <div class="text-muted small mb-1">
+          <i class="fas fa-user me-1"></i>{{ log.changedBy }}
+          <span *ngIf="log.entityId" class="ms-2">
+            <i class="fas fa-fingerprint me-1"></i>{{ log.entityId }}
+          </span>
+        </div>
+        <div *ngIf="log.methodName" class="text-muted" style="font-size:0.75rem;">
+          <i class="fas fa-code me-1"></i>{{ log.methodName }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination (nur für ungefilterte Ansicht) -->
+  <div *ngIf="!loading && totalPages > 1 && activeFilter === 'none'" class="d-flex justify-content-between align-items-center mt-3">
+    <small class="text-muted">
+      Seite {{ page + 1 }} von {{ totalPages }} ({{ totalElements }} Einträge)
+    </small>
+    <div class="d-flex gap-1">
+      <button class="btn btn-outline-secondary btn-sm" (click)="goToPage(0)" [disabled]="page === 0">
+        <i class="fas fa-angle-double-left"></i>
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="goToPage(page - 1)" [disabled]="page === 0">
+        <i class="fas fa-angle-left"></i>
+      </button>
+      <ng-container *ngFor="let p of pages">
+        <button *ngIf="p >= page - 2 && p <= page + 2"
+                class="btn btn-sm"
+                [class.btn-primary]="p === page"
+                [class.btn-outline-secondary]="p !== page"
+                (click)="goToPage(p)">
+          {{ p + 1 }}
+        </button>
+      </ng-container>
+      <button class="btn btn-outline-secondary btn-sm" (click)="goToPage(page + 1)" [disabled]="page >= totalPages - 1">
+        <i class="fas fa-angle-right"></i>
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="goToPage(totalPages - 1)" [disabled]="page >= totalPages - 1">
+        <i class="fas fa-angle-double-right"></i>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Detail Modal -->
+<div *ngIf="selectedLog"
+     class="modal d-block"
+     tabindex="-1"
+     style="background:rgba(0,0,0,.5);"
+     (click)="closeDetail()">
+  <div class="modal-dialog modal-dialog-centered modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <span class="badge me-2" [ngClass]="actionBadgeClass(selectedLog.action)">{{ actionLabel(selectedLog.action) }}</span>
+          {{ selectedLog.entityType }}
+          <small class="text-muted ms-2 fw-normal">{{ selectedLog.changedAt | date:'dd.MM.yyyy HH:mm:ss' }}</small>
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDetail()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <div class="text-muted small mb-1">Benutzer</div>
+            <div class="fw-semibold"><i class="fas fa-user me-1 text-muted"></i>{{ selectedLog.changedBy }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small mb-1">Entitäts-ID</div>
+            <div class="fw-semibold text-break">{{ selectedLog.entityId || '–' }}</div>
+          </div>
+          <div *ngIf="selectedLog.methodName" class="col-12">
+            <div class="text-muted small mb-1">Methode</div>
+            <div class="fw-semibold"><i class="fas fa-code me-1 text-muted"></i>{{ selectedLog.methodName }}</div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <div class="fw-semibold text-muted small mb-2">
+              <i class="fas fa-arrow-left me-1"></i>Alter Wert
+            </div>
+            <pre class="bg-light border rounded p-3 text-break overflow-auto"
+                 style="font-size:0.75rem;max-height:300px;white-space:pre-wrap;">{{ formatJson(selectedLog.oldValues) }}</pre>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="fw-semibold text-muted small mb-2">
+              <i class="fas fa-arrow-right me-1"></i>Neuer Wert
+            </div>
+            <pre class="bg-light border rounded p-3 text-break overflow-auto"
+                 style="font-size:0.75rem;max-height:300px;white-space:pre-wrap;">{{ formatJson(selectedLog.newValues) }}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetail()">Schließen</button>
+      </div>
+
+    </div>
+  </div>
+</div>
