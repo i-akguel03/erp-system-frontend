@@ -36,6 +36,9 @@
           </td>
           <td>
             <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-info" (click)="sendWelcomeEmail(customer)" [disabled]="emailSendingId === customer.id" title="Willkommens-E-Mail senden">
+                <i class="fas fa-envelope"></i>
+              </button>
               <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(customer)" title="Bearbeiten">
                 <i class="fas fa-edit"></i>
               </button>
@@ -69,6 +72,9 @@
           {{ customer.residentialAddress?.city }}
         </div>
         <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-info flex-grow-1" (click)="sendWelcomeEmail(customer)" [disabled]="emailSendingId === customer.id">
+            <i class="fas fa-envelope me-1"></i>E-Mail
+          </button>
           <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(customer)">
             <i class="fas fa-edit me-1"></i>Bearbeiten
           </button>
@@ -99,18 +105,33 @@
   [style]="{ width: '480px', maxWidth: '95vw' }"
   (onHide)="closeNewModal()">
   <div class="d-flex flex-column gap-2 py-2">
-    <input type="text" class="form-control" placeholder="Vorname" [(ngModel)]="newCustomer.firstName">
-    <input type="text" class="form-control" placeholder="Nachname" [(ngModel)]="newCustomer.lastName">
-    <input type="text" class="form-control" placeholder="Telefon" [(ngModel)]="newCustomer.tel">
-    <input type="text" class="form-control" placeholder="E-Mail" [(ngModel)]="newCustomer.email">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="nCustFirst" placeholder=" " [(ngModel)]="newCustomer.firstName">
+      <label for="nCustFirst">Vorname</label>
+    </div>
+    <div class="form-floating">
+      <input type="text" class="form-control" id="nCustLast" placeholder=" " [(ngModel)]="newCustomer.lastName">
+      <label for="nCustLast">Nachname</label>
+    </div>
+    <div class="form-floating">
+      <input type="text" class="form-control" id="nCustTel" placeholder=" " [(ngModel)]="newCustomer.tel">
+      <label for="nCustTel">Telefon</label>
+    </div>
+    <div class="form-floating">
+      <input type="email" class="form-control" id="nCustEmail" placeholder=" " [(ngModel)]="newCustomer.email">
+      <label for="nCustEmail">E-Mail</label>
+    </div>
     <hr class="my-1">
-    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="$any(newCustomer.residentialAddress).street">
-    <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="$any(newCustomer.residentialAddress).postalCode">
-    <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="$any(newCustomer.residentialAddress).city">
-    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="$any(newCustomer.residentialAddress).country">
+    <app-address-autocomplete
+      id="nCustAddr"
+      label="Wohnadresse suchen..."
+      [(address)]="newCustomer.residentialAddress">
+    </app-address-autocomplete>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeNewModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="createCustomer()">Erstellen</button>
+      <button class="btn btn-primary" (click)="createCustomer()" [disabled]="saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Erstellen
+      </button>
     </div>
   </div>
 </p-dialog>
@@ -125,18 +146,33 @@
   [style]="{ width: '480px', maxWidth: '95vw' }"
   (onHide)="closeEditModal()">
   <div class="d-flex flex-column gap-2 py-2">
-    <input type="text" class="form-control" placeholder="Vorname" [(ngModel)]="editCustomer.firstName">
-    <input type="text" class="form-control" placeholder="Nachname" [(ngModel)]="editCustomer.lastName">
-    <input type="text" class="form-control" placeholder="Telefon" [(ngModel)]="editCustomer.tel">
-    <input type="text" class="form-control" placeholder="E-Mail" [(ngModel)]="editCustomer.email">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="eCustFirst" placeholder=" " [(ngModel)]="editCustomer.firstName">
+      <label for="eCustFirst">Vorname</label>
+    </div>
+    <div class="form-floating">
+      <input type="text" class="form-control" id="eCustLast" placeholder=" " [(ngModel)]="editCustomer.lastName">
+      <label for="eCustLast">Nachname</label>
+    </div>
+    <div class="form-floating">
+      <input type="text" class="form-control" id="eCustTel" placeholder=" " [(ngModel)]="editCustomer.tel">
+      <label for="eCustTel">Telefon</label>
+    </div>
+    <div class="form-floating">
+      <input type="email" class="form-control" id="eCustEmail" placeholder=" " [(ngModel)]="editCustomer.email">
+      <label for="eCustEmail">E-Mail</label>
+    </div>
     <hr class="my-1">
-    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="$any(editCustomer.residentialAddress).street">
-    <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="$any(editCustomer.residentialAddress).postalCode">
-    <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="$any(editCustomer.residentialAddress).city">
-    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="$any(editCustomer.residentialAddress).country">
+    <app-address-autocomplete
+      id="eCustAddr"
+      label="Wohnadresse suchen..."
+      [(address)]="editCustomer.residentialAddress">
+    </app-address-autocomplete>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeEditModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="updateCustomer()">Speichern</button>
+      <button class="btn btn-primary" (click)="updateCustomer()" [disabled]="saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Speichern
+      </button>
     </div>
   </div>
 </p-dialog>

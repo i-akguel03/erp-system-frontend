@@ -6,18 +6,20 @@ import { SortPipe } from '../../shared/pipes/sort.pipe';
 import { ListBase } from '../../shared/utils/list-base';
 import { ListToolbarComponent } from '../../shared/components/list-toolbar/list-toolbar.component';
 import { ListStatusComponent } from '../../shared/components/list-status/list-status.component';
+import { AddressAutocompleteComponent } from '../../shared/components/address-autocomplete/address-autocomplete.component';
 import { Router } from '@angular/router';
 import { Customer } from '../../models/Customer';
 import { CustomerService } from '../../services/customer-service';
 import { ErpService } from '../../services/testservice';
 import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
+import { EmailService } from '../../services/email.service';
 import { Dialog } from 'primeng/dialog';
 
 @Component({
   selector: 'app-customer-list',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
+  imports: [CommonModule, HttpClientModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent, AddressAutocompleteComponent],
   templateUrl: './customer-list.html',
   styleUrls: ['./customer-list.scss'],
 })
@@ -35,10 +37,13 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
     private router: Router,
     private initService: ErpService,
     private confirmationService: ConfirmationService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private emailService: EmailService
   ) {
     super();
   }
+
+  emailSendingId: string | null = null;
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -107,35 +112,43 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
   }
 
   createCustomer(): void {
+    if (this.saving) return;
+    this.saving = true;
     const customerToSend = { ...this.newCustomer };
     delete (customerToSend as any).id;
     this.customerService.createCustomer(customerToSend).subscribe({
       next: (created) => {
+        this.saving = false;
         this.customers.push(created);
         this.filteredCustomers = [...this.customers];
         this.newCustomer = this.createEmptyCustomer();
         this.closeNewModal();
+        this.notification.success('Kunde erfolgreich erstellt.');
       },
-      error: (err) => this.handleApiError(err, 'Fehler beim Erstellen des Kunden')
+      error: (err) => { this.handleApiError(err, 'Fehler beim Erstellen des Kunden'); this.notification.error('Fehler beim Erstellen des Kunden.'); }
     });
   }
 
   updateCustomer(): void {
-    if (!this.editCustomer.id) return;
+    if (!this.editCustomer.id || this.saving) return;
+    this.saving = true;
     this.customerService.updateCustomer(this.editCustomer.id, this.editCustomer).subscribe({
       next: (updated) => {
+        this.saving = false;
         const index = this.customers.findIndex(c => c.id === updated.id);
         if (index > -1) this.customers[index] = updated;
         this.filteredCustomers = [...this.customers];
         this.closeEditModal();
+        this.notification.success('Kunde erfolgreich aktualisiert.');
       },
-      error: (err) => this.handleApiError(err, 'Fehler beim Aktualisieren des Kunden')
+      error: (err) => { this.handleApiError(err, 'Fehler beim Aktualisieren des Kunden'); this.notification.error('Fehler beim Aktualisieren des Kunden.'); }
     });
   }
 
   protected override handleApiError(err: any, defaultMessage: string): void {
     console.error('API Error:', err);
     this.loading = false;
+    this.saving = false;
     if (err.status === 401) this.error = 'Login abgelaufen. Bitte loggen Sie sich neu ein.';
     else if (err.status === 403) this.error = 'Zugriff verweigert. Sie haben keine Berechtigung für diese Aktion.';
     else this.error = defaultMessage;
@@ -168,6 +181,15 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
     });
   }
 
+  sendWelcomeEmail(customer: Customer): void {
+    if (!customer.id || this.emailSendingId === customer.id) return;
+    this.emailSendingId = customer.id;
+    this.emailService.sendWelcomeEmail(customer.id).subscribe({
+      next: () => { this.notification.success('Willkommens-E-Mail gesendet.'); this.emailSendingId = null; },
+      error: () => { this.notification.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
+    });
+  }
+
   logout(): void {
     this.customers = [];
     this.filteredCustomers = [];
@@ -181,10 +203,7 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
       firstName: '',
       lastName: '',
       email: '',
-      tel: '',
-      residentialAddress: { street: '', postalCode: '', city: '', country: '' },
-      billingAddress: { street: '', postalCode: '', city: '', country: '' },
-      shippingAddress: { street: '', postalCode: '', city: '', country: '' }
+      tel: ''
     };
   }
 }
