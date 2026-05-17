@@ -3,9 +3,10 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/services/auth';
 import { NotificationService } from '../../services/notification.service';
+import { NotificationApiService } from '../../services/notification-api.service';
 import { ConfirmationService } from 'primeng/api';
-import { Subject } from 'rxjs';
-import { takeUntil, filter } from 'rxjs/operators';
+import { Subject, interval } from 'rxjs';
+import { takeUntil, filter, switchMap, startWith } from 'rxjs/operators';
 
 interface NavItem {
   label: string;
@@ -85,11 +86,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isDropdownOpen = false;
   activeDropdown: string | null = null;
   showNavbar = true;
+  unreadCount = 0;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private notification: NotificationService,
+    private notificationApi: NotificationApiService,
     private confirmationService: ConfirmationService
   ) {}
 
@@ -266,12 +269,25 @@ export class NavbarComponent implements OnInit, OnDestroy {
         .subscribe((isAuthenticated: boolean) => {
           if (isAuthenticated) {
             this.loadCurrentUser();
+            this.startUnreadPolling();
           } else {
             this.currentUser = null;
+            this.unreadCount = 0;
             this.closeNavbar();
             this.closeAllDropdowns();
           }
         });
     }
+  }
+
+  private startUnreadPolling(): void {
+    interval(60_000).pipe(
+      startWith(0),
+      takeUntil(this.destroy$),
+      switchMap(() => this.notificationApi.countUnread())
+    ).subscribe({
+      next: (count) => { this.unreadCount = count; },
+      error: () => {}
+    });
   }
 }

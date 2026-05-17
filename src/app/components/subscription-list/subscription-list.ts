@@ -13,6 +13,7 @@ import { ProductService } from '../../services/product-service';
 import { Product } from '../../models/Product';
 import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
+import { EmailService } from '../../services/email.service';
 import { Dialog } from 'primeng/dialog';
 
 @Component({
@@ -45,10 +46,13 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
     private contractService: ContractService,
     private productService: ProductService,
     private confirmationService: ConfirmationService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private emailService: EmailService
   ) {
     super();
   }
+
+  emailSendingId: string | null = null;
 
   ngOnInit(): void {
     this.loadContracts();
@@ -127,8 +131,9 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
         this.subscriptions.push(created);
         this.filteredSubscriptions = [...this.subscriptions];
         this.closeNewModal();
+        this.notification.success('Abonnement erfolgreich erstellt.');
       },
-      error: err => this.handleApiError(err, 'Fehler beim Erstellen des Abos')
+      error: err => { this.handleApiError(err, 'Fehler beim Erstellen des Abos'); this.notification.error('Fehler beim Erstellen des Abonnements.'); }
     });
   }
 
@@ -145,8 +150,8 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
       endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
     };
     this.subscriptionService.updateSubscription(this.editSubscription.id, subscriptionToUpdate).subscribe({
-      next: updated => { this.updateLocalSubscription(updated); this.closeEditModal(); },
-      error: err => this.handleApiError(err, 'Fehler beim Aktualisieren')
+      next: updated => { this.updateLocalSubscription(updated); this.closeEditModal(); this.notification.success('Abonnement erfolgreich aktualisiert.'); },
+      error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren'); this.notification.error('Fehler beim Aktualisieren des Abonnements.'); }
     });
   }
 
@@ -255,5 +260,14 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
   canCancel(subscription: Subscription): boolean {
     return subscription.subscriptionStatus === SubscriptionStatus.ACTIVE ||
            subscription.subscriptionStatus === SubscriptionStatus.PAUSED;
+  }
+
+  sendExpiryNotice(subscription: Subscription): void {
+    if (!subscription.id || this.emailSendingId === subscription.id) return;
+    this.emailSendingId = subscription.id;
+    this.emailService.sendSubscriptionExpiryNotice(subscription.id).subscribe({
+      next: () => { this.notification.success('Ablaufhinweis-E-Mail gesendet.'); this.emailSendingId = null; },
+      error: () => { this.notification.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
+    });
   }
 }

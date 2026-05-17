@@ -11,6 +11,7 @@ import { Customer } from '../../models/Customer';
 import { CustomerService } from '../../services/customer-service';
 import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
+import { EmailService } from '../../services/email.service';
 import { Dialog } from 'primeng/dialog';
 
 @Component({
@@ -42,10 +43,13 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
     private contractService: ContractService,
     private customerService: CustomerService,
     private confirmationService: ConfirmationService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private emailService: EmailService
   ) {
     super();
   }
+
+  emailSendingId: string | null = null;
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -153,8 +157,9 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
         this.contracts.push(created);
         this.filteredContracts = [...this.contracts];
         this.closeNewModal();
+        this.notification.success('Vertrag erfolgreich erstellt.');
       },
-      error: err => this.handleApiError(err, 'Fehler beim Erstellen des Vertrags')
+      error: err => { this.handleApiError(err, 'Fehler beim Erstellen des Vertrags'); this.notification.error('Fehler beim Erstellen des Vertrags.'); }
     });
   }
 
@@ -171,8 +176,8 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
     };
     console.log('Aktualisiere Vertrag:', contractToUpdate);
     this.contractService.updateContract(this.editContract.id, contractToUpdate).subscribe({
-      next: updated => { this.updateLocalContract(updated); this.closeEditModal(); },
-      error: err => this.handleApiError(err, 'Fehler beim Aktualisieren des Vertrags')
+      next: updated => { this.updateLocalContract(updated); this.closeEditModal(); this.notification.success('Vertrag erfolgreich aktualisiert.'); },
+      error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren des Vertrags'); this.notification.error('Fehler beim Aktualisieren des Vertrags.'); }
     });
   }
 
@@ -247,5 +252,14 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
 
   canEdit(contract: Contract): boolean {
     return contract.contractStatus !== 'TERMINATED';
+  }
+
+  sendExpiryNotice(contract: Contract): void {
+    if (!contract.id || this.emailSendingId === contract.id) return;
+    this.emailSendingId = contract.id;
+    this.emailService.sendContractExpiryNotice(contract.id).subscribe({
+      next: () => { this.notification.success('Ablaufhinweis-E-Mail gesendet.'); this.emailSendingId = null; },
+      error: () => { this.notification.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
+    });
   }
 }

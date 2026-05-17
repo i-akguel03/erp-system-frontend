@@ -17,6 +17,7 @@ import { InvoiceService } from '../../services/invoice-service';
 import { ProductService } from '../../services/product-service';
 import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
+import { EmailService } from '../../services/email.service';
 import { Product } from '../../models/Product';
 import { BillingCycle } from '../../models/Subscription';
 
@@ -25,7 +26,7 @@ import { FinancialTabsComponent } from './components/financial-tabs/financial-ta
 import { ContractListComponent } from './components/contract-list/contract-list';
 
 interface ContractActionEvent {
-  action: 'neu' | 'edit' | 'duplicate' | 'kündigen' | 'stornieren' | 'verlängern';
+  action: 'neu' | 'edit' | 'duplicate' | 'kündigen' | 'stornieren' | 'verlängern' | 'email';
   contract: Contract;
 }
 
@@ -109,6 +110,8 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     { label: 'Jährlich',         value: BillingCycle.ANNUALLY },
   ];
 
+  emailSendingId: string | null = null;
+
   constructor(
     private el: ElementRef,
     private contractService: ContractService,
@@ -117,7 +120,8 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     private invoiceService: InvoiceService,
     private productService: ProductService,
     private confirmationService: ConfirmationService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private emailService: EmailService
   ) { }
 
   ngOnInit(): void {
@@ -412,6 +416,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       case 'verlängern':
         this.renewContract(contract);
         break;
+      case 'email':
+        this.sendContractExpiryNotice(contract);
+        break;
     }
   }
 
@@ -658,6 +665,17 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
           this.notificationService.error('Fehler beim Verlängerungslauf');
           console.error(err);
         }
+      });
+  }
+
+  private sendContractExpiryNotice(contract: Contract): void {
+    if (!contract.id || this.emailSendingId === contract.id) return;
+    this.emailSendingId = contract.id;
+    this.emailService.sendContractExpiryNotice(contract.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => { this.notificationService.success('Ablaufhinweis-E-Mail gesendet.'); this.emailSendingId = null; },
+        error: () => { this.notificationService.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
       });
   }
 

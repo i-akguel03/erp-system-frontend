@@ -89,7 +89,23 @@
       </ul>
 
       <!-- Rechts: User-Dropdown wenn eingeloggt, sonst Anmelden-Button (Desktop) -->
-      <div class="navbar-nav ms-auto">
+      <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+
+        <!-- Glocke: Benachrichtigungen -->
+        <div class="nav-item d-flex align-items-center" *ngIf="isLoggedIn()">
+          <a class="nav-link position-relative px-2 d-flex align-items-center"
+             routerLink="/notifications"
+             (click)="closeAllDropdowns()"
+             title="Benachrichtigungen"
+             style="cursor:pointer;">
+            <i class="bi bi-bell fs-5"></i>
+            <span *ngIf="unreadCount > 0"
+                  class="position-absolute badge rounded-pill bg-danger"
+                  style="font-size:0.6rem;padding:2px 4px;top:2px;right:0;">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </a>
+        </div>
 
         <!-- Eingeloggt: User-Dropdown -->
         <div class="nav-item dropdown user-dropdown" *ngIf="isLoggedIn()">

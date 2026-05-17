@@ -15,6 +15,7 @@ import { DueScheduleService } from '../../../../services/due-schedule-service';
 import { InvoiceService } from '../../../../services/invoice-service';
 import { OpenItemService } from '../../../../services/open-item-service';
 import { NotificationService } from '../../../../services/notification.service';
+import { EmailService } from '../../../../services/email.service';
 
 import { DueScheduleTabComponent } from './components/due-schedule-tab/due-schedule-tab';
 import { InvoiceTabComponent } from './components/invoice-tab/invoice-tab';
@@ -101,7 +102,8 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
     private invoiceService: InvoiceService,
     private openItemService: OpenItemService,
     private notificationService: NotificationService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private emailService: EmailService
   ) {}
 
   ngOnInit(): void {
@@ -175,11 +177,14 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   // Invoice Actions
   private sendInvoice(invoice: Invoice): void {
     if (!invoice.id) return;
-    
+
     this.invoiceService.sendInvoice(invoice.id).subscribe({
       next: (updated) => {
         this.updateLocalInvoice(updated);
-        this.showSuccessMessage('Rechnung wurde versendet');
+        this.emailService.sendInvoiceEmail(invoice.id!).subscribe({
+          next: () => this.showSuccessMessage('Rechnung versendet und E-Mail wurde gesendet'),
+          error: () => this.showSuccessMessage('Rechnung versendet (E-Mail konnte nicht gesendet werden)')
+        });
       },
       error: (err) => this.handleError('Fehler beim Versenden der Rechnung', err)
     });
@@ -230,11 +235,14 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   // OpenItem Actions
   private addReminder(openItem: OpenItem): void {
     if (!openItem.id) return;
-    
+
     this.openItemService.addReminder(openItem.id).subscribe({
       next: (updated) => {
         this.updateLocalOpenItem(updated);
-        this.showSuccessMessage('Mahnung wurde hinzugefügt');
+        this.emailService.sendPaymentReminder(openItem.id!).subscribe({
+          next: () => this.showSuccessMessage('Mahnung hinzugefügt und E-Mail wurde gesendet'),
+          error: () => this.showSuccessMessage('Mahnung hinzugefügt (E-Mail konnte nicht gesendet werden)')
+        });
       },
       error: (err) => this.handleError('Fehler beim Hinzufügen der Mahnung', err)
     });

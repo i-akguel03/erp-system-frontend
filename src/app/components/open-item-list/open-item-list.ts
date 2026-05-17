@@ -7,6 +7,8 @@ import { OpenItem, OpenItemStatus, OpenItemStatistics } from '../../models/OpenI
 import { Invoice } from '../../models/Invoice';
 import { InvoiceService } from '../../services/invoice-service';
 import { OpenItemService } from '../../services/open-item-service';
+import { EmailService } from '../../services/email.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-openitem-list',
@@ -48,11 +50,15 @@ export class OpenItemList implements OnInit {
   // Filter
   currentFilter: 'all' | 'open' | 'overdue' = 'all';
 
+  emailSendingId: string | null = null;
+
   constructor(
     private openItemService: OpenItemService,
     private invoiceService: InvoiceService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private emailService: EmailService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -229,8 +235,9 @@ export class OpenItemList implements OnInit {
         this.applyCurrentFilter();
         this.loadStatistics();
         this.closeNewModal();
+        this.notification.success('Offener Posten erfolgreich erstellt.');
       },
-      error: err => this.handleApiError(err, 'Fehler beim Erstellen des offenen Postens')
+      error: err => { this.handleApiError(err, 'Fehler beim Erstellen des offenen Postens'); this.notification.error('Fehler beim Erstellen des offenen Postens.'); }
     });
   }
 
@@ -251,8 +258,9 @@ export class OpenItemList implements OnInit {
       next: updated => {
         this.updateLocalOpenItem(updated);
         this.loadStatistics();
+        this.notification.success('Offener Posten erfolgreich aktualisiert.');
       },
-      error: err => this.handleApiError(err, 'Fehler beim Aktualisieren des offenen Postens')
+      error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren des offenen Postens'); this.notification.error('Fehler beim Aktualisieren des offenen Postens.'); }
     });
   }
 
@@ -405,7 +413,16 @@ export class OpenItemList implements OnInit {
            openItem.status === OpenItemStatus.PARTIALLY_PAID;
   }
 
-  clearError(): void { 
-    this.error = null; 
+  clearError(): void {
+    this.error = null;
+  }
+
+  sendPaymentReminder(item: OpenItem): void {
+    if (!item.id || this.emailSendingId === item.id) return;
+    this.emailSendingId = item.id;
+    this.emailService.sendPaymentReminder(item.id).subscribe({
+      next: () => { this.notification.success('Zahlungserinnerung gesendet.'); this.emailSendingId = null; },
+      error: () => { this.notification.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
+    });
   }
 }

@@ -7,6 +7,8 @@ import { Customer } from '../../models/Customer';
 import { CustomerService } from '../../services/customer-service';
 import { Invoice } from '../../models/Invoice';
 import { InvoiceService } from '../../services/invoice-service';
+import { EmailService } from '../../services/email.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-invoice-list',
@@ -37,10 +39,14 @@ export class InvoiceListComponent implements OnInit {
   showDetailsModal = false;
   selectedInvoice: Invoice | null = null;
 
+  emailSendingId: string | null = null;
+
   constructor(
     private invoiceService: InvoiceService,
     private customerService: CustomerService,
-    private router: Router
+    private router: Router,
+    private emailService: EmailService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -176,8 +182,9 @@ getItemsCount(invoice: Invoice): number {
         this.invoices.push(created);
         this.filteredInvoices = [...this.invoices];
         this.closeNewModal();
+        this.notification.success('Rechnung erfolgreich erstellt.');
       },
-      error: err => this.handleApiError(err, 'Fehler beim Erstellen der Rechnung')
+      error: err => { this.handleApiError(err, 'Fehler beim Erstellen der Rechnung'); this.notification.error('Fehler beim Erstellen der Rechnung.'); }
     });
   }
 
@@ -196,8 +203,8 @@ getItemsCount(invoice: Invoice): number {
     }
 
     this.invoiceService.updateInvoice(this.editInvoice.id, invoiceToUpdate).subscribe({
-      next: updated => this.updateLocalInvoice(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Aktualisieren der Rechnung')
+      next: updated => { this.updateLocalInvoice(updated); this.notification.success('Rechnung erfolgreich aktualisiert.'); },
+      error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren der Rechnung'); this.notification.error('Fehler beim Aktualisieren der Rechnung.'); }
     });
   }
 
@@ -363,5 +370,14 @@ getItemsCount(invoice: Invoice): number {
     const baseAmount = item.quantity * item.unitPrice;
     const discount = item.discountAmount || 0;
     return baseAmount - discount;
+  }
+
+  sendInvoiceEmail(invoice: Invoice): void {
+    if (!invoice.id || this.emailSendingId === invoice.id) return;
+    this.emailSendingId = invoice.id;
+    this.emailService.sendInvoiceEmail(invoice.id).subscribe({
+      next: () => { this.notification.success('Rechnungs-E-Mail gesendet.'); this.emailSendingId = null; },
+      error: () => { this.notification.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
+    });
   }
 }
