@@ -45,6 +45,9 @@
           <td class="text-nowrap text-muted small">{{ contract.endDate | date:'dd.MM.yyyy' }}</td>
           <td>
             <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-info" (click)="sendExpiryNotice(contract)" [disabled]="emailSendingId === contract.id" title="Ablaufhinweis senden">
+                <i class="fas fa-envelope"></i>
+              </button>
               <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(contract)" title="Bearbeiten">
                 <i class="fas fa-edit"></i>
               </button>
@@ -79,6 +82,9 @@
           <span *ngIf="contract.endDate" class="ms-3"><i class="fas fa-calendar-check me-1"></i>{{ contract.endDate | date:'dd.MM.yyyy' }}</span>
         </div>
         <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-info flex-grow-1" (click)="sendExpiryNotice(contract)" [disabled]="emailSendingId === contract.id">
+            <i class="fas fa-envelope me-1"></i>E-Mail
+          </button>
           <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(contract)">
             <i class="fas fa-edit me-1"></i>Bearbeiten
           </button>
@@ -108,42 +114,47 @@
   [resizable]="false"
   [style]="{ width: '500px', maxWidth: '95vw' }"
   (onHide)="closeNewModal()">
-  <div class="d-flex flex-column gap-3 py-2">
-    <div>
-      <label class="form-label fw-semibold">Titel</label>
-      <input type="text" class="form-control" placeholder="Titel" [(ngModel)]="newContract.contractTitle">
+  <div class="d-flex flex-column gap-2 py-2">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="nConTitle" placeholder=" " [(ngModel)]="newContract.contractTitle">
+      <label for="nConTitle">Titel</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Kunde *</label>
-      <select class="form-select" [(ngModel)]="newContract.customerId" required>
-        <option value="">-- Wählen Sie einen Kunden --</option>
+    <div class="form-floating">
+      <select class="form-select" id="nConCustomer" [(ngModel)]="newContract.customerId" required>
+        <option value="">-- Kunden auswählen --</option>
         <option *ngFor="let customer of customers" [value]="customer.id">
           {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
         </option>
       </select>
-      <div class="form-text">{{ customers.length }} Kunden verfügbar</div>
+      <label for="nConCustomer">Kunde *</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Status</label>
-      <select class="form-select" [(ngModel)]="newContract.contractStatus">
-        <option value="DRAFT">DRAFT</option>
-        <option value="ACTIVE">ACTIVE</option>
-        <option value="SUSPENDED">SUSPENDED</option>
+    <div class="form-floating">
+      <select class="form-select" id="nConStatus" [(ngModel)]="newContract.contractStatus">
+        <option value="DRAFT">Entwurf</option>
+        <option value="ACTIVE">Aktiv</option>
+        <option value="SUSPENDED">Ausgesetzt</option>
       </select>
+      <label for="nConStatus">Status</label>
     </div>
     <div class="row g-2">
       <div class="col">
-        <label class="form-label fw-semibold">Startdatum</label>
-        <input type="date" class="form-control" [(ngModel)]="newStartDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="nConStart" placeholder=" " [(ngModel)]="newStartDateString">
+          <label for="nConStart">Startdatum</label>
+        </div>
       </div>
       <div class="col">
-        <label class="form-label fw-semibold">Enddatum <span class="text-muted fw-normal">(optional)</span></label>
-        <input type="date" class="form-control" [(ngModel)]="newEndDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="nConEnd" placeholder=" " [(ngModel)]="newEndDateString">
+          <label for="nConEnd">Enddatum (optional)</label>
+        </div>
       </div>
     </div>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeNewModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="createContract()" [disabled]="!newContract.customerId">Erstellen</button>
+      <button class="btn btn-primary" (click)="createContract()" [disabled]="!newContract.customerId || saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Erstellen
+      </button>
     </div>
   </div>
 </p-dialog>
@@ -157,42 +168,47 @@
   [resizable]="false"
   [style]="{ width: '500px', maxWidth: '95vw' }"
   (onHide)="closeEditModal()">
-  <div class="d-flex flex-column gap-3 py-2">
-    <div>
-      <label class="form-label fw-semibold">Titel</label>
-      <input type="text" class="form-control" placeholder="Titel" [(ngModel)]="editContract.contractTitle">
+  <div class="d-flex flex-column gap-2 py-2">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="eConTitle" placeholder=" " [(ngModel)]="editContract.contractTitle">
+      <label for="eConTitle">Titel</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Kunde *</label>
-      <select class="form-select" [(ngModel)]="editContract.customerId" required>
+    <div class="form-floating">
+      <select class="form-select" id="eConCustomer" [(ngModel)]="editContract.customerId" required>
         <option value="">-- Kunden auswählen --</option>
         <option *ngFor="let customer of customers" [value]="customer.id">
           {{ customer.firstName }} {{ customer.lastName }} ({{ customer.customerNumber }})
         </option>
       </select>
-      <div class="form-text">Aktuell: {{ getCustomerById(editContract.customerId)?.firstName }} {{ getCustomerById(editContract.customerId)?.lastName }}</div>
+      <label for="eConCustomer">Kunde *</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Status</label>
-      <select class="form-select" [(ngModel)]="editContract.contractStatus">
-        <option value="DRAFT">DRAFT</option>
-        <option value="ACTIVE">ACTIVE</option>
-        <option value="SUSPENDED">SUSPENDED</option>
+    <div class="form-floating">
+      <select class="form-select" id="eConStatus" [(ngModel)]="editContract.contractStatus">
+        <option value="DRAFT">Entwurf</option>
+        <option value="ACTIVE">Aktiv</option>
+        <option value="SUSPENDED">Ausgesetzt</option>
       </select>
+      <label for="eConStatus">Status</label>
     </div>
     <div class="row g-2">
       <div class="col">
-        <label class="form-label fw-semibold">Startdatum</label>
-        <input type="date" class="form-control" [(ngModel)]="editStartDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="eConStart" placeholder=" " [(ngModel)]="editStartDateString">
+          <label for="eConStart">Startdatum</label>
+        </div>
       </div>
       <div class="col">
-        <label class="form-label fw-semibold">Enddatum <span class="text-muted fw-normal">(optional)</span></label>
-        <input type="date" class="form-control" [(ngModel)]="editEndDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="eConEnd" placeholder=" " [(ngModel)]="editEndDateString">
+          <label for="eConEnd">Enddatum (optional)</label>
+        </div>
       </div>
     </div>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeEditModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="updateContract()" [disabled]="!editContract.customerId">Speichern</button>
+      <button class="btn btn-primary" (click)="updateContract()" [disabled]="!editContract.customerId || saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Speichern
+      </button>
     </div>
   </div>
 </p-dialog>

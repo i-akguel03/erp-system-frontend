@@ -119,6 +119,9 @@
               <button class="btn btn-outline-warning" (click)="addReminder(item.id!)" [disabled]="!canAddReminder(item)" title="Mahnung">
                 <i class="fas fa-bell"></i>
               </button>
+              <button class="btn btn-outline-secondary" (click)="sendPaymentReminder(item)" [disabled]="emailSendingId === item.id" title="Zahlungserinnerung per E-Mail">
+                <i class="fas fa-envelope"></i>
+              </button>
               <button class="btn btn-danger" (click)="cancelOpenItem(item.id!)" [disabled]="!canCancel(item)" title="Stornieren">
                 <i class="fas fa-ban"></i>
               </button>
@@ -180,6 +183,9 @@
           </button>
           <button class="btn btn-sm btn-warning flex-grow-1" (click)="addReminder(item.id!)" [disabled]="!canAddReminder(item)">
             <i class="fas fa-bell"></i> Mahnung
+          </button>
+          <button class="btn btn-sm btn-outline-secondary flex-grow-1" (click)="sendPaymentReminder(item)" [disabled]="emailSendingId === item.id">
+            <i class="fas fa-envelope"></i> E-Mail
           </button>
         </div>
       </div>
@@ -363,8 +369,9 @@
           <button class="btn btn-secondary" (click)="closePaymentModal()">
             <i class="fas fa-times me-1"></i>Abbrechen
           </button>
-          <button class="btn btn-success" (click)="recordPayment()" [disabled]="!paymentAmount || paymentAmount <= 0">
-            <i class="fas fa-check me-1"></i>Zahlung buchen
+          <button class="btn btn-success" (click)="recordPayment()" [disabled]="!paymentAmount || paymentAmount <= 0 || saving">
+            @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            @else { <i class="fas fa-check me-1"></i> }Zahlung buchen
           </button>
         </div>
       </div>
@@ -381,41 +388,46 @@
           </h5>
           <button type="button" class="btn-close btn-close-white" (click)="closeNewModal()"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Rechnung *</label>
-            <select [(ngModel)]="newOpenItem.invoiceId" class="form-select">
+        <div class="modal-body d-flex flex-column gap-2">
+          <div class="form-floating">
+            <select class="form-select" id="nOiInvoice" [(ngModel)]="newOpenItem.invoiceId">
               <option value="">-- Rechnung auswählen --</option>
               <option *ngFor="let invoice of availableInvoices" [value]="invoice.id">
                 {{ invoice.invoiceNumber }} - {{ invoice.customerName }} ({{ invoice.totalAmount | currency:'EUR' }})
               </option>
             </select>
+            <label for="nOiInvoice">Rechnung *</label>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Beschreibung *</label>
-            <input type="text" class="form-control" [(ngModel)]="newOpenItem.description" placeholder="Beschreibung des offenen Postens">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="nOiDesc" placeholder=" " [(ngModel)]="newOpenItem.description">
+            <label for="nOiDesc">Beschreibung *</label>
           </div>
-          <div class="row">
-            <div class="col-md-6">
-              <label class="form-label">Betrag *</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="newOpenItem.amount" placeholder="0,00">
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="number" step="0.01" class="form-control" id="nOiAmount" placeholder=" " [(ngModel)]="newOpenItem.amount">
+                <label for="nOiAmount">Betrag (€) *</label>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Fälligkeitsdatum *</label>
-              <input type="date" class="form-control" [(ngModel)]="newDueDateString">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="nOiDue" placeholder=" " [(ngModel)]="newDueDateString">
+                <label for="nOiDue">Fälligkeitsdatum *</label>
+              </div>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Notizen</label>
-            <textarea class="form-control" [(ngModel)]="newOpenItem.notes" rows="3" placeholder="Optionale Notizen..."></textarea>
+          <div class="form-floating">
+            <textarea class="form-control" id="nOiNotes" placeholder=" " [(ngModel)]="newOpenItem.notes" style="height: 80px"></textarea>
+            <label for="nOiNotes">Notizen (optional)</label>
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeNewModal()">
             <i class="fas fa-times me-1"></i>Abbrechen
           </button>
-          <button class="btn btn-primary" (click)="createOpenItem()">
-            <i class="fas fa-check me-1"></i>Erstellen
+          <button class="btn btn-primary" (click)="createOpenItem()" [disabled]="saving">
+            @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            @else { <i class="fas fa-check me-1"></i> }Erstellen
           </button>
         </div>
       </div>
@@ -432,32 +444,37 @@
           </h5>
           <button type="button" class="btn-close" (click)="closeEditModal()"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Beschreibung *</label>
-            <input type="text" class="form-control" [(ngModel)]="editOpenItem.description" placeholder="Beschreibung des offenen Postens">
+        <div class="modal-body d-flex flex-column gap-2">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="eOiDesc" placeholder=" " [(ngModel)]="editOpenItem.description">
+            <label for="eOiDesc">Beschreibung *</label>
           </div>
-          <div class="row">
-            <div class="col-md-6">
-              <label class="form-label">Betrag *</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="editOpenItem.amount" placeholder="0,00">
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="number" step="0.01" class="form-control" id="eOiAmount" placeholder=" " [(ngModel)]="editOpenItem.amount">
+                <label for="eOiAmount">Betrag (€) *</label>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Fälligkeitsdatum *</label>
-              <input type="date" class="form-control" [(ngModel)]="editDueDateString">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="eOiDue" placeholder=" " [(ngModel)]="editDueDateString">
+                <label for="eOiDue">Fälligkeitsdatum *</label>
+              </div>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Notizen</label>
-            <textarea class="form-control" [(ngModel)]="editOpenItem.notes" rows="3" placeholder="Optionale Notizen..."></textarea>
+          <div class="form-floating">
+            <textarea class="form-control" id="eOiNotes" placeholder=" " [(ngModel)]="editOpenItem.notes" style="height: 80px"></textarea>
+            <label for="eOiNotes">Notizen (optional)</label>
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeEditModal()">
             <i class="fas fa-times me-1"></i>Abbrechen
           </button>
-          <button class="btn btn-warning" (click)="updateOpenItem()">
-            <i class="fas fa-save me-1"></i>Speichern
+          <button class="btn btn-warning" (click)="updateOpenItem()" [disabled]="saving">
+            @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            @else { <i class="fas fa-save me-1"></i> }Speichern
           </button>
         </div>
       </div>

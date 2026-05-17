@@ -281,23 +281,20 @@
     <div class="d-flex flex-column gap-3 py-2">
 
       <!-- Vertragsbezeichnung -->
-      <div>
-        <label class="form-label fw-semibold">
-          Vertragsbezeichnung <span class="text-danger">*</span>
-        </label>
+      <div class="form-floating">
         <input type="text"
                class="form-control"
+               id="ccTitle"
+               placeholder=" "
                [(ngModel)]="contractForm.contractTitle"
-               placeholder="z. B. Wartungsvertrag 2025"
                [disabled]="contractModalLoading" />
+        <label for="ccTitle">Vertragsbezeichnung *</label>
       </div>
 
       <!-- Kunde -->
-      <div>
-        <label class="form-label fw-semibold">
-          Kunde <span class="text-danger">*</span>
-        </label>
+      <div class="form-floating">
         <select class="form-select"
+                id="ccCustomer"
                 [(ngModel)]="contractForm.customerId"
                 [disabled]="contractModalLoading">
           <option value="" disabled selected>Kunde auswählen …</option>
@@ -308,34 +305,41 @@
             </option>
           }
         </select>
+        <label for="ccCustomer">Kunde *</label>
       </div>
 
       <!-- Laufzeit -->
       <div class="row g-3">
         <div class="col-6">
-          <label class="form-label fw-semibold">
-            Startdatum <span class="text-danger">*</span>
-          </label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="contractStartDateString"
-                 [disabled]="contractModalLoading" />
+          <div class="form-floating">
+            <input type="date"
+                   class="form-control"
+                   id="ccStart"
+                   placeholder=" "
+                   [(ngModel)]="contractStartDateString"
+                   [disabled]="contractModalLoading" />
+            <label for="ccStart">Startdatum *</label>
+          </div>
         </div>
         <div class="col-6">
-          <label class="form-label fw-semibold">Enddatum <small class="text-muted fw-normal">(optional)</small></label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="contractEndDateString"
-                 [min]="contractStartDateString"
-                 [disabled]="contractModalLoading" />
+          <div class="form-floating">
+            <input type="date"
+                   class="form-control"
+                   id="ccEnd"
+                   placeholder=" "
+                   [(ngModel)]="contractEndDateString"
+                   [min]="contractStartDateString"
+                   [disabled]="contractModalLoading" />
+            <label for="ccEnd">Enddatum (optional)</label>
+          </div>
         </div>
       </div>
 
       <!-- Status (nur bei Bearbeitung) -->
       @if (contractModalMode === 'edit') {
-        <div>
-          <label class="form-label fw-semibold">Status</label>
+        <div class="form-floating">
           <select class="form-select"
+                  id="ccStatus"
                   [(ngModel)]="contractForm.contractStatus"
                   [disabled]="contractModalLoading">
             <option value="DRAFT">Entwurf</option>
@@ -344,16 +348,19 @@
             <option value="TERMINATED">Gekündigt</option>
             <option value="EXPIRED">Abgelaufen</option>
           </select>
+          <label for="ccStatus">Status</label>
         </div>
 
         <!-- Vertragsnummer (nur lesen) -->
         @if (contractForm.contractNumber) {
-          <div>
-            <label class="form-label fw-semibold">Vertragsnummer</label>
+          <div class="form-floating">
             <input type="text"
                    class="form-control bg-light"
+                   id="ccNumber"
+                   placeholder=" "
                    [value]="contractForm.contractNumber"
                    readonly />
+            <label for="ccNumber">Vertragsnummer</label>
           </div>
         }
       }
@@ -390,11 +397,9 @@
     <div class="d-flex flex-column gap-3 py-2">
 
       <!-- Produkt -->
-      <div>
-        <label class="form-label fw-semibold">
-          Produkt <span class="text-danger">*</span>
-        </label>
+      <div class="form-floating">
         <select class="form-select"
+                id="ccSubProduct"
                 [(ngModel)]="subscriptionForm.productId"
                 [disabled]="subscriptionModalLoading">
           <option value="" disabled selected>Produkt auswählen …</option>
@@ -402,45 +407,49 @@
             <option [value]="p.id">{{ p.name }}</option>
           }
         </select>
-        @if (products.length === 0) {
-          <small class="text-muted">Keine Produkte verfügbar</small>
-        }
+        <label for="ccSubProduct">Produkt *</label>
       </div>
+      @if (products.length === 0) {
+        <small class="text-muted">Keine Produkte verfügbar</small>
+      }
 
       <!-- Abrechnungszyklus -->
-      <div>
-        <label class="form-label fw-semibold">
-          Abrechnungszyklus <span class="text-danger">*</span>
-        </label>
+      <div class="form-floating">
         <select class="form-select"
+                id="ccSubCycle"
                 [(ngModel)]="subscriptionForm.billingCycle"
                 [disabled]="subscriptionModalLoading">
           @for (opt of billingCycleOptions; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
           }
         </select>
+        <label for="ccSubCycle">Abrechnungszyklus *</label>
       </div>
 
       <!-- Laufzeit -->
       <div class="row g-3">
         <div class="col-6">
-          <label class="form-label fw-semibold">
-            Startdatum <span class="text-danger">*</span>
-          </label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="subscriptionStartDateString"
-                 [disabled]="subscriptionModalLoading" />
+          <div class="form-floating">
+            <input type="date"
+                   class="form-control"
+                   id="ccSubStart"
+                   placeholder=" "
+                   [(ngModel)]="subscriptionStartDateString"
+                   [disabled]="subscriptionModalLoading" />
+            <label for="ccSubStart">Startdatum *</label>
+          </div>
         </div>
         <div class="col-6">
-          <label class="form-label fw-semibold">
-            Enddatum <small class="text-muted fw-normal">(optional)</small>
-          </label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="subscriptionEndDateString"
-                 [min]="subscriptionStartDateString"
-                 [disabled]="subscriptionModalLoading" />
+          <div class="form-floating">
+            <input type="date"
+                   class="form-control"
+                   id="ccSubEnd"
+                   placeholder=" "
+                   [(ngModel)]="subscriptionEndDateString"
+                   [min]="subscriptionStartDateString"
+                   [disabled]="subscriptionModalLoading" />
+            <label for="ccSubEnd">Enddatum (optional)</label>
+          </div>
         </div>
       </div>
 

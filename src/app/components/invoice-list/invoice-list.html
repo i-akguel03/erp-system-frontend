@@ -69,6 +69,9 @@
               <button class="btn btn-success" (click)="sendInvoice(invoice.id)" [disabled]="!canSend(invoice)" title="Senden">
                 <i class="fas fa-paper-plane"></i>
               </button>
+              <button class="btn btn-outline-secondary" (click)="sendInvoiceEmail(invoice)" [disabled]="emailSendingId === invoice.id" title="Rechnung per E-Mail senden">
+                <i class="fas fa-envelope"></i>
+              </button>
               <button *ngIf="canViewOpenItems(invoice)" class="btn btn-outline-warning" (click)="viewOpenItems(invoice)" title="Open Items">
                 <i class="fas fa-file-invoice-dollar"></i>
               </button>
@@ -118,6 +121,9 @@
           </button>
           <button class="btn btn-sm btn-success flex-grow-1" (click)="sendInvoice(invoice.id)" [disabled]="!canSend(invoice)">
             <i class="fas fa-paper-plane"></i> Senden
+          </button>
+          <button class="btn btn-sm btn-outline-secondary flex-grow-1" (click)="sendInvoiceEmail(invoice)" [disabled]="emailSendingId === invoice.id">
+            <i class="fas fa-envelope"></i> E-Mail
           </button>
           <button *ngIf="canViewOpenItems(invoice)" class="btn btn-sm btn-warning flex-grow-1" (click)="viewOpenItems(invoice)">
             <i class="fas fa-file-invoice-dollar"></i> Open Items
@@ -321,22 +327,26 @@
           </h5>
           <button type="button" class="btn-close btn-close-white" (click)="closeNewModal()"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Kunde *</label>
-            <select [(ngModel)]="newInvoice.customerId" class="form-select">
+        <div class="modal-body d-flex flex-column gap-2">
+          <div class="form-floating">
+            <select class="form-select" id="nInvCustomer" [(ngModel)]="newInvoice.customerId">
               <option value="">-- Kunde auswählen --</option>
               <option *ngFor="let c of customers" [value]="c.id">{{ c.firstName }} {{ c.lastName }} ({{ c.customerNumber }})</option>
             </select>
+            <label for="nInvCustomer">Kunde *</label>
           </div>
-          <div class="row">
-            <div class="col-md-6">
-              <label class="form-label">Rechnungsdatum</label>
-              <input type="date" class="form-control" [(ngModel)]="newInvoiceDateString">
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="nInvDate" placeholder=" " [(ngModel)]="newInvoiceDateString">
+                <label for="nInvDate">Rechnungsdatum</label>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Fälligkeitsdatum</label>
-              <input type="date" class="form-control" [(ngModel)]="newDueDateString">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="nInvDue" placeholder=" " [(ngModel)]="newDueDateString">
+                <label for="nInvDue">Fälligkeitsdatum</label>
+              </div>
             </div>
           </div>
         </div>
@@ -344,8 +354,9 @@
           <button class="btn btn-secondary" (click)="closeNewModal()">
             <i class="fas fa-times me-1"></i>Abbrechen
           </button>
-          <button class="btn btn-success" (click)="createInvoice()">
-            <i class="fas fa-check me-1"></i>Erstellen
+          <button class="btn btn-success" (click)="createInvoice()" [disabled]="saving">
+            @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            @else { <i class="fas fa-check me-1"></i> }Erstellen
           </button>
         </div>
       </div>
@@ -362,22 +373,26 @@
           </h5>
           <button type="button" class="btn-close btn-close-white" (click)="closeEditModal()"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Kunde *</label>
-            <select [(ngModel)]="editInvoice.customerId" class="form-select">
+        <div class="modal-body d-flex flex-column gap-2">
+          <div class="form-floating">
+            <select class="form-select" id="eInvCustomer" [(ngModel)]="editInvoice.customerId">
               <option value="">-- Kunde auswählen --</option>
               <option *ngFor="let c of customers" [value]="c.id">{{ c.firstName }} {{ c.lastName }} ({{ c.customerNumber }})</option>
             </select>
+            <label for="eInvCustomer">Kunde *</label>
           </div>
-          <div class="row">
-            <div class="col-md-6">
-              <label class="form-label">Rechnungsdatum</label>
-              <input type="date" class="form-control" [(ngModel)]="editInvoiceDateString">
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="eInvDate" placeholder=" " [(ngModel)]="editInvoiceDateString">
+                <label for="eInvDate">Rechnungsdatum</label>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Fälligkeitsdatum</label>
-              <input type="date" class="form-control" [(ngModel)]="editDueDateString">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="eInvDue" placeholder=" " [(ngModel)]="editDueDateString">
+                <label for="eInvDue">Fälligkeitsdatum</label>
+              </div>
             </div>
           </div>
         </div>
@@ -385,8 +400,9 @@
           <button class="btn btn-secondary" (click)="closeEditModal()">
             <i class="fas fa-times me-1"></i>Abbrechen
           </button>
-          <button class="btn btn-primary" (click)="updateInvoice()">
-            <i class="fas fa-save me-1"></i>Speichern
+          <button class="btn btn-primary" (click)="updateInvoice()" [disabled]="saving">
+            @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            @else { <i class="fas fa-save me-1"></i> }Speichern
           </button>
         </div>
       </div>

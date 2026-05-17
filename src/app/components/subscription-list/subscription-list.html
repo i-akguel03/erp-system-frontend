@@ -52,6 +52,9 @@
               <button *ngIf="canCancel(subscription)" class="btn btn-sm btn-outline-secondary" (click)="subscriptionToPause = subscription; showPauseModal = true" title="Kündigen">
                 <i class="fas fa-ban"></i>
               </button>
+              <button class="btn btn-sm btn-outline-info" (click)="sendExpiryNotice(subscription)" [disabled]="emailSendingId === subscription.id" title="Ablaufhinweis senden">
+                <i class="fas fa-envelope"></i>
+              </button>
               <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(subscription)" title="Bearbeiten">
                 <i class="fas fa-edit"></i>
               </button>
@@ -93,6 +96,9 @@
           <button *ngIf="canCancel(subscription)" class="btn btn-sm btn-outline-secondary" (click)="subscriptionToPause = subscription; showPauseModal = true">
             <i class="fas fa-ban me-1"></i>Kündigen
           </button>
+          <button class="btn btn-sm btn-outline-info" (click)="sendExpiryNotice(subscription)" [disabled]="emailSendingId === subscription.id">
+            <i class="fas fa-envelope me-1"></i>E-Mail
+          </button>
           <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(subscription)">
             <i class="fas fa-edit me-1"></i>Bearbeiten
           </button>
@@ -122,42 +128,48 @@
   [resizable]="false"
   [style]="{ width: '500px', maxWidth: '95vw' }"
   (onHide)="closeNewModal()">
-  <div class="d-flex flex-column gap-3 py-2">
-    <div>
-      <label class="form-label fw-semibold">Produkt *</label>
-      <select class="form-select" [(ngModel)]="newSubscription.productId" required>
+  <div class="d-flex flex-column gap-2 py-2">
+    <div class="form-floating">
+      <select class="form-select" id="nSubProduct" [(ngModel)]="newSubscription.productId" required>
         <option value="">-- Produkt auswählen --</option>
         <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
       </select>
+      <label for="nSubProduct">Produkt *</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Vertrag *</label>
-      <select class="form-select" [(ngModel)]="newSubscription.contractId" required>
+    <div class="form-floating">
+      <select class="form-select" id="nSubContract" [(ngModel)]="newSubscription.contractId" required>
         <option value="">-- Vertrag auswählen --</option>
         <option *ngFor="let contract of contracts" [value]="contract.id">
           {{ contract.contractTitle }} ({{ contract.contractNumber }})
         </option>
       </select>
+      <label for="nSubContract">Vertrag *</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Status</label>
-      <select class="form-select" [(ngModel)]="newSubscription.subscriptionStatus">
+    <div class="form-floating">
+      <select class="form-select" id="nSubStatus" [(ngModel)]="newSubscription.subscriptionStatus">
         <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
       </select>
+      <label for="nSubStatus">Status</label>
     </div>
     <div class="row g-2">
       <div class="col">
-        <label class="form-label fw-semibold">Startdatum</label>
-        <input type="date" class="form-control" [(ngModel)]="newStartDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="nSubStart" placeholder=" " [(ngModel)]="newStartDateString">
+          <label for="nSubStart">Startdatum</label>
+        </div>
       </div>
       <div class="col">
-        <label class="form-label fw-semibold">Enddatum <span class="text-muted fw-normal">(optional)</span></label>
-        <input type="date" class="form-control" [(ngModel)]="newEndDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="nSubEnd" placeholder=" " [(ngModel)]="newEndDateString">
+          <label for="nSubEnd">Enddatum (optional)</label>
+        </div>
       </div>
     </div>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeNewModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="createSubscription()" [disabled]="!newSubscription.contractId || !newSubscription.productId">Erstellen</button>
+      <button class="btn btn-primary" (click)="createSubscription()" [disabled]="!newSubscription.contractId || !newSubscription.productId || saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Erstellen
+      </button>
     </div>
   </div>
 </p-dialog>
@@ -171,42 +183,48 @@
   [resizable]="false"
   [style]="{ width: '500px', maxWidth: '95vw' }"
   (onHide)="closeEditModal()">
-  <div class="d-flex flex-column gap-3 py-2">
-    <div>
-      <label class="form-label fw-semibold">Produkt *</label>
-      <select class="form-select" [(ngModel)]="editSubscription.productId" required>
+  <div class="d-flex flex-column gap-2 py-2">
+    <div class="form-floating">
+      <select class="form-select" id="eSubProduct" [(ngModel)]="editSubscription.productId" required>
         <option value="">-- Produkt auswählen --</option>
         <option *ngFor="let product of products" [value]="product.id">{{ product.name }}</option>
       </select>
+      <label for="eSubProduct">Produkt *</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Vertrag *</label>
-      <select class="form-select" [(ngModel)]="editSubscription.contractId" required>
+    <div class="form-floating">
+      <select class="form-select" id="eSubContract" [(ngModel)]="editSubscription.contractId" required>
         <option value="">-- Vertrag auswählen --</option>
         <option *ngFor="let contract of contracts" [value]="contract.id">
           {{ contract.contractTitle }} ({{ contract.contractNumber }})
         </option>
       </select>
+      <label for="eSubContract">Vertrag *</label>
     </div>
-    <div>
-      <label class="form-label fw-semibold">Status</label>
-      <select class="form-select" [(ngModel)]="editSubscription.subscriptionStatus">
+    <div class="form-floating">
+      <select class="form-select" id="eSubStatus" [(ngModel)]="editSubscription.subscriptionStatus">
         <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
       </select>
+      <label for="eSubStatus">Status</label>
     </div>
     <div class="row g-2">
       <div class="col">
-        <label class="form-label fw-semibold">Startdatum</label>
-        <input type="date" class="form-control" [(ngModel)]="editStartDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="eSubStart" placeholder=" " [(ngModel)]="editStartDateString">
+          <label for="eSubStart">Startdatum</label>
+        </div>
       </div>
       <div class="col">
-        <label class="form-label fw-semibold">Enddatum <span class="text-muted fw-normal">(optional)</span></label>
-        <input type="date" class="form-control" [(ngModel)]="editEndDateString">
+        <div class="form-floating">
+          <input type="date" class="form-control" id="eSubEnd" placeholder=" " [(ngModel)]="editEndDateString">
+          <label for="eSubEnd">Enddatum (optional)</label>
+        </div>
       </div>
     </div>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeEditModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="updateSubscription()" [disabled]="!editSubscription.contractId || !editSubscription.productId">Speichern</button>
+      <button class="btn btn-primary" (click)="updateSubscription()" [disabled]="!editSubscription.contractId || !editSubscription.productId || saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Speichern
+      </button>
     </div>
   </div>
 </p-dialog>
