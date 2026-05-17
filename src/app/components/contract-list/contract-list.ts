@@ -152,8 +152,11 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
       return;
     }
     console.log('Erstelle Vertrag:', contractToSend);
+    if (this.saving) return;
+    this.saving = true;
     this.contractService.createContract(contractToSend).subscribe({
       next: created => {
+        this.saving = false;
         this.contracts.push(created);
         this.filteredContracts = [...this.contracts];
         this.closeNewModal();
@@ -175,8 +178,10 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
       endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
     };
     console.log('Aktualisiere Vertrag:', contractToUpdate);
+    if (this.saving) return;
+    this.saving = true;
     this.contractService.updateContract(this.editContract.id, contractToUpdate).subscribe({
-      next: updated => { this.updateLocalContract(updated); this.closeEditModal(); this.notification.success('Vertrag erfolgreich aktualisiert.'); },
+      next: updated => { this.saving = false; this.updateLocalContract(updated); this.closeEditModal(); this.notification.success('Vertrag erfolgreich aktualisiert.'); },
       error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren des Vertrags'); this.notification.error('Fehler beim Aktualisieren des Vertrags.'); }
     });
   }

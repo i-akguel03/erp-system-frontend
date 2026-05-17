@@ -39,6 +39,7 @@ export class InvoiceListComponent implements OnInit {
   showDetailsModal = false;
   selectedInvoice: Invoice | null = null;
 
+  saving = false;
   emailSendingId: string | null = null;
 
   constructor(
@@ -177,8 +178,11 @@ getItemsCount(invoice: Invoice): number {
       return;
     }
 
+    if (this.saving) return;
+    this.saving = true;
     this.invoiceService.createInvoice(invoiceToSend).subscribe({
       next: created => {
+        this.saving = false;
         this.invoices.push(created);
         this.filteredInvoices = [...this.invoices];
         this.closeNewModal();
@@ -202,8 +206,10 @@ getItemsCount(invoice: Invoice): number {
       return;
     }
 
+    if (this.saving) return;
+    this.saving = true;
     this.invoiceService.updateInvoice(this.editInvoice.id, invoiceToUpdate).subscribe({
-      next: updated => { this.updateLocalInvoice(updated); this.notification.success('Rechnung erfolgreich aktualisiert.'); },
+      next: updated => { this.saving = false; this.updateLocalInvoice(updated); this.notification.success('Rechnung erfolgreich aktualisiert.'); },
       error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren der Rechnung'); this.notification.error('Fehler beim Aktualisieren der Rechnung.'); }
     });
   }
@@ -278,6 +284,7 @@ getItemsCount(invoice: Invoice): number {
   private handleApiError(err: any, defaultMessage: string): void {
     console.error('API Error:', err);
     this.loading = false;
+    this.saving = false;
     this.error = err.error?.message || defaultMessage;
   }
 

@@ -126,8 +126,11 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
       startDate: new Date(this.newStartDateString),
       endDate: this.newEndDateString ? new Date(this.newEndDateString) : undefined,
     };
+    if (this.saving) return;
+    this.saving = true;
     this.subscriptionService.createSubscription(subscriptionToSend).subscribe({
       next: created => {
+        this.saving = false;
         this.subscriptions.push(created);
         this.filteredSubscriptions = [...this.subscriptions];
         this.closeNewModal();
@@ -149,8 +152,10 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
       startDate: new Date(this.editStartDateString),
       endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
     };
+    if (this.saving) return;
+    this.saving = true;
     this.subscriptionService.updateSubscription(this.editSubscription.id, subscriptionToUpdate).subscribe({
-      next: updated => { this.updateLocalSubscription(updated); this.closeEditModal(); this.notification.success('Abonnement erfolgreich aktualisiert.'); },
+      next: updated => { this.saving = false; this.updateLocalSubscription(updated); this.closeEditModal(); this.notification.success('Abonnement erfolgreich aktualisiert.'); },
       error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren'); this.notification.error('Fehler beim Aktualisieren des Abonnements.'); }
     });
   }

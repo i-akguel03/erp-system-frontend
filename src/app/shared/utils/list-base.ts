@@ -3,6 +3,7 @@ import { SortState } from './sort-state';
 export abstract class ListBase<T> {
   sort = new SortState();
   loading = false;
+  saving = false;
   error: string | null = null;
   searchTerm = '';
   showNewModal = false;
@@ -15,6 +16,7 @@ export abstract class ListBase<T> {
   protected handleApiError(err: any, defaultMessage: string): void {
     console.error('API Error:', err);
     this.loading = false;
+    this.saving = false;
     this.error = err.error?.message || defaultMessage;
   }
 

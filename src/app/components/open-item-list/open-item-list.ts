@@ -50,6 +50,7 @@ export class OpenItemList implements OnInit {
   // Filter
   currentFilter: 'all' | 'open' | 'overdue' = 'all';
 
+  saving = false;
   emailSendingId: string | null = null;
 
   constructor(
@@ -229,8 +230,11 @@ export class OpenItemList implements OnInit {
       return;
     }
 
+    if (this.saving) return;
+    this.saving = true;
     this.openItemService.createOpenItem(openItemToSend).subscribe({
       next: created => {
+        this.saving = false;
         this.openItems.push(created);
         this.applyCurrentFilter();
         this.loadStatistics();
@@ -254,8 +258,11 @@ export class OpenItemList implements OnInit {
       return;
     }
 
+    if (this.saving) return;
+    this.saving = true;
     this.openItemService.updateOpenItem(this.editOpenItem.id, openItemToUpdate).subscribe({
       next: updated => {
+        this.saving = false;
         this.updateLocalOpenItem(updated);
         this.loadStatistics();
         this.notification.success('Offener Posten erfolgreich aktualisiert.');
@@ -276,13 +283,16 @@ export class OpenItemList implements OnInit {
       return;
     }
 
+    if (this.saving) return;
+    this.saving = true;
     this.openItemService.recordPayment(
-      this.paymentOpenItem.id, 
-      this.paymentAmount, 
-      this.paymentMethod || undefined, 
+      this.paymentOpenItem.id,
+      this.paymentAmount,
+      this.paymentMethod || undefined,
       this.paymentReference || undefined
     ).subscribe({
       next: updated => {
+        this.saving = false;
         this.updateLocalOpenItem(updated);
         this.loadStatistics();
         this.closePaymentModal();
@@ -331,6 +341,7 @@ export class OpenItemList implements OnInit {
   private handleApiError(err: any, defaultMessage: string): void {
     console.error('API Error:', err);
     this.loading = false;
+    this.saving = false;
     this.error = err.error?.message || defaultMessage;
   }
 
