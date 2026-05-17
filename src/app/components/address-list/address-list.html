@@ -84,19 +84,33 @@
   [style]="{ width: '420px', maxWidth: '95vw' }"
   (onHide)="closeNewModal()">
   <div class="d-flex flex-column gap-2 py-2">
-    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="newAddress.street">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="nAdrStreet" placeholder=" " [(ngModel)]="newAddress.street">
+      <label for="nAdrStreet">Straße</label>
+    </div>
     <div class="row g-2">
       <div class="col-4">
-        <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="newAddress.postalCode">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="nAdrPlz" placeholder=" " [(ngModel)]="newAddress.postalCode">
+          <label for="nAdrPlz">PLZ</label>
+        </div>
       </div>
       <div class="col-8">
-        <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="newAddress.city">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="nAdrCity" placeholder=" " [(ngModel)]="newAddress.city">
+          <label for="nAdrCity">Stadt</label>
+        </div>
       </div>
     </div>
-    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="newAddress.country">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="nAdrCountry" placeholder=" " [(ngModel)]="newAddress.country">
+      <label for="nAdrCountry">Land</label>
+    </div>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeNewModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="createAddress()">Erstellen</button>
+      <button class="btn btn-primary" (click)="createAddress()" [disabled]="saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Erstellen
+      </button>
     </div>
   </div>
 </p-dialog>
@@ -111,19 +125,33 @@
   [style]="{ width: '420px', maxWidth: '95vw' }"
   (onHide)="closeEditModal()">
   <div class="d-flex flex-column gap-2 py-2">
-    <input type="text" class="form-control" placeholder="Straße" [(ngModel)]="editAddress.street">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="eAdrStreet" placeholder=" " [(ngModel)]="editAddress.street">
+      <label for="eAdrStreet">Straße</label>
+    </div>
     <div class="row g-2">
       <div class="col-4">
-        <input type="text" class="form-control" placeholder="PLZ" [(ngModel)]="editAddress.postalCode">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="eAdrPlz" placeholder=" " [(ngModel)]="editAddress.postalCode">
+          <label for="eAdrPlz">PLZ</label>
+        </div>
       </div>
       <div class="col-8">
-        <input type="text" class="form-control" placeholder="Stadt" [(ngModel)]="editAddress.city">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="eAdrCity" placeholder=" " [(ngModel)]="editAddress.city">
+          <label for="eAdrCity">Stadt</label>
+        </div>
       </div>
     </div>
-    <input type="text" class="form-control" placeholder="Land" [(ngModel)]="editAddress.country">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="eAdrCountry" placeholder=" " [(ngModel)]="editAddress.country">
+      <label for="eAdrCountry">Land</label>
+    </div>
     <div class="d-flex gap-2 justify-content-end pt-2 border-top mt-1">
       <button class="btn btn-outline-secondary" (click)="closeEditModal()">Abbrechen</button>
-      <button class="btn btn-primary" (click)="updateAddress()">Speichern</button>
+      <button class="btn btn-primary" (click)="updateAddress()" [disabled]="saving">
+        @if (saving) { <span class="spinner-border spinner-border-sm me-1"></span> }Speichern
+      </button>
     </div>
   </div>
 </p-dialog>

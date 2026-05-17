@@ -93,24 +93,31 @@ export class ProductListComponent extends ListBase<Product> implements OnInit {
   }
 
   createProduct(): void {
+    if (this.saving) return;
+    this.saving = true;
     this.productService.createProduct(this.newProduct).subscribe({
       next: created => {
         this.products.push(created);
         this.filteredProducts = [...this.products];
+        this.saving = false;
         this.closeNewModal();
+        this.notification.success('Produkt wurde erfolgreich erstellt.');
       },
       error: err => this.handleApiError(err, 'Fehler beim Erstellen des Produkts')
     });
   }
 
   updateProduct(): void {
-    if (!this.editProduct.id) return;
+    if (!this.editProduct.id || this.saving) return;
+    this.saving = true;
     this.productService.updateProduct(this.editProduct.id, this.editProduct).subscribe({
       next: updated => {
         const index = this.products.findIndex(p => p.id === updated.id);
         if (index >= 0) this.products[index] = updated;
         this.filteredProducts = [...this.products];
+        this.saving = false;
         this.closeEditModal();
+        this.notification.success('Produkt wurde erfolgreich aktualisiert.');
       },
       error: err => this.handleApiError(err, 'Fehler beim Aktualisieren des Produkts')
     });

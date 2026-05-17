@@ -94,24 +94,31 @@ export class AddressListComponent extends ListBase<Address> implements OnInit {
   }
 
   createAddress(): void {
+    if (this.saving) return;
+    this.saving = true;
     this.addressService.createAddress(this.newAddress).subscribe({
       next: created => {
         this.addresses.push(created);
         this.filteredAddresses = [...this.addresses];
+        this.saving = false;
         this.closeNewModal();
+        this.notification.success('Adresse wurde erfolgreich erstellt.');
       },
       error: err => this.handleApiError(err, 'Fehler beim Erstellen der Adresse')
     });
   }
 
   updateAddress(): void {
-    if (!this.editAddress.id) return;
+    if (!this.editAddress.id || this.saving) return;
+    this.saving = true;
     this.addressService.updateAddress(this.editAddress.id, this.editAddress).subscribe({
       next: updated => {
         const index = this.addresses.findIndex(a => a.id === updated.id);
         if (index >= 0) this.addresses[index] = updated;
         this.filteredAddresses = [...this.addresses];
+        this.saving = false;
         this.closeEditModal();
+        this.notification.success('Adresse wurde erfolgreich aktualisiert.');
       },
       error: err => this.handleApiError(err, 'Fehler beim Aktualisieren der Adresse')
     });
