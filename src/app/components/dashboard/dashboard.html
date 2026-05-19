@@ -1,330 +1,234 @@
-<!-- dashboard.component.html -->
-<div class="hero-section">
-  <div class="container">
-    <div class="text-center mb-5">
-      <h1 class="hero-title">ERP-System Backend</h1>
-      <p class="hero-subtitle">Moderne Enterprise Resource Planning Lösung mit Spring Boot & Angular</p>
-      <div class="d-flex justify-content-center gap-3 flex-wrap">
-        <a [href]="githubUrl" target="_blank" class="btn btn-dark btn-lg px-4">
-          <i class="bi bi-github me-2"></i>GitHub Repository
-        </a>
-        <a [href]="swaggerUrl" target="_blank" class="btn btn-primary btn-lg px-4">
-          <i class="bi bi-file-text me-2"></i>API Dokumentation
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="container my-5">
-  <!-- Projektübersicht -->
-  <div class="row mb-5">
-    <div class="col-12">
-      <div class="feature-card project-overview">
-        <div class="card-body">
-          <h2 class="section-title text-center mb-4">
-            <i class="bi bi-info-circle-fill me-2"></i>Projektübersicht
-          </h2>
-          <p class="lead text-center text-muted mb-4">
-            Ein vollständiges ERP-System für modernes Geschäftsmanagement mit Fokus auf 
-            Abonnements, Rechnungsstellung und Kundenbeziehungen.
-          </p>
-          <div class="row g-3">
-            <div class="col-md-4 text-center">
-              <div class="stat-box">
-                <i class="bi bi-code-slash fs-1 text-primary mb-2"></i>
-                <h4 class="fw-bold">REST API</h4>
-                <p class="text-muted small">Vollständige Backend-Architektur</p>
-              </div>
-            </div>
-            <div class="col-md-4 text-center">
-              <div class="stat-box">
-                <i class="bi bi-shield-check fs-1 text-success mb-2"></i>
-                <h4 class="fw-bold">Sicherheit</h4>
-                <p class="text-muted small">JWT & Spring Security</p>
-              </div>
-            </div>
-            <div class="col-md-4 text-center">
-              <div class="stat-box">
-                <i class="bi bi-database fs-1 text-info mb-2"></i>
-                <h4 class="fw-bold">Datenbank</h4>
-                <p class="text-muted small">PostgreSQL/MSSQL Support</p>
-              </div>
-            </div>
-          </div>
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="container hero-content">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <div class="hero-badge mb-3">
+          <span class="badge-dot"></span>
+          Fullstack · Java · Angular · PostgreSQL
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Technologie-Stack -->
-  <div class="row mb-5">
-    <div class="col-12">
-      <h2 class="section-title text-center mb-4">
-        <i class="bi bi-layers-fill me-2"></i>Technologie-Stack
-      </h2>
-    </div>
-  </div>
-
-  <div class="row g-4 mb-5">
-    <div class="col-md-6 col-lg-3" *ngFor="let tech of technologies">
-      <div class="tech-card" [class]="tech.colorClass">
-        <div class="tech-icon">
-          <i [class]="tech.icon"></i>
-        </div>
-        <h5 class="fw-bold mb-2">{{ tech.title }}</h5>
-        <p class="small mb-0">{{ tech.description }}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Hauptfunktionen -->
-  <div class="row mb-5">
-    <div class="col-12">
-      <h2 class="section-title text-center mb-4">
-        <i class="bi bi-star-fill me-2"></i>Hauptfunktionen
-      </h2>
-    </div>
-  </div>
-
-  <div class="row g-4 mb-5">
-    <div class="col-md-6 col-lg-4" *ngFor="let feature of features">
-      <div class="feature-card feature-hover">
-        <div class="feature-icon-wrapper mb-3">
-          <i [class]="feature.icon + ' feature-icon'"></i>
-        </div>
-        <h5 class="fw-bold mb-3">{{ feature.title }}</h5>
-        <p class="text-muted mb-3">{{ feature.description }}</p>
-        <ul class="list-unstyled small">
-          <li *ngFor="let detail of feature.details" class="mb-1">
-            <i class="bi bi-check-circle-fill text-success me-2"></i>{{ detail }}
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- Architektur-Highlights -->
-  <div class="row mb-5">
-    <div class="col-12">
-      <div class="feature-card architecture-card">
-        <h2 class="section-title text-center mb-4">
-          <i class="bi bi-diagram-3-fill me-2"></i>Architektur-Highlights
-        </h2>
-        <div class="row g-4">
-          <div class="col-md-6" *ngFor="let highlight of architectureHighlights">
-            <div class="d-flex">
-              <div class="flex-shrink-0">
-                <div class="architecture-icon">
-                  <i [class]="highlight.icon"></i>
-                </div>
-              </div>
-              <div class="flex-grow-1 ms-3">
-                <h5 class="fw-bold mb-2">{{ highlight.title }}</h5>
-                <p class="text-muted small mb-0">{{ highlight.description }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Call to Action -->
-  <div class="row">
-    <div class="col-12">
-      <div class="cta-section text-center">
-        <h3 class="fw-bold mb-3">Bereit für den nächsten Schritt?</h3>
-        <p class="lead text-muted mb-4">
-          Erkunden Sie den vollständigen Quellcode und die API-Dokumentation
+        <h1 class="hero-title">ERP System</h1>
+        <p class="hero-sub">
+          Produktionsnahes Enterprise Resource Planning – von der Datenbank-Schicht bis zur responsiven
+          Benutzeroberfläche. 18 REST-Controller · 50+ Endpunkte · vollständige CI/CD-Pipeline.
         </p>
-        <div class="d-flex justify-content-center gap-3 flex-wrap">
-          <a [href]="githubUrl" target="_blank" class="btn btn-lg btn-outline-dark px-5">
-            <i class="bi bi-github me-2"></i>Code ansehen
+        <div class="d-flex gap-3 flex-wrap mt-4">
+          <a [href]="githubBackend" target="_blank" class="btn btn-hero-dark">
+            <i class="bi bi-github me-2"></i>Backend
           </a>
-          <a [href]="swaggerUrl" target="_blank" class="btn btn-lg btn-gradient px-5">
-            <i class="bi bi-rocket-takeoff me-2"></i>API testen
+          <a [href]="githubFrontend" target="_blank" class="btn btn-hero-dark">
+            <i class="bi bi-github me-2"></i>Frontend
           </a>
+          <a [href]="swaggerUrl" target="_blank" class="btn btn-hero-light">
+            <i class="bi bi-file-earmark-code me-2"></i>API Docs
+          </a>
+          <a [href]="liveUrl" target="_blank" class="btn btn-hero-accent">
+            <i class="bi bi-rocket-takeoff me-2"></i>Live Demo
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-4 d-none d-lg-flex justify-content-center">
+        <div class="hero-graphic">
+          <i class="bi bi-diagram-3"></i>
         </div>
       </div>
     </div>
   </div>
-</div>
+</section>
 
-<style>
-  .hero-section {
-    padding: 4rem 0 3rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    margin-bottom: 3rem;
+<!-- ═══════════════════════ SCOPE STRIP ═══════════════════════ -->
+<section class="scope-strip">
+  <div class="container">
+    <div class="row g-0 text-center">
+      <div class="col-6 col-md-3 scope-item">
+        <div class="scope-num">18</div>
+        <div class="scope-label">REST Controller</div>
+      </div>
+      <div class="col-6 col-md-3 scope-item">
+        <div class="scope-num">50+</div>
+        <div class="scope-label">API-Endpunkte</div>
+      </div>
+      <div class="col-6 col-md-3 scope-item">
+        <div class="scope-num">15+</div>
+        <div class="scope-label">Entity-Typen</div>
+      </div>
+      <div class="col-6 col-md-3 scope-item">
+        <div class="scope-num">2</div>
+        <div class="scope-label">Cloud-Deployments</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ LIVE KPIs ═══════════════════════ -->
+<section class="section-gap container">
+  <div class="section-header">
+    <h2 class="section-title">Live-Daten</h2>
+    <p class="section-sub">Echtzeit-Kennzahlen direkt aus dem Backend</p>
+  </div>
+
+  @if (!isLoggedIn()) {
+    <div class="login-prompt">
+      <i class="bi bi-lock-fill fs-3 mb-2 d-block text-primary"></i>
+      <p class="mb-3 text-muted">Melden Sie sich an, um Live-Kennzahlen zu sehen.</p>
+      <a routerLink="/login" class="btn btn-primary px-4">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Anmelden
+      </a>
+      <div class="demo-hint mt-3">Demo-Login: <strong>a&nbsp;/&nbsp;a</strong></div>
+    </div>
   }
 
-  .hero-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-    animation: fadeInUp 0.8s ease-out;
+  @if (isLoggedIn()) {
+    <div class="row g-3">
+      <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+          @if (kpiLoading) { <div class="kpi-skeleton"></div> }
+          @if (!kpiLoading && kpi) { <div class="kpi-val">{{ kpi.totalCustomers }}</div> }
+          <div class="kpi-lbl">Kunden</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-green">
+          <div class="kpi-icon"><i class="bi bi-arrow-repeat"></i></div>
+          @if (kpiLoading) { <div class="kpi-skeleton"></div> }
+          @if (!kpiLoading && kpi) { <div class="kpi-val">{{ kpi.activeSubscriptions }}</div> }
+          <div class="kpi-lbl">Aktive Abonnements</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-icon"><i class="bi bi-currency-euro"></i></div>
+          @if (kpiLoading) { <div class="kpi-skeleton"></div> }
+          @if (!kpiLoading && kpi) { <div class="kpi-val">{{ formatCurrency(kpi.monthlyRecurringRevenue) }}</div> }
+          <div class="kpi-lbl">MRR</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-red">
+          <div class="kpi-icon"><i class="bi bi-exclamation-circle-fill"></i></div>
+          @if (kpiLoading) { <div class="kpi-skeleton"></div> }
+          @if (!kpiLoading && kpi) { <div class="kpi-val">{{ kpi.overdueItemsCount }}</div> }
+          <div class="kpi-lbl">Überfällige Posten</div>
+        </div>
+      </div>
+    </div>
   }
+</section>
 
-  .hero-subtitle {
-    font-size: 1.3rem;
-    opacity: 0.95;
-    margin-bottom: 2rem;
-    animation: fadeInUp 1s ease-out;
-  }
+<!-- ═══════════════════════ TECH STACK ═══════════════════════ -->
+<section class="section-gap bg-light-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Technologie-Stack</h2>
+      <p class="section-sub">Moderner Fullstack mit produktionserprobten Technologien</p>
+    </div>
+    <div class="tech-grid">
+      @for (t of stack; track t.label) {
+        <div class="tech-pill">
+          <i [class]="t.icon" [style.color]="t.color"></i>
+          <span>{{ t.label }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</section>
 
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
+<!-- ═══════════════════════ DOMAINS ═══════════════════════ -->
+<section class="section-gap container">
+  <div class="section-header">
+    <h2 class="section-title">Fachliche Domänen</h2>
+    <p class="section-sub">Von der Stammdatenpflege bis zur automatisierten Rechnungsstellung</p>
+  </div>
+  <div class="row g-4">
+    @for (d of domains; track d.title) {
+      <div class="col-md-6 col-xl-4">
+        <div class="domain-card">
+          <div class="domain-icon" [style.background]="d.color + '18'" [style.color]="d.color">
+            <i [class]="d.icon"></i>
+          </div>
+          <h5 class="fw-bold mb-2">{{ d.title }}</h5>
+          <p class="text-muted small mb-3">{{ d.desc }}</p>
+          <div class="d-flex flex-wrap gap-1">
+            @for (tag of d.tags; track tag) {
+              <span class="domain-tag">{{ tag }}</span>
+            }
+          </div>
+        </div>
+      </div>
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  </div>
+</section>
 
-  .feature-card {
-    background: white;
-    border-radius: 20px;
-    padding: 2rem;
-    border: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
-    height: 100%;
-  }
+<!-- ═══════════════════════ ARCHITECTURE ═══════════════════════ -->
+<section class="section-gap bg-light-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Architektur & Patterns</h2>
+      <p class="section-sub">Bewährte Enterprise-Patterns für Wartbarkeit und Skalierbarkeit</p>
+    </div>
+    <div class="row g-3">
+      @for (p of patterns; track p.title) {
+        <div class="col-md-6 col-lg-4">
+          <div class="pattern-card">
+            <div class="pattern-icon"><i [class]="p.icon"></i></div>
+            <div>
+              <div class="fw-semibold mb-1">{{ p.title }}</div>
+              <div class="text-muted small">{{ p.desc }}</div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
 
-  .feature-hover:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-  }
+<!-- ═══════════════════════ DEPLOYMENT ═══════════════════════ -->
+<section class="section-gap container">
+  <div class="section-header">
+    <h2 class="section-title">Deployment & CI/CD</h2>
+    <p class="section-sub">Vollautomatisches Deployment bei jedem Push auf main</p>
+  </div>
+  <div class="row g-4 justify-content-center">
+    <div class="col-md-5">
+      <div class="deploy-card">
+        <div class="deploy-logo"><i class="bi bi-triangle-fill" style="color:#000"></i></div>
+        <h5 class="fw-bold mb-1">Frontend – Vercel</h5>
+        <p class="text-muted small mb-3">Angular 20 SPA, automatisches Build & Deployment bei Push.</p>
+        <a [href]="liveUrl" target="_blank" class="btn btn-sm btn-outline-dark">
+          <i class="bi bi-box-arrow-up-right me-1"></i>Live öffnen
+        </a>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="deploy-card">
+        <div class="deploy-logo"><i class="bi bi-cloud-fill" style="color:#46e3b7"></i></div>
+        <h5 class="fw-bold mb-1">Backend – Render</h5>
+        <p class="text-muted small mb-3">Spring Boot 3 REST API, PostgreSQL, Swagger UI live verfügbar.</p>
+        <a [href]="swaggerUrl" target="_blank" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-file-earmark-code me-1"></i>API testen
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
 
-  .section-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #2d3748;
-  }
-
-  .tech-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem 1.5rem;
-    text-align: center;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
-    height: 100%;
-    border-left: 4px solid;
-  }
-
-  .tech-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-  }
-
-  .tech-card.primary {
-    border-left-color: #667eea;
-  }
-
-  .tech-card.success {
-    border-left-color: #38ef7d;
-  }
-
-  .tech-card.danger {
-    border-left-color: #f45c43;
-  }
-
-  .tech-card.info {
-    border-left-color: #00f2fe;
-  }
-
-  .tech-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-  }
-
-  .tech-card.primary .tech-icon {
-    color: #667eea;
-  }
-
-  .tech-card.success .tech-icon {
-    color: #11998e;
-  }
-
-  .tech-card.danger .tech-icon {
-    color: #eb3349;
-  }
-
-  .tech-card.info .tech-icon {
-    color: #4facfe;
-  }
-
-  .feature-icon-wrapper {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .feature-icon {
-    font-size: 1.8rem;
-    color: white;
-  }
-
-  .stat-box {
-    padding: 1.5rem;
-  }
-
-  .project-overview {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  }
-
-  .architecture-card {
-    background: linear-gradient(to bottom right, #fafafa, #f0f0f0);
-  }
-
-  .architecture-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-  }
-
-  .cta-section {
-    padding: 3rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    color: white;
-  }
-
-  .btn-gradient {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-    border: none;
-    color: white;
-    font-weight: 600;
-    transition: all 0.3s ease;
-  }
-
-  .btn-gradient:hover {
-    transform: scale(1.05);
-    box-shadow: 0 10px 25px rgba(17, 153, 142, 0.3);
-    color: white;
-  }
-
-  @media (max-width: 768px) {
-    .hero-title {
-      font-size: 2.5rem;
-    }
-    
-    .hero-subtitle {
-      font-size: 1.1rem;
-    }
-  }
-</style>
+<!-- ═══════════════════════ CTA ═══════════════════════ -->
+<section class="cta-section">
+  <div class="container text-center">
+    <h3 class="fw-bold mb-2">Quellcode & Live-Demo</h3>
+    <p class="text-white-75 mb-4">Vollständiger Code auf GitHub · Interaktive API auf Swagger</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a [href]="githubBackend" target="_blank" class="btn btn-light text-dark fw-semibold px-4">
+        <i class="bi bi-github me-2"></i>Backend-Code
+      </a>
+      <a [href]="githubFrontend" target="_blank" class="btn btn-outline-light fw-semibold px-4">
+        <i class="bi bi-github me-2"></i>Frontend-Code
+      </a>
+      <a [href]="swaggerUrl" target="_blank" class="btn btn-accent fw-semibold px-4">
+        <i class="bi bi-rocket-takeoff me-2"></i>API erkunden
+      </a>
+    </div>
+  </div>
+</section>
