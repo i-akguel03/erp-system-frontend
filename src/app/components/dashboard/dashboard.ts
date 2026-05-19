@@ -21,6 +21,18 @@ export class Dashboard implements OnInit {
 
   kpi: DashboardKpiDto | null = null;
   kpiLoading = false;
+  kpiIsDemo = false;
+
+  private readonly demoKpi: DashboardKpiDto = {
+    totalCustomers: 142,
+    activeSubscriptions: 318,
+    monthlyRecurringRevenue: 48750,
+    openInvoicesCount: 27,
+    openInvoicesTotalAmount: 12340,
+    totalOutstandingAmount: 9820,
+    overdueItemsCount: 8,
+    overdueItemsAmount: 3200,
+  };
 
   stack = [
     { label: 'Angular 20',        icon: 'bi bi-lightning-charge-fill', color: '#dd0031' },
@@ -122,6 +134,9 @@ export class Dashboard implements OnInit {
   ngOnInit(): void {
     if (this.auth.isLoggedIn()) {
       this.loadKpi();
+    } else {
+      this.kpi = this.demoKpi;
+      this.kpiIsDemo = true;
     }
   }
 
@@ -132,8 +147,8 @@ export class Dashboard implements OnInit {
   private loadKpi(): void {
     this.kpiLoading = true;
     this.dashboardService.getKpi().subscribe({
-      next: data => { this.kpi = data; this.kpiLoading = false; },
-      error: ()   => { this.kpiLoading = false; }
+      next: data => { this.kpi = data; this.kpiIsDemo = false; this.kpiLoading = false; },
+      error: ()   => { this.kpi = this.demoKpi; this.kpiIsDemo = true; this.kpiLoading = false; }
     });
   }
 
