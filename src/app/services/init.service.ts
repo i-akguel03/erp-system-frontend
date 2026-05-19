@@ -6,7 +6,7 @@ import { AuthService } from '../auth/services/auth';
 
 @Injectable({ providedIn: 'root' })
 export class InitService extends BaseApiService {
-  private base = `${this.apiBaseUrl}/init`;
+  private base = `${this.apiBaseUrl}/api/init`;
 
   constructor(http: HttpClient, authService: AuthService) {
     super(http, authService);
