@@ -17,7 +17,7 @@ export class Dashboard implements OnInit {
   githubFrontend = 'https://github.com/i-akguel03/erp-system-frontend';
   githubBackend  = 'https://github.com/i-akguel03/erp-system-backend';
   swaggerUrl     = 'https://erp-system-backend-yo8w.onrender.com/swagger-ui/index.html';
-  liveUrl        = 'https://erp-system-frontend-tan.vercel.app/';
+  liveUrl        = 'https://erp-system-frontend-tan.vercel.app/login';
 
   kpi: DashboardKpiDto | null = null;
   kpiLoading = false;
