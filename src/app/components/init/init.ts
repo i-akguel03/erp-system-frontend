@@ -16,6 +16,7 @@ interface ActionResult {
   templateUrl: './init.html',
 })
 export class InitComponent {
+  password = '';
   loading: string | null = null;
   result: ActionResult | null = null;
 
@@ -23,7 +24,6 @@ export class InitComponent {
 
   showClearModal = false;
   showClearBusinessModal = false;
-  deletePassword = '';
   deleteLoading = false;
 
   constructor(
@@ -50,27 +50,26 @@ export class InitComponent {
     });
   }
 
-  initFull(): void        { this.run('full',        this.initService.initFull()); }
-  initBasic(): void       { this.run('basic',       this.initService.initBasic()); }
-  initRealistic(): void   { this.run('realistic',   this.initService.initRealistic()); }
-  initDevelopment(): void { this.run('development', this.initService.initDevelopment()); }
-  initDemo(): void        { this.run('demo',        this.initService.initDemo()); }
-  status(): void          { this.run('status',      this.initService.status()); }
-  repair(): void          { this.run('repair',      this.initService.repair()); }
-  maintenance(): void     { this.run('maintenance', this.initService.maintenance()); }
+  initFull(): void        { this.run('full',        this.initService.initFull(this.password)); }
+  initBasic(): void       { this.run('basic',       this.initService.initBasic(this.password)); }
+  initRealistic(): void   { this.run('realistic',   this.initService.initRealistic(this.password)); }
+  initDevelopment(): void { this.run('development', this.initService.initDevelopment(this.password)); }
+  initDemo(): void        { this.run('demo',        this.initService.initDemo(this.password)); }
+  status(): void          { this.run('status',      this.initService.status(this.password)); }
+  repair(): void          { this.run('repair',      this.initService.repair(this.password)); }
+  maintenance(): void     { this.run('maintenance', this.initService.maintenance(this.password)); }
 
   initFullWithBilling(): void {
-    this.run('fullBilling', this.initService.initFullWithBilling(this.billingDate));
+    this.run('fullBilling', this.initService.initFullWithBilling(this.billingDate, this.password));
   }
 
   confirmClearAll(): void {
     if (this.deleteLoading) return;
     this.deleteLoading = true;
-    this.initService.clearAll(this.deletePassword).subscribe({
+    this.initService.clearAll(this.password).subscribe({
       next: msg => {
         this.deleteLoading = false;
         this.showClearModal = false;
-        this.deletePassword = '';
         this.result = { message: msg, success: true };
         this.notification.success(msg);
       },
@@ -86,11 +85,10 @@ export class InitComponent {
   confirmClearBusiness(): void {
     if (this.deleteLoading) return;
     this.deleteLoading = true;
-    this.initService.clearBusiness(this.deletePassword).subscribe({
+    this.initService.clearBusiness(this.password).subscribe({
       next: msg => {
         this.deleteLoading = false;
         this.showClearBusinessModal = false;
-        this.deletePassword = '';
         this.result = { message: msg, success: true };
         this.notification.success(msg);
       },
@@ -103,21 +101,7 @@ export class InitComponent {
     });
   }
 
-  openClearModal(): void {
-    this.deletePassword = '';
-    this.showClearModal = true;
-  }
-
-  openClearBusinessModal(): void {
-    this.deletePassword = '';
-    this.showClearBusinessModal = true;
-  }
-
-  isLoading(key: string): boolean {
-    return this.loading === key;
-  }
-
-  anyLoading(): boolean {
-    return this.loading !== null;
-  }
+  isLoading(key: string): boolean { return this.loading === key; }
+  anyLoading(): boolean { return this.loading !== null; }
+  canAct(): boolean { return this.password.length > 0 && !this.anyLoading(); }
 }
