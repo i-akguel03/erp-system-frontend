@@ -76,7 +76,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
       adminOnly: true,
       children: [
         { label: 'Benutzerverwaltung', icon: 'bi-people', routerLink: '/admin' },
-        { label: 'Audit-Log', icon: 'bi-clock-history', routerLink: '/audit-logs' }
+        { label: 'Audit-Log', icon: 'bi-clock-history', routerLink: '/audit-logs' },
+        { label: 'Datenverwaltung', icon: 'bi-database-gear', routerLink: '/init' }
       ]
     }
   ];

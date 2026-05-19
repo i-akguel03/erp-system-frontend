@@ -21,6 +21,7 @@ import { AdminGuard } from './auth/guards/admin-guard/admin-guard';
 import { AuditLogComponent } from './components/audit-log/audit-log';
 import { AnalyseComponent } from './components/analyse/analyse';
 import { NotificationListComponent } from './components/notification-list/notification-list';
+import { InitComponent } from './components/init/init';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -45,6 +46,7 @@ export const routes: Routes = [
   { path: 'vorgang', component: VorgaengeListComponent, canActivate: [AuthGuard] },
   { path: 'admin', component: AdminComponent, canActivate: [AdminGuard] },
   { path: 'audit-logs', component: AuditLogComponent, canActivate: [AdminGuard] },
+  { path: 'init', component: InitComponent, canActivate: [AdminGuard] },
   { path: 'analyse', component: AnalyseComponent, canActivate: [AuthGuard] },
   { path: 'notifications', component: NotificationListComponent, canActivate: [AuthGuard] },
 

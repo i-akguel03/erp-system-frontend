@@ -1,0 +1,218 @@
+<div class="p-3 p-md-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center mb-4">
+    <div>
+      <h4 class="mb-0 fw-bold">
+        <i class="fas fa-database me-2 text-primary"></i>Datenverwaltung
+      </h4>
+      <small class="text-muted">Testdaten initialisieren, löschen und reparieren</small>
+    </div>
+  </div>
+
+  <!-- Ergebnis -->
+  <div *ngIf="result" class="alert d-flex align-items-center gap-2 mb-4"
+       [class.alert-success]="result.success"
+       [class.alert-danger]="!result.success">
+    <i class="fas" [class.fa-check-circle]="result.success" [class.fa-exclamation-triangle]="!result.success"></i>
+    {{ result.message }}
+  </div>
+
+  <div class="row g-3">
+
+    <!-- Initialisierung -->
+    <div class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent border-bottom fw-semibold">
+          <i class="fas fa-play-circle me-2 text-success"></i>Initialisierung
+        </div>
+        <div class="card-body d-flex flex-column gap-2">
+
+          <button class="btn btn-outline-success d-flex align-items-center gap-2"
+                  (click)="initFull()" [disabled]="anyLoading()">
+            @if (isLoading('full')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Komplett-Init</div>
+              <small class="text-muted">Alle Entitäten ACTIVE, Rechnungslauf heute</small>
+            </div>
+          </button>
+
+          <div class="d-flex gap-2 align-items-end">
+            <div class="form-floating flex-grow-1">
+              <input type="date" class="form-control" id="billingDate" placeholder=" " [(ngModel)]="billingDate">
+              <label for="billingDate">Rechnungsdatum</label>
+            </div>
+            <button class="btn btn-outline-success" style="height: 58px; white-space: nowrap;"
+                    (click)="initFullWithBilling()" [disabled]="anyLoading()">
+              @if (isLoading('fullBilling')) { <span class="spinner-border spinner-border-sm"></span> }
+              <span *ngIf="!isLoading('fullBilling')"><i class="fas fa-calendar-check me-1"></i>Mit Datum</span>
+            </button>
+          </div>
+
+          <button class="btn btn-outline-secondary d-flex align-items-center gap-2"
+                  (click)="initBasic()" [disabled]="anyLoading()">
+            @if (isLoading('basic')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Nur Stammdaten</div>
+              <small class="text-muted">Adressen, Kunden, Produkte, Lagerbestand</small>
+            </div>
+          </button>
+
+          <button class="btn btn-outline-info d-flex align-items-center gap-2"
+                  (click)="initRealistic()" [disabled]="anyLoading()">
+            @if (isLoading('realistic')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Realistisch</div>
+              <small class="text-muted">80 % Verträge aktiv, 85 % Abos aktiv</small>
+            </div>
+          </button>
+
+          <button class="btn btn-outline-primary d-flex align-items-center gap-2"
+                  (click)="initDevelopment()" [disabled]="anyLoading()">
+            @if (isLoading('development')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Development</div>
+              <small class="text-muted">95 % Verträge aktiv, 90 % Abos aktiv</small>
+            </div>
+          </button>
+
+          <button class="btn btn-outline-warning d-flex align-items-center gap-2"
+                  (click)="initDemo()" [disabled]="anyLoading()">
+            @if (isLoading('demo')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Demo</div>
+              <small class="text-muted">Ausgewogene Verteilung für Präsentationen</small>
+            </div>
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+
+      <!-- Status & Wartung -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-bottom fw-semibold">
+          <i class="fas fa-tools me-2 text-secondary"></i>Status & Wartung
+        </div>
+        <div class="card-body d-flex flex-column gap-2">
+
+          <button class="btn btn-outline-secondary d-flex align-items-center gap-2"
+                  (click)="status()" [disabled]="anyLoading()">
+            @if (isLoading('status')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Status ausgeben</div>
+              <small class="text-muted">Datenbestand in Logs anzeigen</small>
+            </div>
+          </button>
+
+          <button class="btn btn-outline-warning d-flex align-items-center gap-2"
+                  (click)="repair()" [disabled]="anyLoading()">
+            @if (isLoading('repair')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Konsistenz reparieren</div>
+              <small class="text-muted">Fehlende OpenItems erstellen, Status synchronisieren</small>
+            </div>
+          </button>
+
+          <button class="btn btn-outline-secondary d-flex align-items-center gap-2"
+                  (click)="maintenance()" [disabled]="anyLoading()">
+            @if (isLoading('maintenance')) { <span class="spinner-border spinner-border-sm"></span> }
+            <div class="text-start">
+              <div class="fw-semibold">Wartung ausführen</div>
+              <small class="text-muted">Überfällige Items aktualisieren, verwaiste Daten bereinigen</small>
+            </div>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Daten löschen -->
+      <div class="card border-0 shadow-sm border-danger border-opacity-25">
+        <div class="card-header bg-transparent border-bottom fw-semibold text-danger">
+          <i class="fas fa-trash-alt me-2"></i>Daten löschen
+        </div>
+        <div class="card-body d-flex flex-column gap-2">
+
+          <button class="btn btn-outline-danger d-flex align-items-center gap-2"
+                  (click)="openClearBusinessModal()" [disabled]="anyLoading()">
+            <div class="text-start">
+              <div class="fw-semibold">Geschäftsdaten löschen</div>
+              <small class="text-muted">Stammdaten (Kunden, Produkte, Adressen) bleiben erhalten</small>
+            </div>
+          </button>
+
+          <button class="btn btn-danger d-flex align-items-center gap-2"
+                  (click)="openClearModal()" [disabled]="anyLoading()">
+            <div class="text-start">
+              <div class="fw-semibold">Alle Daten löschen</div>
+              <small class="text-white-50">Komplett-Reset — nicht rückgängig machbar</small>
+            </div>
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: Alle Daten löschen -->
+<div *ngIf="showClearModal" class="modal d-block" tabindex="-1"
+     style="background:rgba(0,0,0,.5);" (click)="showClearModal=false">
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>Alle Daten löschen
+        </h5>
+        <button type="button" class="btn-close" (click)="showClearModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Diese Aktion löscht <strong>alle Daten</strong> unwiderruflich. Bitte Bestätigungspasswort eingeben:</p>
+        <div class="form-floating">
+          <input type="password" class="form-control" id="clearPwd" placeholder=" " [(ngModel)]="deletePassword">
+          <label for="clearPwd">Passwort</label>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-secondary" (click)="showClearModal=false">Abbrechen</button>
+        <button class="btn btn-danger" (click)="confirmClearAll()" [disabled]="!deletePassword || deleteLoading">
+          @if (deleteLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Alle Daten löschen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Geschäftsdaten löschen -->
+<div *ngIf="showClearBusinessModal" class="modal d-block" tabindex="-1"
+     style="background:rgba(0,0,0,.5);" (click)="showClearBusinessModal=false">
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>Geschäftsdaten löschen
+        </h5>
+        <button type="button" class="btn-close" (click)="showClearBusinessModal=false"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Verträge, Rechnungen, Abonnements etc. werden gelöscht. Stammdaten bleiben erhalten. Bitte Bestätigungspasswort eingeben:</p>
+        <div class="form-floating">
+          <input type="password" class="form-control" id="clearBizPwd" placeholder=" " [(ngModel)]="deletePassword">
+          <label for="clearBizPwd">Passwort</label>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-secondary" (click)="showClearBusinessModal=false">Abbrechen</button>
+        <button class="btn btn-danger" (click)="confirmClearBusiness()" [disabled]="!deletePassword || deleteLoading">
+          @if (deleteLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Geschäftsdaten löschen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
