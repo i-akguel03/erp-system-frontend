@@ -38,6 +38,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     },
     { label: 'Analyse', icon: 'bi-bar-chart-line', routerLink: '/analyse', public: false },
     { label: 'Vertragscenter', icon: 'bi-briefcase', routerLink: '/contract-center', public: false },
+    { label: 'Abrechnungscenter', icon: 'bi-file-invoice-dollar', routerLink: '/billing-center', public: false },
     {
       label: 'Stammdaten',
       icon: 'bi-database',

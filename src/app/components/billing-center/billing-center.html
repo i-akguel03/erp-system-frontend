@@ -1,0 +1,363 @@
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<div class="bc-header px-3 px-md-4 pt-4 pb-3">
+  <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold">
+        <i class="fas fa-file-invoice-dollar me-2 text-danger"></i>Abrechnungscenter
+      </h4>
+      <small class="text-muted">Offene Posten, Mahnwesen und Zahlungsübersicht</small>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" (click)="load()" [disabled]="loading" title="Aktualisieren">
+        <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+      </button>
+      <a routerLink="/open-item" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-list me-1"></i>Alle Posten
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ── ERROR ─────────────────────────────────────────────────── -->
+@if (error) {
+  <div class="mx-3 mx-md-4 alert alert-danger d-flex align-items-center gap-2">
+    <i class="fas fa-exclamation-triangle"></i>{{ error }}
+    <button class="btn-close ms-auto" (click)="clearError()"></button>
+  </div>
+}
+
+<!-- ── LOADING ────────────────────────────────────────────────── -->
+@if (loading) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-danger" role="status"></div>
+    <p class="mt-2 text-muted small">Abrechnungsdaten werden geladen…</p>
+  </div>
+}
+
+@if (!loading) {
+
+<!-- ── KPI STRIP ──────────────────────────────────────────────── -->
+<div class="kpi-strip px-3 px-md-4 pb-3">
+  <div class="row g-3">
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label">Überfällig</div>
+        <div class="kpi-value">{{ fmt(totalOverdueAmount) }}</div>
+        <div class="kpi-sub">{{ countOf('overdue') }} Posten</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card kpi-orange">
+        <div class="kpi-label">Mahnung fällig</div>
+        <div class="kpi-value">{{ reminderDueCount }}</div>
+        <div class="kpi-sub">nicht kontaktiert (30 d)</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-label">Gesamtausstehend</div>
+        <div class="kpi-value">{{ fmt(totalOutstanding) }}</div>
+        <div class="kpi-sub">{{ countOf('all') }} aktive Posten</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card kpi-yellow">
+        <div class="kpi-label">Teilbezahlt</div>
+        <div class="kpi-value">{{ countOf('partial') }}</div>
+        <div class="kpi-sub">offene Teilzahlungen</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AGING ANALYSE ──────────────────────────────────────────── -->
+@if (countOf('overdue') > 0) {
+<div class="px-3 px-md-4 mb-3">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-3">
+        <i class="fas fa-chart-bar me-2 text-danger"></i>Aging-Analyse – Überfälligkeitsdauer
+      </h6>
+      <div class="d-flex flex-column gap-2">
+        @for (bucket of agingBuckets; track bucket.label) {
+          <div class="aging-row">
+            <div class="aging-label">{{ bucket.label }}</div>
+            <div class="aging-bar-wrap">
+              <div class="aging-bar"
+                   [style.width.%]="(bucket.amount / agingMaxAmount) * 100"
+                   [style.background]="bucket.color">
+              </div>
+            </div>
+            <div class="aging-count text-muted">{{ bucket.count }} Posten</div>
+            <div class="aging-amount fw-semibold" [style.color]="bucket.color">{{ fmt(bucket.amount) }}</div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ── TABS + SUCHE ───────────────────────────────────────────── -->
+<div class="px-3 px-md-4">
+
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <!-- Tabs -->
+    <ul class="nav nav-pills gap-1">
+      <li class="nav-item">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='overdue'" (click)="activeTab='overdue'">
+          Überfällig
+          <span class="badge bg-danger ms-1">{{ countOf('overdue') }}</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='open'" (click)="activeTab='open'">
+          Offen
+          <span class="badge bg-primary ms-1">{{ countOf('open') }}</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='partial'" (click)="activeTab='partial'">
+          Teilbezahlt
+          <span class="badge bg-warning text-dark ms-1">{{ countOf('partial') }}</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='all'" (click)="activeTab='all'">
+          Alle aktiven
+        </button>
+      </li>
+    </ul>
+
+    <!-- Suche -->
+    <div class="input-group input-group-sm" style="max-width: 260px;">
+      <span class="input-group-text bg-white border-end-0">
+        <i class="fas fa-search text-muted" style="font-size: 0.75rem;"></i>
+      </span>
+      <input type="text" class="form-control border-start-0"
+             placeholder="Kunde, Rechnung, Vertrag…"
+             [(ngModel)]="searchTerm">
+    </div>
+  </div>
+
+  <!-- ── DESKTOP TABELLE ────────────────────────────────────────── -->
+  <div class="table-responsive d-none d-md-block mb-4" *ngIf="filtered.length > 0">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="border-bottom border-2">
+          <th class="th-small border-0">Status</th>
+          <th class="th-small border-0">Kunde</th>
+          <th class="th-small border-0">Rechnung</th>
+          <th class="th-small border-0">Vertrag</th>
+          <th class="th-small border-0 text-end">Betrag</th>
+          <th class="th-small border-0 text-end">Ausstehend</th>
+          <th class="th-small border-0">Fälligkeit</th>
+          <th class="th-small border-0">Mahnungen</th>
+          <th class="border-0" style="width: 130px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of filtered; track item.id) {
+          <tr [class.table-danger]="item.status === 'OVERDUE'">
+            <td>
+              <span [class]="statusClass(item.status)" style="font-size: 0.72rem;">
+                {{ statusLabel(item.status) }}
+              </span>
+            </td>
+            <td class="fw-medium">{{ item.customerName || '–' }}</td>
+            <td class="text-muted small">{{ item.invoiceNumber || '–' }}</td>
+            <td class="text-muted small">
+              @if (item.contractNumber) {
+                <span class="badge bg-light text-dark border">{{ item.contractNumber }}</span>
+              } @else { <span class="text-muted">–</span> }
+            </td>
+            <td class="text-end fw-medium">{{ fmt(item.amount) }}</td>
+            <td class="text-end">
+              <span class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0">
+                {{ fmt(item.outstandingAmount) }}
+              </span>
+            </td>
+            <td>
+              <div class="small">{{ item.dueDate | date:'dd.MM.yyyy' }}</div>
+              @if (item.daysOverdue && item.daysOverdue > 0) {
+                <div class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">
+                  {{ item.daysOverdue }} Tage
+                </div>
+              }
+            </td>
+            <td>
+              @if ((item.reminderCount ?? 0) > 0) {
+                <span class="badge bg-warning text-dark">{{ item.reminderCount }}×</span>
+              } @else {
+                <span class="text-muted small">–</span>
+              }
+            </td>
+            <td>
+              <div class="d-flex gap-1 justify-content-end">
+                <button class="btn btn-sm btn-outline-success" (click)="openPayModal(item)"
+                        title="Zahlung erfassen" [disabled]="item.status === 'CANCELLED'">
+                  <i class="fas fa-coins"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-warning" (click)="sendReminder(item)"
+                        [disabled]="emailSendingId === item.id" title="Mahnung senden">
+                  @if (emailSendingId === item.id) {
+                    <span class="spinner-border spinner-border-sm"></span>
+                  } @else {
+                    <i class="fas fa-paper-plane"></i>
+                  }
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="openCancelModal(item)"
+                        title="Stornieren" [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
+                  <i class="fas fa-ban"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── MOBILE CARDS ───────────────────────────────────────────── -->
+  <div class="d-md-none mb-4">
+    @for (item of filtered; track item.id) {
+      <div class="card border-0 shadow-sm mb-3" [class.border-danger]="item.status === 'OVERDUE'" [class.border-start]="item.status === 'OVERDUE'" style="border-left-width: 3px !important;">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <span [class]="statusClass(item.status)" style="font-size: 0.7rem;">{{ statusLabel(item.status) }}</span>
+              <div class="fw-semibold mt-1">{{ item.customerName || '–' }}</div>
+              <div class="text-muted small">{{ item.invoiceNumber }}</div>
+            </div>
+            <div class="text-end">
+              <div class="fw-bold text-danger">{{ fmt(item.outstandingAmount) }}</div>
+              @if (item.daysOverdue && item.daysOverdue > 0) {
+                <div class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">{{ item.daysOverdue }} Tage</div>
+              }
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap text-muted small mb-3">
+            @if (item.contractNumber) {
+              <span><i class="fas fa-file-contract me-1"></i>{{ item.contractNumber }}</span>
+            }
+            @if (item.dueDate) {
+              <span><i class="fas fa-calendar me-1"></i>{{ item.dueDate | date:'dd.MM.yy' }}</span>
+            }
+            @if ((item.reminderCount ?? 0) > 0) {
+              <span><i class="fas fa-bell me-1"></i>{{ item.reminderCount }}× Mahnung</span>
+            }
+          </div>
+
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-success flex-grow-1" (click)="openPayModal(item)"
+                    [disabled]="item.status === 'CANCELLED'">
+              <i class="fas fa-coins me-1"></i>Zahlung
+            </button>
+            <button class="btn btn-sm btn-outline-warning flex-grow-1" (click)="sendReminder(item)"
+                    [disabled]="emailSendingId === item.id">
+              @if (emailSendingId === item.id) {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+              } @else {
+                <i class="fas fa-paper-plane me-1"></i>
+              }
+              Mahnung
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="openCancelModal(item)"
+                    [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
+              <i class="fas fa-ban"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ── LEER ───────────────────────────────────────────────────── -->
+  @if (filtered.length === 0) {
+    <div class="text-center py-5 text-muted">
+      <i class="fas fa-check-circle fa-3x mb-3 text-success opacity-50"></i>
+      <h6>Keine Posten in dieser Ansicht</h6>
+      <small>
+        @if (searchTerm) { Keine Treffer für „{{ searchTerm }}" }
+        @else { Alles erledigt oder keine aktiven Posten }
+      </small>
+    </div>
+  }
+
+</div>
+} <!-- end !loading -->
+
+<!-- ═══════════════ MODAL: ZAHLUNG ERFASSEN ═══════════════════ -->
+@if (showPayModal && payItem) {
+  <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.45);" (click)="showPayModal=false">
+    <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-coins me-2 text-success"></i>Zahlung erfassen</h5>
+          <button class="btn-close" (click)="showPayModal=false"></button>
+        </div>
+        <div class="modal-body d-flex flex-column gap-3">
+          <div class="alert alert-light border mb-0">
+            <div class="fw-semibold">{{ payItem.customerName }}</div>
+            <div class="text-muted small">{{ payItem.invoiceNumber }} · Ausstehend: {{ fmt(payItem.outstandingAmount) }}</div>
+          </div>
+          <div class="form-floating">
+            <input type="number" class="form-control" id="payAmt" placeholder=" "
+                   [(ngModel)]="payAmount" min="0.01" step="0.01">
+            <label for="payAmt">Betrag (€)</label>
+          </div>
+          <div class="form-floating">
+            <select class="form-select" id="payMeth" [(ngModel)]="payMethod">
+              <option value="">– Zahlungsart –</option>
+              <option value="BANK_TRANSFER">Überweisung</option>
+              <option value="CASH">Bar</option>
+              <option value="CREDIT_CARD">Kreditkarte</option>
+              <option value="DIRECT_DEBIT">Lastschrift</option>
+              <option value="PAYPAL">PayPal</option>
+            </select>
+            <label for="payMeth">Zahlungsart</label>
+          </div>
+          <div class="form-floating">
+            <input type="text" class="form-control" id="payRef" placeholder=" " [(ngModel)]="payRef">
+            <label for="payRef">Referenz / Buchungsnummer (optional)</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" (click)="showPayModal=false">Abbrechen</button>
+          <button class="btn btn-success" (click)="confirmPayment()" [disabled]="!payAmount || paying">
+            @if (paying) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Zahlung buchen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ═══════════════ MODAL: STORNIEREN ════════════════════════ -->
+@if (showCancelModal && cancelItem) {
+  <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.45);" (click)="showCancelModal=false">
+    <div class="modal-dialog modal-dialog-centered modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title text-danger"><i class="fas fa-ban me-2"></i>Stornieren</h5>
+          <button class="btn-close" (click)="showCancelModal=false"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-0">
+            Posten <strong>{{ cancelItem.invoiceNumber }}</strong> ({{ fmt(cancelItem.outstandingAmount) }}) von
+            <strong>{{ cancelItem.customerName }}</strong> stornieren?
+          </p>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button class="btn btn-secondary btn-sm" (click)="showCancelModal=false">Abbrechen</button>
+          <button class="btn btn-danger btn-sm" (click)="confirmCancel()" [disabled]="cancelling">
+            @if (cancelling) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Stornieren
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

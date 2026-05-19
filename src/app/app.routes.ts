@@ -22,6 +22,7 @@ import { AuditLogComponent } from './components/audit-log/audit-log';
 import { AnalyseComponent } from './components/analyse/analyse';
 import { NotificationListComponent } from './components/notification-list/notification-list';
 import { InitComponent } from './components/init/init';
+import { BillingCenterComponent } from './components/billing-center/billing-center';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -38,6 +39,7 @@ export const routes: Routes = [
   { path: 'subscription', component: SubscriptionListComponent, canActivate: [AuthGuard] },
   { path: 'product', component: ProductListComponent, canActivate: [AuthGuard] },
   { path: 'contract-center', component: ContractCenterComponent, canActivate: [AuthGuard] },
+  { path: 'billing-center', component: BillingCenterComponent, canActivate: [AuthGuard] },
   { path: 'due-schedule', component: DueScheduleListComponent, canActivate: [AuthGuard] },
   { path: 'invoice', component: InvoiceListComponent, canActivate: [AuthGuard] },
   { path: 'open-item', component: OpenItemList, canActivate: [AuthGuard] },

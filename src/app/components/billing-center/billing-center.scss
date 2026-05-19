@@ -1,0 +1,108 @@
+.bc-header {
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+}
+
+// ── KPI CARDS ─────────────────────────────────────────────────
+.kpi-strip {
+  background: #fff;
+}
+
+.kpi-card {
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+  }
+}
+
+.kpi-red    { background: linear-gradient(135deg, #dc3545, #c82333); }
+.kpi-orange { background: linear-gradient(135deg, #fd7e14, #e8610a); }
+.kpi-blue   { background: linear-gradient(135deg, #0d6efd, #0b5ed7); }
+.kpi-yellow { background: linear-gradient(135deg, #ffc107, #e0a800); color: #212529 !important; }
+
+.kpi-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+.kpi-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+
+  @media (max-width: 576px) { font-size: 1rem; }
+}
+
+.kpi-sub {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+// ── AGING ─────────────────────────────────────────────────────
+.aging-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 80px 110px;
+  align-items: center;
+  gap: 12px;
+
+  @media (max-width: 576px) {
+    grid-template-columns: 90px 1fr 60px;
+    .aging-amount { display: none; }
+  }
+}
+
+.aging-label { font-size: 0.8rem; color: #6c757d; white-space: nowrap; }
+
+.aging-bar-wrap {
+  height: 10px;
+  background: #f0f0f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.aging-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+  min-width: 2px;
+}
+
+.aging-count  { font-size: 0.8rem; text-align: right; }
+.aging-amount { font-size: 0.85rem; text-align: right; }
+
+// ── TABLE ─────────────────────────────────────────────────────
+.th-small {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6c757d;
+}
+
+// ── NAV PILLS ─────────────────────────────────────────────────
+.nav-pills .nav-link {
+  font-size: 0.85rem;
+  color: #495057;
+  border-radius: 8px;
+
+  &.active {
+    background: #dc3545;
+    color: #fff;
+  }
+}
