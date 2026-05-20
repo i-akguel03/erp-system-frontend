@@ -72,7 +72,7 @@ export class InvoiceTabComponent {
   }
 
   canSendInvoice(invoice: Invoice): boolean {
-    return invoice.status === 'DRAFT';
+    return invoice.status === 'DRAFT' || invoice.status === 'ACTIVE';
   }
 
   canEdit(invoice: Invoice): boolean {
@@ -80,11 +80,11 @@ export class InvoiceTabComponent {
   }
 
   canSend(invoice: Invoice): boolean {
-    return invoice.status === 'DRAFT';
+    return invoice.status === 'DRAFT' || invoice.status === 'ACTIVE';
   }
 
   canCancel(invoice: Invoice): boolean {
-    return invoice.status === 'DRAFT' || invoice.status === 'SENT';
+    return invoice.status === 'DRAFT' || invoice.status === 'ACTIVE' || invoice.status === 'SENT';
   }
 
   canViewOpenItems(invoice: Invoice): boolean {

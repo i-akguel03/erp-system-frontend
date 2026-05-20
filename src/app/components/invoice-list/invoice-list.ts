@@ -377,11 +377,11 @@ getItemsCount(invoice: Invoice): number {
   }
 
   canSend(invoice: Invoice): boolean {
-    return invoice.status === 'DRAFT';
+    return invoice.status === 'DRAFT' || invoice.status === 'ACTIVE';
   }
 
   canCancel(invoice: Invoice): boolean {
-    return invoice.status === 'DRAFT' || invoice.status === 'SENT';
+    return invoice.status === 'DRAFT' || invoice.status === 'ACTIVE' || invoice.status === 'SENT';
   }
 
   canEdit(invoice: Invoice): boolean {
