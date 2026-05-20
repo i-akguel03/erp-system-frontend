@@ -1,0 +1,134 @@
+<div class="px-3 px-md-4 py-3">
+
+  <!-- Header / Jahresauswahl -->
+  <div class="d-flex flex-column flex-sm-row gap-2 mb-4 align-items-stretch align-items-sm-center">
+    <h5 class="mb-0 me-auto fw-bold">
+      <i class="bi bi-bar-chart-line me-2 text-primary"></i>
+      <span class="d-none d-sm-inline">Gewinn- und Verlustrechnung</span>
+      <span class="d-sm-none">GuV-Bericht</span>
+    </h5>
+    <select class="form-select" style="max-width:130px" [(ngModel)]="selectedJahr" (ngModelChange)="loadGuv()">
+      <option *ngFor="let j of verfuegbareJahre" [value]="j">{{ j }}</option>
+    </select>
+    <button class="btn btn-secondary" (click)="loadGuv()">
+      <i class="bi bi-arrow-clockwise me-1"></i><span class="d-none d-sm-inline">Aktualisieren</span>
+    </button>
+  </div>
+
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger alert-dismissible">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
+
+  <!-- Ladeanzeige -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="mt-2 text-muted">GuV wird berechnet...</p>
+  </div>
+
+  <!-- Kein Ergebnis -->
+  <div *ngIf="!loading && !hasData && !error" class="text-center py-5 text-muted">
+    <i class="bi bi-bar-chart display-4"></i>
+    <p class="mt-2">Keine Buchungsdaten für {{ selectedJahr }}.</p>
+    <small>SKR04-Kontenplan initialisieren und Buchungen anlegen.</small>
+  </div>
+
+  <!-- Ergebnis-Kacheln -->
+  <div class="row g-2 mb-4" *ngIf="!loading && hasData">
+    <div class="col-12 col-sm-4">
+      <div class="card border-0 shadow-sm text-center h-100">
+        <div class="card-body">
+          <div class="h4 text-success mb-1">{{ gesamtErtrag | currency:'EUR' }}</div>
+          <small class="text-muted">Gesamterlöse {{ selectedJahr }}</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-4">
+      <div class="card border-0 shadow-sm text-center h-100">
+        <div class="card-body">
+          <div class="h4 text-danger mb-1">{{ gesamtAufwand | currency:'EUR' }}</div>
+          <small class="text-muted">Gesamtaufwendungen {{ selectedJahr }}</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-4">
+      <div class="card border-0 shadow-sm text-center h-100"
+           [class.border-success]="ergebnis >= 0" [class.border-danger]="ergebnis < 0">
+        <div class="card-body">
+          <div class="h4 mb-1" [class.text-success]="ergebnis >= 0" [class.text-danger]="ergebnis < 0">
+            {{ ergebnis | currency:'EUR' }}
+          </div>
+          <small class="text-muted">{{ ergebnis >= 0 ? 'Jahresüberschuss' : 'Jahresfehlbetrag' }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Erträge & Aufwendungen nebeneinander (Desktop) / untereinander (Mobile) -->
+  <div class="row g-3" *ngIf="!loading && hasData">
+
+    <!-- Erträge -->
+    <div class="col-12 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-success bg-opacity-10 border-0 fw-semibold text-success">
+          <i class="bi bi-arrow-up-circle me-2"></i>Erträge
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            <div *ngFor="let z of ertraege"
+                 class="list-group-item d-flex justify-content-between align-items-center py-2">
+              <span class="small">{{ z.bezeichnung }}</span>
+              <span class="fw-semibold text-success small">{{ z.betrag | currency:'EUR' }}</span>
+            </div>
+            <div *ngIf="ertraege.length === 0" class="list-group-item text-muted text-center py-3 small">
+              Keine Erträge
+            </div>
+            <div class="list-group-item d-flex justify-content-between align-items-center bg-success bg-opacity-10 fw-bold">
+              <span>Summe Erträge</span>
+              <span class="text-success">{{ gesamtErtrag | currency:'EUR' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aufwendungen -->
+    <div class="col-12 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-danger bg-opacity-10 border-0 fw-semibold text-danger">
+          <i class="bi bi-arrow-down-circle me-2"></i>Aufwendungen
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            <div *ngFor="let z of aufwendungen"
+                 class="list-group-item d-flex justify-content-between align-items-center py-2">
+              <span class="small">{{ z.bezeichnung }}</span>
+              <span class="fw-semibold text-danger small">{{ z.betrag | currency:'EUR' }}</span>
+            </div>
+            <div *ngIf="aufwendungen.length === 0" class="list-group-item text-muted text-center py-3 small">
+              Keine Aufwendungen
+            </div>
+            <div class="list-group-item d-flex justify-content-between align-items-center bg-danger bg-opacity-10 fw-bold">
+              <span>Summe Aufwendungen</span>
+              <span class="text-danger">{{ gesamtAufwand | currency:'EUR' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ergebnis-Zeile -->
+  <div class="card mt-3 border-0 shadow-sm" *ngIf="!loading && hasData"
+       [class.border-success]="ergebnis >= 0" [class.border-danger]="ergebnis < 0">
+    <div class="card-body d-flex justify-content-between align-items-center py-3 px-4">
+      <span class="fw-bold fs-6">{{ ergebnis >= 0 ? 'Jahresüberschuss' : 'Jahresfehlbetrag' }} {{ selectedJahr }}</span>
+      <span class="fw-bold fs-5" [class.text-success]="ergebnis >= 0" [class.text-danger]="ergebnis < 0">
+        {{ ergebnis | currency:'EUR' }}
+      </span>
+    </div>
+  </div>
+
+</div>

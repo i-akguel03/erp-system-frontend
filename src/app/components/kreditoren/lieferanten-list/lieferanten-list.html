@@ -1,0 +1,222 @@
+<div class="px-3 px-md-4 py-3">
+
+  <!-- Toolbar -->
+  <div class="d-flex flex-column flex-sm-row gap-2 mb-3 align-items-stretch align-items-sm-center">
+    <input type="text" class="form-control"
+           placeholder="Name, Nummer oder E-Mail suchen..."
+           [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()">
+    <div class="d-flex gap-2">
+      <button class="btn btn-secondary flex-grow-1 flex-sm-grow-0" (click)="loadLieferanten()">
+        <i class="bi bi-arrow-clockwise me-1"></i><span class="d-none d-sm-inline">Aktualisieren</span>
+      </button>
+      <button *ngIf="isAdmin()" class="btn btn-success flex-grow-1 flex-sm-grow-0" (click)="openNewModal()">
+        <i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">Neuer Lieferant</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger alert-dismissible">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
+
+  <!-- Ladeanzeige -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="mt-2 text-muted">Lieferanten werden geladen...</p>
+  </div>
+
+  <!-- Leer -->
+  <div *ngIf="!loading && lieferanten.length === 0" class="text-center py-5 text-muted">
+    <i class="bi bi-truck display-4"></i>
+    <p class="mt-2">Noch keine Lieferanten vorhanden.</p>
+  </div>
+
+  <!-- Desktop Tabelle -->
+  <div class="table-responsive d-none d-md-block" *ngIf="!loading && filteredLieferanten.length > 0">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="border-bottom border-2">
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Nr.</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Name</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">E-Mail</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Telefon</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">IBAN</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Status</th>
+          <th class="border-0" style="width:60px" *ngIf="isAdmin()"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of filteredLieferanten">
+          <td class="text-muted small">{{ l.lieferantennummer }}</td>
+          <td class="fw-medium">{{ l.name }}</td>
+          <td class="text-muted small">{{ l.email || '-' }}</td>
+          <td class="text-muted small">{{ l.telefon || '-' }}</td>
+          <td class="text-muted small">{{ l.iban || '-' }}</td>
+          <td>
+            <span class="badge" [ngClass]="l.aktiv ? 'bg-success' : 'bg-secondary'">
+              {{ l.aktiv ? 'Aktiv' : 'Inaktiv' }}
+            </span>
+          </td>
+          <td *ngIf="isAdmin()">
+            <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(l)" title="Bearbeiten">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="d-md-none" *ngIf="!loading && filteredLieferanten.length > 0">
+    <div *ngFor="let l of filteredLieferanten" class="card border-0 shadow-sm mb-2">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <div>
+            <div class="text-muted small">{{ l.lieferantennummer }}</div>
+            <h6 class="mb-0 fw-semibold">{{ l.name }}</h6>
+          </div>
+          <span class="badge ms-2" [ngClass]="l.aktiv ? 'bg-success' : 'bg-secondary'">
+            {{ l.aktiv ? 'Aktiv' : 'Inaktiv' }}
+          </span>
+        </div>
+        <div class="d-flex flex-wrap gap-2 text-muted small mb-2">
+          <span *ngIf="l.email"><i class="bi bi-envelope me-1"></i>{{ l.email }}</span>
+          <span *ngIf="l.telefon"><i class="bi bi-telephone me-1"></i>{{ l.telefon }}</span>
+          <span *ngIf="l.iban"><i class="bi bi-bank me-1"></i>{{ l.iban }}</span>
+        </div>
+        <div *ngIf="isAdmin()" class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(l)">
+            <i class="bi bi-pencil me-1"></i>Bearbeiten
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && lieferanten.length > 0 && filteredLieferanten.length === 0"
+       class="text-center py-4 text-muted">
+    Keine Lieferanten gefunden.
+  </div>
+
+</div>
+
+<!-- Neuer Lieferant Modal -->
+<div *ngIf="showNewModal" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+  <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Neuer Lieferant</h5>
+        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+        <div class="row g-3">
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Name *</label>
+            <input type="text" class="form-control" [(ngModel)]="newLieferant.name">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">E-Mail</label>
+            <input type="email" class="form-control" [(ngModel)]="newLieferant.email">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Telefon</label>
+            <input type="text" class="form-control" [(ngModel)]="newLieferant.telefon">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Steuernummer</label>
+            <input type="text" class="form-control" [(ngModel)]="newLieferant.steuernummer">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">USt-IdNr.</label>
+            <input type="text" class="form-control" [(ngModel)]="newLieferant.ustIdNr">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">IBAN</label>
+            <input type="text" class="form-control" [(ngModel)]="newLieferant.iban">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">BIC</label>
+            <input type="text" class="form-control" [(ngModel)]="newLieferant.bic">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notizen</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="newLieferant.notizen"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer flex-column flex-sm-row gap-2">
+        <button class="btn btn-secondary w-100 w-sm-auto" (click)="closeNewModal()">Abbrechen</button>
+        <button class="btn btn-success w-100 w-sm-auto" (click)="createLieferant()" [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+          Anlegen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lieferant bearbeiten Modal -->
+<div *ngIf="showEditModal" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+  <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Lieferant bearbeiten</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+        <div class="row g-3">
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Name *</label>
+            <input type="text" class="form-control" [(ngModel)]="editLieferant.name">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">E-Mail</label>
+            <input type="email" class="form-control" [(ngModel)]="editLieferant.email">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Telefon</label>
+            <input type="text" class="form-control" [(ngModel)]="editLieferant.telefon">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Steuernummer</label>
+            <input type="text" class="form-control" [(ngModel)]="editLieferant.steuernummer">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">USt-IdNr.</label>
+            <input type="text" class="form-control" [(ngModel)]="editLieferant.ustIdNr">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">IBAN</label>
+            <input type="text" class="form-control" [(ngModel)]="editLieferant.iban">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">BIC</label>
+            <input type="text" class="form-control" [(ngModel)]="editLieferant.bic">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notizen</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="editLieferant.notizen"></textarea>
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="editLieferant.aktiv" id="editAktiv">
+              <label class="form-check-label" for="editAktiv">Aktiv</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer flex-column flex-sm-row gap-2">
+        <button class="btn btn-secondary w-100 w-sm-auto" (click)="closeEditModal()">Abbrechen</button>
+        <button class="btn btn-primary w-100 w-sm-auto" (click)="updateLieferant()" [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

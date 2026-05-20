@@ -1,0 +1,262 @@
+<div class="px-3 px-md-4 py-3">
+
+  <!-- Toolbar -->
+  <div class="d-flex flex-column flex-sm-row gap-2 mb-3 align-items-stretch align-items-sm-center">
+    <input type="text" class="form-control"
+           placeholder="Rechnungsnummer, Lieferant oder Referenz..."
+           [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()">
+    <select class="form-select" style="min-width:150px" [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()">
+      <option value="">Alle Status</option>
+      <option value="ERFASST">Erfasst</option>
+      <option value="GEPRUEFT">Geprüft</option>
+      <option value="FREIGEGEBEN">Freigegeben</option>
+      <option value="BEZAHLT">Bezahlt</option>
+      <option value="STORNIERT">Storniert</option>
+    </select>
+    <div class="d-flex gap-2">
+      <button class="btn flex-grow-1 flex-sm-grow-0"
+              [ngClass]="showNurUeberfaellig ? 'btn-danger' : 'btn-outline-danger'"
+              (click)="toggleUeberfaellig()">
+        <i class="bi bi-exclamation-triangle me-1"></i><span class="d-none d-sm-inline">Überfällig</span>
+      </button>
+      <button class="btn btn-secondary flex-grow-1 flex-sm-grow-0" (click)="loadRechnungen()">
+        <i class="bi bi-arrow-clockwise me-1"></i><span class="d-none d-sm-inline">Aktualisieren</span>
+      </button>
+      <button *ngIf="isAdmin()" class="btn btn-success flex-grow-1 flex-sm-grow-0" (click)="openNewModal()">
+        <i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">Erfassen</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger alert-dismissible">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
+
+  <!-- Ladeanzeige -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="mt-2 text-muted">Eingangsrechnungen werden geladen...</p>
+  </div>
+
+  <!-- Leer -->
+  <div *ngIf="!loading && rechnungen.length === 0" class="text-center py-5 text-muted">
+    <i class="bi bi-file-earmark-minus display-4"></i>
+    <p class="mt-2">
+      {{ showNurUeberfaellig ? 'Keine überfälligen Eingangsrechnungen.' : 'Noch keine Eingangsrechnungen vorhanden.' }}
+    </p>
+  </div>
+
+  <!-- Desktop Tabelle -->
+  <div class="table-responsive d-none d-md-block" *ngIf="!loading && filteredRechnungen.length > 0">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="border-bottom border-2">
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Nummer</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Lieferant</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Lief.-Rech.-Nr.</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Eingang</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Fällig</th>
+          <th class="fw-semibold text-muted text-uppercase border-0 text-end" style="font-size:.7rem;letter-spacing:.05em">Netto</th>
+          <th class="fw-semibold text-muted text-uppercase border-0 text-end" style="font-size:.7rem;letter-spacing:.05em">Brutto</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Status</th>
+          <th class="border-0" style="width:90px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of filteredRechnungen"
+            [class.table-warning]="r.status === 'FREIGEGEBEN'"
+            [class.table-danger]="r.status === 'STORNIERT'">
+          <td class="fw-bold text-primary">{{ r.eingangsrechnungsnummer }}</td>
+          <td class="fw-medium">{{ r.lieferantName }}</td>
+          <td class="text-muted small">{{ r.lieferantenRechnungsnummer || '-' }}</td>
+          <td class="text-muted small">{{ r.eingangsDatum | date:'dd.MM.yyyy' }}</td>
+          <td class="text-muted small">{{ r.faelligDatum | date:'dd.MM.yyyy' }}</td>
+          <td class="text-end">{{ r.nettobetrag | currency:'EUR' }}</td>
+          <td class="text-end fw-medium">{{ r.bruttobetrag | currency:'EUR' }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusBadge(r.status)">{{ getStatusLabel(r.status) }}</span>
+          </td>
+          <td>
+            <div class="d-flex gap-1 justify-content-end">
+              <button *ngIf="isAdmin() && canFreigeben(r)"
+                      class="btn btn-sm btn-outline-warning" (click)="freigeben(r)" title="Freigeben">
+                <i class="bi bi-check-circle"></i>
+              </button>
+              <button *ngIf="isAdmin() && canBezahlen(r)"
+                      class="btn btn-sm btn-outline-success" (click)="openZahlungModal(r)" title="Zahlung verbuchen">
+                <i class="bi bi-cash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="d-md-none" *ngIf="!loading && filteredRechnungen.length > 0">
+    <div *ngFor="let r of filteredRechnungen"
+         class="card border-0 shadow-sm mb-2"
+         [class.border-warning]="r.status === 'FREIGEGEBEN'"
+         [class.border-danger]="r.status === 'STORNIERT'">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <div>
+            <div class="fw-bold text-primary small">{{ r.eingangsrechnungsnummer }}</div>
+            <div class="fw-medium">{{ r.lieferantName }}</div>
+          </div>
+          <span class="badge ms-2 flex-shrink-0" [ngClass]="getStatusBadge(r.status)">
+            {{ getStatusLabel(r.status) }}
+          </span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <small class="text-muted">
+            <i class="bi bi-calendar3 me-1"></i>Fällig: {{ r.faelligDatum | date:'dd.MM.yyyy' }}
+          </small>
+          <span class="fw-semibold">{{ r.bruttobetrag | currency:'EUR' }}</span>
+        </div>
+        <small class="text-muted d-block mb-2" *ngIf="r.lieferantenRechnungsnummer">
+          Lief.-Rech.-Nr.: {{ r.lieferantenRechnungsnummer }}
+        </small>
+        <div class="d-flex gap-2" *ngIf="isAdmin()">
+          <button *ngIf="canFreigeben(r)" class="btn btn-sm btn-outline-warning flex-grow-1" (click)="freigeben(r)">
+            <i class="bi bi-check-circle me-1"></i>Freigeben
+          </button>
+          <button *ngIf="canBezahlen(r)" class="btn btn-sm btn-outline-success flex-grow-1" (click)="openZahlungModal(r)">
+            <i class="bi bi-cash me-1"></i>Zahlung
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && rechnungen.length > 0 && filteredRechnungen.length === 0"
+       class="text-center py-4 text-muted">
+    Keine Eingangsrechnungen gefunden.
+  </div>
+
+</div>
+
+<!-- Eingangsrechnung erfassen Modal -->
+<div *ngIf="showNewModal" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+  <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-file-earmark-plus me-2"></i>Eingangsrechnung erfassen</h5>
+        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+        <div class="row g-3">
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Lieferant *</label>
+            <select class="form-select" [(ngModel)]="newRequest.lieferantId">
+              <option value="">— auswählen —</option>
+              <option *ngFor="let l of lieferanten" [value]="l.id">{{ l.name }} ({{ l.lieferantennummer }})</option>
+            </select>
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Lieferanten-Rechnungsnummer</label>
+            <input type="text" class="form-control" [(ngModel)]="newRequest.lieferantenRechnungsnummer">
+          </div>
+          <div class="col-12 col-sm-4">
+            <label class="form-label">Eingangsdatum *</label>
+            <input type="date" class="form-control" [(ngModel)]="newRequest.eingangsDatum">
+          </div>
+          <div class="col-12 col-sm-4">
+            <label class="form-label">Rechnungsdatum *</label>
+            <input type="date" class="form-control" [(ngModel)]="newRequest.rechnungsDatum">
+          </div>
+          <div class="col-12 col-sm-4">
+            <label class="form-label">Fälligkeitsdatum *</label>
+            <input type="date" class="form-control" [(ngModel)]="newRequest.faelligDatum">
+          </div>
+          <div class="col-6 col-sm-4">
+            <label class="form-label">Nettobetrag (€) *</label>
+            <input type="number" step="0.01" class="form-control" [(ngModel)]="newRequest.nettobetrag">
+          </div>
+          <div class="col-6 col-sm-4">
+            <label class="form-label">Steuersatz *</label>
+            <select class="form-select" [(ngModel)]="newRequest.steuersatz">
+              <option [value]="19">19 %</option>
+              <option [value]="7">7 %</option>
+              <option [value]="0">0 %</option>
+            </select>
+          </div>
+          <div class="col-12 col-sm-4">
+            <label class="form-label">Brutto (berechnet)</label>
+            <input type="text" class="form-control bg-light" [value]="berechnetBrutto() | currency:'EUR'" readonly>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Aufwandskonto *</label>
+            <select class="form-select" [(ngModel)]="newRequest.aufwandskontoNr">
+              <option [value]="0">— auswählen —</option>
+              <option *ngFor="let k of aufwandskonten" [value]="k.kontonummer">
+                {{ k.kontonummer }} – {{ k.bezeichnung }}
+              </option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notizen</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="newRequest.notizen"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer flex-column flex-sm-row gap-2">
+        <button class="btn btn-secondary w-100 w-sm-auto" (click)="closeNewModal()">Abbrechen</button>
+        <button class="btn btn-success w-100 w-sm-auto" (click)="erfassen()" [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+          Erfassen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Zahlung verbuchen Modal -->
+<div *ngIf="showZahlungModal && zahlungRechnung" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+  <div class="modal-dialog modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-cash me-2"></i>Zahlung verbuchen</h5>
+        <button type="button" class="btn-close" (click)="closeZahlungModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="card bg-light border-0 mb-3">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Rechnung</span>
+              <span class="fw-semibold small">{{ zahlungRechnung.eingangsrechnungsnummer }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Lieferant</span>
+              <span class="small">{{ zahlungRechnung.lieferantName }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Betrag</span>
+              <span class="fw-bold text-success">{{ zahlungRechnung.bruttobetrag | currency:'EUR' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Zahlungsdatum *</label>
+          <input type="date" class="form-control" [(ngModel)]="zahlungRequest.gezahltAm">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Zahlungsreferenz</label>
+          <input type="text" class="form-control" [(ngModel)]="zahlungRequest.zahlungsreferenz"
+                 placeholder="z.B. Überweisungsreferenz">
+        </div>
+      </div>
+      <div class="modal-footer flex-column flex-sm-row gap-2">
+        <button class="btn btn-secondary w-100 w-sm-auto" (click)="closeZahlungModal()">Abbrechen</button>
+        <button class="btn btn-success w-100 w-sm-auto" (click)="bezahlen()" [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!saving" class="bi bi-check-lg me-1"></i>Zahlung verbuchen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

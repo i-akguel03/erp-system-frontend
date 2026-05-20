@@ -1,0 +1,189 @@
+<div class="px-3 px-md-4 py-3">
+
+  <!-- Toolbar -->
+  <div class="d-flex flex-column flex-sm-row gap-2 mb-3 align-items-stretch align-items-sm-center">
+    <input type="text" class="form-control"
+           placeholder="Kontonummer oder Bezeichnung suchen..."
+           [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()">
+    <select class="form-select" style="min-width:160px" [(ngModel)]="filterTyp" (ngModelChange)="applyFilter()">
+      <option value="">Alle Typen</option>
+      <option value="AKTIV">Aktivkonto</option>
+      <option value="PASSIV">Passivkonto</option>
+      <option value="AUFWAND">Aufwandskonto</option>
+      <option value="ERTRAG">Ertragskonto</option>
+    </select>
+    <div class="d-flex gap-2">
+      <button class="btn btn-secondary flex-grow-1 flex-sm-grow-0" (click)="loadKonten()">
+        <i class="bi bi-arrow-clockwise me-1"></i><span class="d-none d-sm-inline">Aktualisieren</span>
+      </button>
+      <button *ngIf="isAdmin()" class="btn btn-warning flex-grow-1 flex-sm-grow-0" (click)="initSkr04()" [disabled]="initLoading">
+        <span *ngIf="initLoading" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!initLoading" class="bi bi-lightning-charge me-1"></i><span class="d-none d-sm-inline">SKR04 init</span>
+      </button>
+      <button *ngIf="isAdmin()" class="btn btn-success flex-grow-1 flex-sm-grow-0" (click)="openNewModal()">
+        <i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">Neues Konto</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger alert-dismissible" role="alert">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="clearError()"></button>
+  </div>
+
+  <!-- Statistik-Kacheln -->
+  <div class="row g-2 mb-3" *ngIf="!loading && konten.length > 0">
+    <div class="col-6 col-md-3">
+      <div class="card text-center border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="h5 mb-0 text-primary">{{ countByTyp('AKTIV') }}</div>
+          <small class="text-muted">Aktivkonten</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="h5 mb-0 text-warning">{{ countByTyp('PASSIV') }}</div>
+          <small class="text-muted">Passivkonten</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="h5 mb-0 text-danger">{{ countByTyp('AUFWAND') }}</div>
+          <small class="text-muted">Aufwandskonten</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="h5 mb-0 text-success">{{ countByTyp('ERTRAG') }}</div>
+          <small class="text-muted">Ertragskonten</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ladeanzeige -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="mt-2 text-muted">Kontenplan wird geladen...</p>
+  </div>
+
+  <!-- Leer -->
+  <div *ngIf="!loading && konten.length === 0" class="text-center py-5 text-muted">
+    <i class="bi bi-journals display-4"></i>
+    <p class="mt-2">Kein Kontenplan vorhanden.</p>
+    <p class="small">SKR04 initialisieren oder Konto manuell anlegen.</p>
+  </div>
+
+  <!-- Desktop Tabelle -->
+  <div class="table-responsive d-none d-md-block" *ngIf="!loading && filteredKonten.length > 0">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="border-bottom border-2">
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Nr.</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Bezeichnung</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Typ</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Klasse</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Sammelkonto</th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size:.7rem;letter-spacing:.05em">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let k of filteredKonten">
+          <td class="fw-bold text-primary">{{ k.kontonummer }}</td>
+          <td class="fw-medium">{{ k.bezeichnung }}</td>
+          <td><span class="badge" [ngClass]="getTypBadge(k.kontoTyp)">{{ getTypLabel(k.kontoTyp) }}</span></td>
+          <td class="text-muted small">{{ k.kontoKlasse }}</td>
+          <td>
+            <i *ngIf="k.sammelkonto" class="bi bi-check-circle-fill text-success"></i>
+            <i *ngIf="!k.sammelkonto" class="bi bi-dash text-muted"></i>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="k.aktiv ? 'bg-success' : 'bg-secondary'">
+              {{ k.aktiv ? 'Aktiv' : 'Inaktiv' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="d-md-none" *ngIf="!loading && filteredKonten.length > 0">
+    <div *ngFor="let k of filteredKonten" class="card border-0 shadow-sm mb-2">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="fw-bold text-primary fs-6">{{ k.kontonummer }}</span>
+          <div class="d-flex gap-1">
+            <span class="badge" [ngClass]="getTypBadge(k.kontoTyp)">{{ getTypLabel(k.kontoTyp) }}</span>
+            <span class="badge" [ngClass]="k.aktiv ? 'bg-success' : 'bg-secondary'">{{ k.aktiv ? 'Aktiv' : 'Inaktiv' }}</span>
+          </div>
+        </div>
+        <div class="fw-medium">{{ k.bezeichnung }}</div>
+        <div class="d-flex gap-3 mt-1" *ngIf="k.kontoKlasse || k.sammelkonto">
+          <small class="text-muted" *ngIf="k.kontoKlasse">{{ k.kontoKlasse }}</small>
+          <small class="text-success" *ngIf="k.sammelkonto"><i class="bi bi-check-circle-fill me-1"></i>Sammelkonto</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && konten.length > 0 && filteredKonten.length === 0" class="text-center py-4 text-muted">
+    Keine Konten gefunden.
+  </div>
+
+</div>
+
+<!-- Neues Konto Modal -->
+<div *ngIf="showNewModal" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+  <div class="modal-dialog modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Neues Konto anlegen</h5>
+        <button type="button" class="btn-close" (click)="closeNewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+        <div class="mb-3">
+          <label class="form-label">Kontonummer *</label>
+          <input type="number" class="form-control" [(ngModel)]="newKonto.kontonummer" placeholder="z.B. 1800">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Bezeichnung *</label>
+          <input type="text" class="form-control" [(ngModel)]="newKonto.bezeichnung" placeholder="z.B. Bank">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Kontotyp *</label>
+          <select class="form-select" [(ngModel)]="newKonto.kontoTyp">
+            <option value="">— auswählen —</option>
+            <option value="AKTIV">Aktivkonto</option>
+            <option value="PASSIV">Passivkonto</option>
+            <option value="AUFWAND">Aufwandskonto</option>
+            <option value="ERTRAG">Ertragskonto</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Kontoklasse</label>
+          <input type="text" class="form-control" [(ngModel)]="newKonto.kontoKlasse" placeholder="z.B. Klasse 1">
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" [(ngModel)]="newKonto.sammelkonto" id="sammelkonto">
+          <label class="form-check-label" for="sammelkonto">Sammelkonto</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary w-100 w-sm-auto" (click)="closeNewModal()">Abbrechen</button>
+        <button class="btn btn-success w-100 w-sm-auto" (click)="createKonto()" [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+          Anlegen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

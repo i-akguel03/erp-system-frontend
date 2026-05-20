@@ -23,6 +23,11 @@ import { AnalyseComponent } from './components/analyse/analyse';
 import { NotificationListComponent } from './components/notification-list/notification-list';
 import { InitComponent } from './components/init/init';
 import { BillingCenterComponent } from './components/billing-center/billing-center';
+import { KontenplanComponent } from './components/buchhaltung/kontenplan/kontenplan';
+import { BuchungssatzListComponent } from './components/buchhaltung/buchungssatz-list/buchungssatz-list';
+import { GuvBerichtComponent } from './components/buchhaltung/guv-bericht/guv-bericht';
+import { LieferantenListComponent } from './components/kreditoren/lieferanten-list/lieferanten-list';
+import { EingangsrechnungListComponent } from './components/kreditoren/eingangsrechnung-list/eingangsrechnung-list';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -52,6 +57,14 @@ export const routes: Routes = [
   { path: 'analyse', component: AnalyseComponent, canActivate: [AuthGuard] },
   { path: 'notifications', component: NotificationListComponent, canActivate: [AuthGuard] },
 
+  // Buchhaltung
+  { path: 'buchhaltung/kontenplan', component: KontenplanComponent, canActivate: [AuthGuard] },
+  { path: 'buchhaltung/buchungen', component: BuchungssatzListComponent, canActivate: [AuthGuard] },
+  { path: 'buchhaltung/guv', component: GuvBerichtComponent, canActivate: [AuthGuard] },
+
+  // Kreditoren
+  { path: 'kreditoren/lieferanten', component: LieferantenListComponent, canActivate: [AuthGuard] },
+  { path: 'kreditoren/eingangsrechnungen', component: EingangsrechnungListComponent, canActivate: [AuthGuard] },
 
   // Weiterleitungen
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },

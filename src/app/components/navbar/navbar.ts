@@ -71,6 +71,25 @@ export class NavbarComponent implements OnInit, OnDestroy {
       ]
     },
     {
+      label: 'Kreditoren',
+      icon: 'bi-truck',
+      public: false,
+      children: [
+        { label: 'Lieferanten', icon: 'bi-building', routerLink: '/kreditoren/lieferanten' },
+        { label: 'Eingangsrechnungen', icon: 'bi-file-earmark-minus', routerLink: '/kreditoren/eingangsrechnungen' }
+      ]
+    },
+    {
+      label: 'Buchhaltung',
+      icon: 'bi-journal-bookmark',
+      public: false,
+      children: [
+        { label: 'Buchungsjournal', icon: 'bi-journal-text', routerLink: '/buchhaltung/buchungen' },
+        { label: 'GuV-Bericht', icon: 'bi-bar-chart-line', routerLink: '/buchhaltung/guv' },
+        { label: 'Kontenplan', icon: 'bi-list-columns', routerLink: '/buchhaltung/kontenplan' }
+      ]
+    },
+    {
       label: 'Administration',
       icon: 'bi-shield-lock',
       public: false,
