@@ -28,7 +28,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
   
   private destroy$ = new Subject<void>();
   
-  // Logisch reorganisierte Navigation - Mobile First
   items: NavItem[] = [
     {
       label: 'Dashboard',
@@ -36,9 +35,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       routerLink: '/dashboard',
       public: true
     },
-    { label: 'Analyse', icon: 'bi-bar-chart-line', routerLink: '/analyse', public: false },
-    { label: 'Vertragscenter', icon: 'bi-briefcase', routerLink: '/contract-center', public: false },
-    { label: 'Abrechnungscenter', icon: 'bi-cash-coin', routerLink: '/billing-center', public: false },
     {
       label: 'Stammdaten',
       icon: 'bi-database',
@@ -50,12 +46,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
       ]
     },
     {
-      label: 'Verträge',
-      icon: 'bi-file-earmark-text',
+      label: 'Vertrieb',
+      icon: 'bi-briefcase',
       public: false,
       children: [
+        { label: 'Analyse', icon: 'bi-bar-chart-line', routerLink: '/analyse' },
+        { label: 'Vertragscenter', icon: 'bi-file-earmark-check', routerLink: '/contract-center' },
         { label: 'Verträge', icon: 'bi-file-text', routerLink: '/contract' },
-        { label: 'Abonnements', icon: 'bi-arrow-repeat', routerLink: '/subscription' },
+        { label: 'Abonnements', icon: 'bi-arrow-repeat', routerLink: '/subscription' }
       ]
     },
     {
@@ -63,6 +61,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       icon: 'bi-receipt',
       public: false,
       children: [
+        { label: 'Abrechnungscenter', icon: 'bi-cash-coin', routerLink: '/billing-center' },
         { label: 'Fälligkeitspläne', icon: 'bi-calendar-event', routerLink: '/due-schedule' },
         { label: 'Rechnungslauf', icon: 'bi-play-circle', routerLink: '/invoice-batch' },
         { label: 'Rechnungen', icon: 'bi-receipt-cutoff', routerLink: '/invoice' },
@@ -71,22 +70,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
       ]
     },
     {
-      label: 'Kreditoren',
-      icon: 'bi-truck',
-      public: false,
-      children: [
-        { label: 'Lieferanten', icon: 'bi-building', routerLink: '/kreditoren/lieferanten' },
-        { label: 'Eingangsrechnungen', icon: 'bi-file-earmark-minus', routerLink: '/kreditoren/eingangsrechnungen' }
-      ]
-    },
-    {
-      label: 'Buchhaltung',
-      icon: 'bi-journal-bookmark',
+      label: 'Finanzen',
+      icon: 'bi-bank',
       public: false,
       children: [
         { label: 'Buchungsjournal', icon: 'bi-journal-text', routerLink: '/buchhaltung/buchungen' },
         { label: 'GuV-Bericht', icon: 'bi-bar-chart-line', routerLink: '/buchhaltung/guv' },
-        { label: 'Kontenplan', icon: 'bi-list-columns', routerLink: '/buchhaltung/kontenplan' }
+        { label: 'Kontenplan', icon: 'bi-list-columns', routerLink: '/buchhaltung/kontenplan' },
+        { label: 'Lieferanten', icon: 'bi-truck', routerLink: '/kreditoren/lieferanten' },
+        { label: 'Eingangsrechnungen', icon: 'bi-file-earmark-arrow-down', routerLink: '/kreditoren/eingangsrechnungen' }
       ]
     },
     {
