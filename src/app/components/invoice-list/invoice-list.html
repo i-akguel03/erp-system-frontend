@@ -55,7 +55,7 @@
           <td (click)="openDetailsModal(invoice)">{{ invoice.invoiceDate | date:'dd.MM.yyyy' }}</td>
           <td (click)="openDetailsModal(invoice)">{{ invoice.dueDate | date:'dd.MM.yyyy' }}</td>
           <td (click)="openDetailsModal(invoice)">
-            <span [ngClass]="getStatusBadgeClass(invoice.status)" class="badge">{{ invoice.status }}</span>
+            <span [ngClass]="getStatusBadgeClass(invoice.status)" class="badge">{{ getStatusLabel(invoice.status) }}</span>
           </td>
           <td (click)="openDetailsModal(invoice)">{{ invoice.totalAmount | currency:'EUR' }}</td>
           <td>
@@ -94,7 +94,7 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-2">
           <h5 class="card-title text-primary mb-0">{{ invoice.invoiceNumber }}</h5>
-          <span [ngClass]="getStatusBadgeClass(invoice.status)" class="badge">{{ invoice.status }}</span>
+          <span [ngClass]="getStatusBadgeClass(invoice.status)" class="badge">{{ getStatusLabel(invoice.status) }}</span>
         </div>
         <h6 class="card-subtitle mb-2 text-muted">
           {{ getCustomerById(invoice.customerId)?.firstName }} {{ getCustomerById(invoice.customerId)?.lastName }}
@@ -169,7 +169,7 @@
                 </div>
                 <div class="col-sm-6 mb-2">
                   <small class="text-muted">Status:</small>
-                  <div><span [ngClass]="getStatusBadgeClass(selectedInvoice.status)" class="badge">{{ selectedInvoice.status }}</span></div>
+                  <div><span [ngClass]="getStatusBadgeClass(selectedInvoice.status)" class="badge">{{ getStatusLabel(selectedInvoice.status) }}</span></div>
                 </div>
                 <div class="col-sm-6 mb-2">
                   <small class="text-muted">Rechnungsdatum:</small>
@@ -291,26 +291,24 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <div class="d-flex gap-2 w-100 flex-wrap">
-            <button class="btn btn-outline-secondary" (click)="closeDetailsModal()">Schließen</button>
-            <button class="btn btn-primary" (click)="openEditModal(selectedInvoice!); closeDetailsModal()" [disabled]="!canEdit(selectedInvoice!)">
-              <i class="fas fa-edit me-1"></i>Bearbeiten
+        <div class="modal-footer flex-column flex-sm-row gap-2">
+          <button class="btn btn-outline-secondary" (click)="closeDetailsModal()">Schließen</button>
+          <button class="btn btn-primary" (click)="openEditFromDetails()" [disabled]="!canEdit(selectedInvoice!)">
+            <i class="fas fa-edit me-1"></i>Bearbeiten
+          </button>
+          <button class="btn btn-success" (click)="sendFromDetails()" [disabled]="!canSend(selectedInvoice!)">
+            <i class="fas fa-paper-plane me-1"></i>Senden
+          </button>
+          <button *ngIf="canViewOpenItems(selectedInvoice!)" class="btn btn-warning" (click)="viewOpenItemsFromDetails()">
+            <i class="fas fa-file-invoice-dollar me-1"></i>Open Items
+          </button>
+          <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-outline-danger" (click)="cancelFromDetails()" [disabled]="!canCancel(selectedInvoice!)">
+              <i class="fas fa-ban me-1"></i>Stornieren
             </button>
-            <button class="btn btn-success" (click)="sendInvoice(selectedInvoice!.id); closeDetailsModal()" [disabled]="!canSend(selectedInvoice!)">
-              <i class="fas fa-paper-plane me-1"></i>Senden
+            <button class="btn btn-danger" (click)="deleteFromDetails()">
+              <i class="fas fa-trash me-1"></i>Löschen
             </button>
-            <button *ngIf="canViewOpenItems(selectedInvoice!)" class="btn btn-warning" (click)="viewOpenItems(selectedInvoice!); closeDetailsModal()">
-              <i class="fas fa-file-invoice-dollar me-1"></i>Open Items
-            </button>
-            <div class="ms-auto d-flex gap-2">
-              <button class="btn btn-outline-danger" (click)="cancelInvoice(selectedInvoice!.id); closeDetailsModal()" [disabled]="!canCancel(selectedInvoice!)">
-                <i class="fas fa-ban me-1"></i>Stornieren
-              </button>
-              <button class="btn btn-danger" (click)="deleteInvoice(selectedInvoice!.id); closeDetailsModal()">
-                <i class="fas fa-trash me-1"></i>Löschen
-              </button>
-            </div>
           </div>
         </div>
       </div>

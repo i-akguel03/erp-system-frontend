@@ -165,6 +165,41 @@ getItemsCount(invoice: Invoice): number {
     this.selectedInvoice = null;
   }
 
+  openEditFromDetails(): void {
+    if (!this.selectedInvoice) return;
+    const invoice = this.selectedInvoice;
+    this.closeDetailsModal();
+    this.openEditModal(invoice);
+  }
+
+  sendFromDetails(): void {
+    if (!this.selectedInvoice?.id) return;
+    const id = this.selectedInvoice.id;
+    this.closeDetailsModal();
+    this.sendInvoice(id);
+  }
+
+  cancelFromDetails(): void {
+    if (!this.selectedInvoice?.id) return;
+    const id = this.selectedInvoice.id;
+    this.closeDetailsModal();
+    this.cancelInvoice(id);
+  }
+
+  deleteFromDetails(): void {
+    if (!this.selectedInvoice?.id) return;
+    const id = this.selectedInvoice.id;
+    this.closeDetailsModal();
+    this.deleteInvoice(id);
+  }
+
+  viewOpenItemsFromDetails(): void {
+    if (!this.selectedInvoice) return;
+    const invoice = this.selectedInvoice;
+    this.closeDetailsModal();
+    this.viewOpenItems(invoice);
+  }
+
   // --- CRUD Operations ---
   createInvoice(): void {
     const invoiceToSend: Invoice = {
@@ -218,16 +253,28 @@ getItemsCount(invoice: Invoice): number {
   sendInvoice(invoiceId: string): void {
     if (!invoiceId) return;
     this.invoiceService.sendInvoice(invoiceId).subscribe({
-      next: updated => this.updateLocalInvoice(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Senden der Rechnung')
+      next: updated => {
+        this.updateLocalInvoice(updated);
+        this.notification.success('Rechnung erfolgreich versendet.');
+      },
+      error: err => {
+        this.handleApiError(err, 'Fehler beim Senden der Rechnung');
+        this.notification.error(this.error || 'Fehler beim Senden der Rechnung.');
+      }
     });
   }
 
   cancelInvoice(invoiceId: string): void {
     if (!invoiceId) return;
     this.invoiceService.cancelInvoice(invoiceId).subscribe({
-      next: updated => this.updateLocalInvoice(updated),
-      error: err => this.handleApiError(err, 'Fehler beim Stornieren der Rechnung')
+      next: updated => {
+        this.updateLocalInvoice(updated);
+        this.notification.success('Rechnung erfolgreich storniert.');
+      },
+      error: err => {
+        this.handleApiError(err, 'Fehler beim Stornieren der Rechnung');
+        this.notification.error(this.error || 'Fehler beim Stornieren der Rechnung.');
+      }
     });
   }
 
@@ -311,8 +358,21 @@ getItemsCount(invoice: Invoice): number {
     switch (status) {
       case 'DRAFT': return 'bg-secondary';
       case 'SENT': return 'bg-primary';
-      case 'CANCELLED': return 'bg-danger';
-      default: return 'bg-light';
+      case 'ACTIVE': return 'bg-success';
+      case 'OVERDUE': return 'bg-danger';
+      case 'CANCELLED': return 'bg-dark';
+      default: return 'bg-light text-dark';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'DRAFT': return 'Entwurf';
+      case 'SENT': return 'Versendet';
+      case 'ACTIVE': return 'Aktiv';
+      case 'OVERDUE': return 'Überfällig';
+      case 'CANCELLED': return 'Storniert';
+      default: return status;
     }
   }
 
@@ -321,7 +381,7 @@ getItemsCount(invoice: Invoice): number {
   }
 
   canCancel(invoice: Invoice): boolean {
-    return invoice.status === 'ACTIVE';
+    return invoice.status === 'DRAFT' || invoice.status === 'SENT';
   }
 
   canEdit(invoice: Invoice): boolean {
