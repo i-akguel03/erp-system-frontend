@@ -180,11 +180,10 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
 
     this.invoiceService.sendInvoice(invoice.id).subscribe({
       next: (updated) => {
-        this.updateLocalInvoice(updated);
-        this.emailService.sendInvoiceEmail(invoice.id!).subscribe({
-          next: () => this.showSuccessMessage('Rechnung versendet und E-Mail wurde gesendet'),
-          error: () => this.showSuccessMessage('Rechnung versendet (E-Mail konnte nicht gesendet werden)')
-        });
+        this.invoices = this.invoices.map(i => i.id === updated.id ? updated : i);
+        this.showSuccessMessage('Rechnung wurde erfolgreich versendet');
+        // E-Mail optional – Fehler werden still ignoriert
+        this.emailService.sendInvoiceEmail(invoice.id!).subscribe({ error: () => {} });
       },
       error: (err) => this.handleError('Fehler beim Versenden der Rechnung', err)
     });
@@ -396,10 +395,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
 
   // Helper Methods
   private updateLocalInvoice(updated: Invoice): void {
-    const index = this.invoices.findIndex(i => i.id === updated.id);
-    if (index >= 0) {
-      this.invoices[index] = updated;
-    }
+    this.invoices = this.invoices.map(i => i.id === updated.id ? updated : i);
   }
 
   private updateLocalOpenItem(updated: OpenItem): void {
