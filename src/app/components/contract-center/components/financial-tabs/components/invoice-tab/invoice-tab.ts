@@ -188,8 +188,9 @@ export class InvoiceTabComponent {
 
   sendInvoiceFromDetails(): void {
     if (this.selectedInvoice) {
+      const invoice = this.selectedInvoice;
       this.closeDetailsModal();
-      this.sendInvoice(this.selectedInvoice);
+      this.sendInvoice(invoice);
     }
   }
 
