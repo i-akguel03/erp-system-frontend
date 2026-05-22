@@ -54,14 +54,14 @@ export class GuvBerichtComponent implements OnInit {
     });
   }
 
+  private readonly SUMMARY_KEYS = new Set(['GESAMT_ERTRAG', 'GESAMT_AUFWAND', 'ERGEBNIS']);
+
   private processGuvData(data: { [bezeichnung: string]: number }): void {
-    // Backend liefert Map<Kontobezeichnung, Saldo>
-    // Positive Werte = Ertrag, negative = Aufwand (oder je nach Kontotyp)
-    // Wir trennen anhand des Vorzeichens des Saldos
     this.ertraege = [];
     this.aufwendungen = [];
 
     Object.entries(data).forEach(([bezeichnung, saldo]) => {
+      if (this.SUMMARY_KEYS.has(bezeichnung)) return;
       if (saldo >= 0) {
         this.ertraege.push({ bezeichnung, betrag: saldo, typ: 'ERTRAG' });
       } else {

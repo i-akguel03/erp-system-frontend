@@ -125,7 +125,7 @@ export class BuchungssatzListComponent implements OnInit {
   }
 
   canStorno(b: Buchungssatz): boolean {
-    return b.status === 'GEBUCHT';
+    return b.status === 'GEBUCHT' && !b.stornoVonId;
   }
 
   clearError(): void { this.error = null; }

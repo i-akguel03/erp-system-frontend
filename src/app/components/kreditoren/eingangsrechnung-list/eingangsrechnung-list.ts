@@ -115,12 +115,6 @@ export class EingangsrechnungListComponent implements OnInit {
 
   closeNewModal(): void { this.showNewModal = false; }
 
-  berechneBrutto(): void {
-    const netto = this.newRequest.nettobetrag || 0;
-    const satz = this.newRequest.steuersatz || 0;
-    // nur zur Anzeige im Template (kein eigenes Feld im Request)
-  }
-
   berechnetBrutto(): number {
     const netto = this.newRequest.nettobetrag || 0;
     const satz = this.newRequest.steuersatz || 0;
