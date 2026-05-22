@@ -37,8 +37,8 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
 
   filteredContracts: Contract[] = [];
   searchTerm: string = '';
+  statusFilter: string = '';
 
-  // Kontextmenü
   contextMenuVisible = false;
   contextMenuPosition = { x: 0, y: 0 };
   contextMenuContract: Contract | null = null;
@@ -64,29 +64,67 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
       debounceTime(300),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
-    ).subscribe(searchTerm => this.performSearch(searchTerm));
+    ).subscribe(term => this.performSearch(term));
   }
 
   filterContracts(): void {
     this.searchSubject.next(this.searchTerm);
   }
 
+  filterByStatus(status: string): void {
+    this.statusFilter = status;
+    this.performSearch(this.searchTerm);
+  }
+
   private performSearch(term: string): void {
-    const searchTerm = term.toLowerCase().trim();
-    if (!searchTerm) {
-      this.filteredContracts = [...this.contracts];
-      return;
+    let list = [...this.contracts];
+
+    if (this.statusFilter === 'EXPIRING') {
+      list = list.filter(c => this.isExpiringSoon(c));
+    } else if (this.statusFilter) {
+      list = list.filter(c => c.contractStatus === this.statusFilter);
     }
 
-    this.filteredContracts = this.contracts.filter(contract => {
-      const customer = this.getCustomerById(contract.customerId);
-      const customerStr = customer ? `${customer.firstName} ${customer.lastName} ${customer.customerNumber}` : '';
-      
-      return (contract.contractNumber?.toLowerCase().includes(searchTerm)) ||
-        (contract.contractTitle?.toLowerCase().includes(searchTerm)) ||
-        (contract.contractStatus?.toLowerCase().includes(searchTerm)) ||
-        customerStr.toLowerCase().includes(searchTerm);
-    });
+    const searchTerm = term.toLowerCase().trim();
+    if (searchTerm) {
+      list = list.filter(contract => {
+        const customer = this.getCustomerById(contract.customerId);
+        const customerStr = customer
+          ? `${customer.firstName} ${customer.lastName} ${customer.customerNumber}`
+          : '';
+        return (
+          contract.contractNumber?.toLowerCase().includes(searchTerm) ||
+          contract.contractTitle?.toLowerCase().includes(searchTerm) ||
+          contract.contractStatus?.toLowerCase().includes(searchTerm) ||
+          customerStr.toLowerCase().includes(searchTerm)
+        );
+      });
+    }
+
+    this.filteredContracts = list;
+  }
+
+  getStatusCount(status: string): number {
+    return this.contracts.filter(c => c.contractStatus === status).length;
+  }
+
+  getExpiringCount(): number {
+    return this.contracts.filter(c => this.isExpiringSoon(c)).length;
+  }
+
+  isExpiringSoon(contract: Contract): boolean {
+    if (!contract.endDate || contract.contractStatus !== 'ACTIVE') return false;
+    const days = Math.ceil(
+      (new Date(contract.endDate).getTime() - Date.now()) / 86_400_000
+    );
+    return days >= 0 && days <= 30;
+  }
+
+  getRowClass(contract: Contract): Record<string, boolean> {
+    return {
+      'table-active bg-primary bg-opacity-10': this.isSelectedContract(contract),
+      'row-expiring': !this.isSelectedContract(contract) && this.isExpiringSoon(contract),
+    };
   }
 
   emitCreateContract(): void {
@@ -106,25 +144,28 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
     return this.customers[customerId];
   }
 
-  // Vertragsstatus-Logik
-  // Vertragsstatus-Logik aus Modell
-getContractStatus(contract: Contract): string {
-  return contract.contractStatus ?? 'Unbekannt';
-}
-
-getContractStatusClass(contract: Contract): string {
-  switch (contract.contractStatus) {
-    case 'ACTIVE': return 'badge bg-success';
-    case 'DRAFT': return 'badge bg-warning text-dark';
-    case 'SUSPENDED': return 'badge bg-secondary';
-    case 'TERMINATED': return 'badge bg-dark text-white';
-    case 'EXPIRED': return 'badge bg-danger';
-    default: return 'badge bg-light text-dark';
+  getContractStatus(contract: Contract): string {
+    const labels: Record<string, string> = {
+      ACTIVE: 'Aktiv',
+      DRAFT: 'Entwurf',
+      SUSPENDED: 'Ausgesetzt',
+      TERMINATED: 'Gekündigt',
+      EXPIRED: 'Abgelaufen',
+    };
+    return labels[contract.contractStatus ?? ''] ?? contract.contractStatus ?? 'Unbekannt';
   }
-}
 
+  getContractStatusClass(contract: Contract): string {
+    switch (contract.contractStatus) {
+      case 'ACTIVE':     return 'badge bg-success';
+      case 'DRAFT':      return 'badge bg-warning text-dark';
+      case 'SUSPENDED':  return 'badge bg-secondary';
+      case 'TERMINATED': return 'badge bg-dark text-white';
+      case 'EXPIRED':    return 'badge bg-danger';
+      default:           return 'badge bg-light text-dark';
+    }
+  }
 
-  // Kontextmenü-Funktionen
   onContractMenuClick(event: MouseEvent, contract: Contract): void {
     event.stopPropagation();
     const btn = event.currentTarget as HTMLElement;
@@ -151,9 +192,6 @@ getContractStatusClass(contract: Contract): string {
   private calcMenuY(triggerBottom: number, triggerTop: number): number {
     const menuH = 300;
     const isMobile = window.innerWidth <= 768;
-    // On mobile the sliding panel has transform:translateX(0) which makes
-    // position:fixed children relative to the panel, not the viewport.
-    // The panel starts below the 56px header and ends above the 62px tab bar.
     const headerH = isMobile ? 56 : 0;
     const tabBarH = isMobile ? 62 : 0;
     const panelH = window.innerHeight - headerH - tabBarH;
@@ -167,12 +205,7 @@ getContractStatusClass(contract: Contract): string {
 
   onContractAction(action: string): void {
     if (!this.contextMenuContract) return;
-    
-    this.contractAction.emit({
-      action,
-      contract: this.contextMenuContract
-    });
-    
+    this.contractAction.emit({ action, contract: this.contextMenuContract });
     this.closeContextMenu();
   }
 
@@ -183,22 +216,16 @@ getContractStatusClass(contract: Contract): string {
 
   @HostListener('document:click')
   onDocumentClick(): void {
-    if (this.contextMenuVisible) {
-      this.closeContextMenu();
-    }
+    if (this.contextMenuVisible) this.closeContextMenu();
   }
 
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
-    if (this.contextMenuVisible) {
-      this.closeContextMenu();
-    }
+    if (this.contextMenuVisible) this.closeContextMenu();
   }
 
   @HostListener('window:resize')
   onWindowResize(): void {
-    if (this.contextMenuVisible) {
-      this.closeContextMenu();
-    }
+    if (this.contextMenuVisible) this.closeContextMenu();
   }
 }

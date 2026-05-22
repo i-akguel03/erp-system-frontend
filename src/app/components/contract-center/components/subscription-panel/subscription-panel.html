@@ -5,10 +5,10 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
         <tr>
-          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('productName')">Produkt <i class="fas ms-1" [ngClass]="sort.icon('productName')" style="font-size: 0.55rem;"></i></th>
-          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('subscriptionStatus')">Status <i class="fas ms-1" [ngClass]="sort.icon('subscriptionStatus')" style="font-size: 0.55rem;"></i></th>
-          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('startDate')">Laufzeit <i class="fas ms-1" [ngClass]="sort.icon('startDate')" style="font-size: 0.55rem;"></i></th>
-          <th class="fw-semibold text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Verbleibend</th>
+          <th class="th-sortable" (click)="sort.toggle('productName')">Produkt <i class="fas ms-1" [ngClass]="sort.icon('productName')"></i></th>
+          <th class="th-sortable" (click)="sort.toggle('subscriptionStatus')">Status <i class="fas ms-1" [ngClass]="sort.icon('subscriptionStatus')"></i></th>
+          <th class="th-sortable" (click)="sort.toggle('startDate')">Laufzeit <i class="fas ms-1" [ngClass]="sort.icon('startDate')"></i></th>
+          <th>Verbleibend</th>
         </tr>
       </thead>
       <tbody>
@@ -53,12 +53,3 @@
 
 </div>
 
-<style>
-:host { display: block; height: 100%; }
-
-thead.position-sticky th {
-  background-color: #f8f9fa;
-  border-top: 0 !important;
-  border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
-}
-</style>

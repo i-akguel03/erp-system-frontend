@@ -288,7 +288,6 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   // Modal Management - Edit Invoice
   openEditInvoiceModal(invoice: Invoice): void {
     if (!invoice) {
-      console.error('Fehler: Invoice ist null oder undefined');
       this.handleError('Keine gültige Rechnung zum Bearbeiten ausgewählt');
       return;
     }
@@ -308,7 +307,6 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   // Modal Management - Edit OpenItem
   openEditOpenItemModal(openItem: OpenItem): void {
     if (!openItem) {
-      console.error('Fehler: OpenItem ist null oder undefined');
       this.handleError('Kein gültiger offener Posten zum Bearbeiten ausgewählt');
       return;
     }
@@ -414,8 +412,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
         return new Date().toISOString().split('T')[0];
       }
       return d.toISOString().split('T')[0];
-    } catch (error) {
-      console.warn('Fehler beim Formatieren des Datums:', date, error);
+    } catch {
       return new Date().toISOString().split('T')[0];
     }
   }
@@ -459,8 +456,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
           this.dueSchedules = schedules;
           this.loading.schedules = false;
         },
-        error: (err) => {
-          console.error('Fehler beim Laden der Fälligkeitspläne:', err);
+        error: () => {
           this.errors.schedules = 'Fehler beim Laden der Fälligkeitspläne';
           this.loading.schedules = false;
           this.dueSchedules = [];
@@ -481,8 +477,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
           this.invoices = invoices;
           this.loading.invoices = false;
         },
-        error: (err) => {
-          console.error('Fehler beim Laden der Rechnungen:', err);
+        error: () => {
           this.errors.invoices = 'Fehler beim Laden der Rechnungen';
           this.loading.invoices = false;
           this.invoices = [];
@@ -503,8 +498,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
           this.openItems = openItems;
           this.loading.openItems = false;
         },
-        error: (err) => {
-          console.error('Fehler beim Laden der offenen Posten:', err);
+        error: () => {
           this.errors.openItems = 'Fehler beim Laden der offenen Posten';
           this.loading.openItems = false;
           this.openItems = [];
@@ -549,9 +543,7 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   canEditInvoice(invoice: Invoice): boolean {
-    return invoice.status !== 'CANCELLED' && 
-           invoice.status !== 'SENT' && 
-           invoice.status !== 'DRAFT';
+    return invoice.status === 'DRAFT';
   }
 
   canEditOpenItem(openItem: OpenItem): boolean {

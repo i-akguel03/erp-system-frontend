@@ -1,3 +1,24 @@
+/* Tab count badges */
+.tab-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1em 0.45em;
+  border-radius: 999px;
+  line-height: 1.4;
+  min-width: 1.4em;
+  text-align: center;
+}
+
+.tab-count--light {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.tab-count--muted {
+  background: rgba(0, 0, 0, 0.08);
+  color: #6c757d;
+}
+
 /* Container & Tabs */
 .card.flex-fill {
   display: flex;

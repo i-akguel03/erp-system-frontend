@@ -1,5 +1,22 @@
-.cursor-pointer {
+.cursor-pointer { cursor: pointer; }
+
+.table thead th {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #6c757d;
+  white-space: nowrap;
+  background-color: #f8f9fa;
+  border-top: 0 !important;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
+}
+
+.th-sortable {
   cursor: pointer;
+  user-select: none;
+  &:hover { background-color: #e9ecef !important; }
+  i { font-size: 0.55rem; }
 }
 
 .subscription-item {

@@ -17,43 +17,46 @@
 
   <!-- Tab Navigation -->
   <ul class="nav nav-tabs nav-fill border-0 bg-light compact-tabs-v1" role="tablist">
-  <li class="nav-item">
-    <button class="nav-link border-0 py-2 px-2 text-start"
-            [class.active]="activeTab==='schedule'"
-            [class.bg-primary]="activeTab==='schedule'"
-            [class.text-white]="activeTab==='schedule'"
-            [class.text-dark]="activeTab!=='schedule'"
-            (click)="setActiveTab('schedule')"
-            type="button">
-      <i class="fas fa-calendar-alt me-2"></i>
-      <span class="fw-medium small">Fälligkeitsplan</span>
-    </button>
-  </li>
-  <li class="nav-item">
-    <button class="nav-link border-0 py-2 px-2 text-start"
-            [class.active]="activeTab==='invoices'"
-            [class.bg-primary]="activeTab==='invoices'"
-            [class.text-white]="activeTab==='invoices'"
-            [class.text-dark]="activeTab!=='invoices'"
-            (click)="setActiveTab('invoices')"
-            type="button">
-      <i class="fas fa-file-invoice me-2"></i>
-      <span class="fw-medium small">Rechnungen</span>
-    </button>
-  </li>
-  <li class="nav-item">
-    <button class="nav-link border-0 py-2 px-2 text-start"
-            [class.active]="activeTab==='openitems'"
-            [class.bg-primary]="activeTab==='openitems'"
-            [class.text-white]="activeTab==='openitems'"
-            [class.text-dark]="activeTab!=='openitems'"
-            (click)="setActiveTab('openitems')"
-            type="button">
-      <i class="fas fa-exclamation-triangle me-2"></i>
-      <span class="fw-medium small">Offene Posten</span>
-    </button>
-  </li>
-</ul>
+    <li class="nav-item">
+      <button class="nav-link border-0 py-2 px-2 d-flex align-items-center justify-content-center gap-1"
+              [ngClass]="activeTab==='schedule' ? 'active bg-primary text-white' : 'text-dark'"
+              (click)="setActiveTab('schedule')"
+              type="button">
+        <i class="fas fa-calendar-alt"></i>
+        <span class="fw-medium small">Fälligkeitsplan</span>
+        <span *ngIf="dueSchedules.length" class="tab-count"
+              [ngClass]="activeTab==='schedule' ? 'tab-count--light' : 'tab-count--muted'">
+          {{ dueSchedules.length }}
+        </span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link border-0 py-2 px-2 d-flex align-items-center justify-content-center gap-1"
+              [ngClass]="activeTab==='invoices' ? 'active bg-primary text-white' : 'text-dark'"
+              (click)="setActiveTab('invoices')"
+              type="button">
+        <i class="fas fa-file-invoice"></i>
+        <span class="fw-medium small">Rechnungen</span>
+        <span *ngIf="invoices.length" class="tab-count"
+              [ngClass]="activeTab==='invoices' ? 'tab-count--light' : 'tab-count--muted'">
+          {{ invoices.length }}
+        </span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link border-0 py-2 px-2 d-flex align-items-center justify-content-center gap-1"
+              [ngClass]="activeTab==='openitems' ? 'active bg-primary text-white' : 'text-dark'"
+              (click)="setActiveTab('openitems')"
+              type="button">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span class="fw-medium small">Offene Posten</span>
+        <span *ngIf="openItems.length" class="tab-count"
+              [ngClass]="activeTab==='openitems' ? 'tab-count--light' : 'tab-count--muted'">
+          {{ openItems.length }}
+        </span>
+      </button>
+    </li>
+  </ul>
 
 
 

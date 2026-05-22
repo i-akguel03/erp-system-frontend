@@ -91,6 +91,15 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     return Object.values(this.customers);
   }
 
+  get expiringContractCount(): number {
+    const threshold = 30 * 86_400_000;
+    return this.contracts.filter(c => {
+      if (!c.endDate || c.contractStatus !== 'ACTIVE') return false;
+      const diff = new Date(c.endDate).getTime() - Date.now();
+      return diff >= 0 && diff <= threshold;
+    }).length;
+  }
+
   // Mobile state management - FIXED: Added navigation stack
   isMobile = false;
   mobileCurrentView: 'contracts' | 'subscriptions' | 'financial' = 'contracts';
@@ -315,8 +324,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
             if (c.id) this.customers[c.id] = c;
           });
         },
-        error: err => {
-          console.error('Fehler beim Laden der Kunden:', err);
+        error: () => {
           this.error = 'Fehler beim Laden der Kunden.';
         }
       });
@@ -334,7 +342,6 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: err => {
-          console.error('Fehler beim Laden der Verträge:', err);
           this.error = err.error?.message || `Fehler beim Laden der Verträge (HTTP ${err.status}).`;
           this.loading = false;
         }
@@ -346,7 +353,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: products => { this.products = products; },
-        error: err => console.error('Fehler beim Laden der Produkte:', err)
+        error: () => this.notificationService.warn('Produkte konnten nicht geladen werden.')
       });
   }
 
@@ -357,9 +364,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
         next: subs => {
           this.subscriptions = subs;
         },
-        error: err => {
-          console.error('Fehler beim Laden der Abonnements:', err);
+        error: () => {
           this.subscriptions = [];
+          this.notificationService.warn('Abonnements konnten nicht geladen werden.');
         }
       });
   }
@@ -521,10 +528,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
             this.closeContractModal();
             this.notificationService.success('Vertrag wurde aktualisiert');
           },
-          error: err => {
+          error: () => {
             this.contractModalLoading = false;
             this.notificationService.error('Fehler beim Aktualisieren des Vertrags');
-            console.error(err);
           }
         });
     } else {
@@ -537,10 +543,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
             const verb = this.contractModalMode === 'duplicate' ? 'dupliziert' : 'erstellt';
             this.notificationService.success(`Vertrag wurde ${verb}`);
           },
-          error: err => {
+          error: () => {
             this.contractModalLoading = false;
             this.notificationService.error('Fehler beim Speichern des Vertrags');
-            console.error(err);
           }
         });
     }
@@ -586,9 +591,8 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
               this.updateLocalContract(updated);
               this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde gekündigt`);
             },
-            error: err => {
+            error: () => {
               this.notificationService.error('Fehler beim Kündigen des Vertrags');
-              console.error(err);
             }
           });
       }
@@ -611,9 +615,8 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
               this.updateLocalContract(updated);
               this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde storniert`);
             },
-            error: err => {
+            error: () => {
               this.notificationService.error('Fehler beim Stornieren des Vertrags');
-              console.error(err);
             }
           });
       }
@@ -640,9 +643,8 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
               }
               this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde verlängert`);
             },
-            error: err => {
+            error: () => {
               this.notificationService.error('Fehler beim Verlängern des Vertrags');
-              console.error(err);
             }
           });
       }
@@ -660,10 +662,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
           this.notificationService.success(`Verlängerungslauf abgeschlossen — ${count} Vertrag/Verträge verlängert`);
           this.loadContracts();
         },
-        error: err => {
+        error: () => {
           this.renewalBatchLoading = false;
           this.notificationService.error('Fehler beim Verlängerungslauf');
-          console.error(err);
         }
       });
   }
@@ -735,10 +736,9 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
           this.closeSubscriptionModal();
           this.notificationService.success('Abonnement wurde erstellt');
         },
-        error: err => {
+        error: () => {
           this.subscriptionModalLoading = false;
           this.notificationService.error('Fehler beim Erstellen des Abonnements');
-          console.error(err);
         }
       });
   }
