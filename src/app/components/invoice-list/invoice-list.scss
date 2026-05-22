@@ -1,0 +1,16 @@
+.table thead th {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #6c757d;
+  white-space: nowrap;
+  background-color: #f8f9fa;
+  border-top: 0 !important;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
+}
+
+.input-group .form-control:focus {
+  box-shadow: none;
+  border-color: #dee2e6;
+}

@@ -1,24 +1,63 @@
-<div class="container mt-3">
+<div class="px-3 px-md-4 py-3">
 
-  <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
-    <!-- Suchfeld -->
-    <input type="text" class="form-control flex-grow-1" placeholder="Rechnungen suchen..."
-           [(ngModel)]="searchTerm" (ngModelChange)="filterInvoices()">
+  <!-- Page Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h5 class="mb-0 fw-semibold">Rechnungen</h5>
+      <small class="text-muted">{{ invoices.length }} Einträge gesamt</small>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm btn-outline-secondary" (click)="loadInvoices()" title="Aktualisieren">
+        <i class="fas fa-refresh me-1"></i>Aktualisieren
+      </button>
+      <button class="btn btn-sm btn-outline-info" (click)="viewAllOpenItems()">
+        <i class="fas fa-list me-1"></i>Open Items
+      </button>
+      <button class="btn btn-sm btn-outline-warning" (click)="generateInvoiceRun()" [disabled]="loading">
+        <i class="fas fa-play me-1"></i>Rechnungslauf
+      </button>
+      <button class="btn btn-sm btn-success" (click)="openNewModal()">
+        <i class="fas fa-plus me-1"></i>Neue Rechnung
+      </button>
+    </div>
+  </div>
 
-    <!-- Buttons -->
-    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
-      <button class="btn btn-info flex-grow-1 flex-md-grow-0" (click)="viewAllOpenItems()">
-        <i class="fas fa-list"></i> Open Items
+  <!-- Search + Status Filter -->
+  <div class="d-flex flex-column flex-md-row gap-2 mb-3 align-items-md-center">
+    <div class="input-group input-group-sm" style="max-width: 300px;">
+      <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted" style="font-size: 0.8rem;"></i></span>
+      <input type="text" class="form-control border-start-0 ps-0"
+             placeholder="Rechnungen suchen..."
+             [(ngModel)]="searchTerm" (ngModelChange)="filterInvoices()">
+      <button *ngIf="searchTerm" class="btn btn-outline-secondary" type="button" (click)="searchTerm=''; filterInvoices()">
+        <i class="fas fa-times" style="font-size: 0.75rem;"></i>
       </button>
-      <button class="btn btn-warning flex-grow-1 flex-md-grow-0" (click)="generateInvoiceRun()" [disabled]="loading">
-        <i class="fas fa-play"></i> Rechnungslauf
+    </div>
+    <div class="d-flex flex-wrap gap-1">
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="statusFilter === '' ? 'btn-primary' : 'btn-outline-secondary'"
+              (click)="filterByStatus('')">
+        Alle <span class="badge ms-1" [ngClass]="statusFilter === '' ? 'bg-white text-primary' : 'bg-secondary'">{{ invoices.length }}</span>
       </button>
-      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadInvoices()">
-        <i class="fas fa-refresh"></i> Aktualisieren
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="statusFilter === 'DRAFT' ? 'btn-secondary' : 'btn-outline-secondary'"
+              (click)="filterByStatus('DRAFT')">
+        Entwurf<span *ngIf="getStatusCount('DRAFT') > 0" class="badge bg-secondary ms-1">{{ getStatusCount('DRAFT') }}</span>
       </button>
-      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">
-        <i class="fas fa-plus"></i> Neue Rechnung
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="statusFilter === 'SENT' ? 'btn-primary' : 'btn-outline-secondary'"
+              (click)="filterByStatus('SENT')">
+        Versendet<span *ngIf="getStatusCount('SENT') > 0" class="badge bg-primary ms-1">{{ getStatusCount('SENT') }}</span>
+      </button>
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="statusFilter === 'OVERDUE' ? 'btn-danger' : 'btn-outline-secondary'"
+              (click)="filterByStatus('OVERDUE')">
+        Überfällig<span *ngIf="getStatusCount('OVERDUE') > 0" class="badge bg-danger ms-1">{{ getStatusCount('OVERDUE') }}</span>
+      </button>
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="statusFilter === 'CANCELLED' ? 'btn-dark' : 'btn-outline-secondary'"
+              (click)="filterByStatus('CANCELLED')">
+        Storniert<span *ngIf="getStatusCount('CANCELLED') > 0" class="badge bg-dark ms-1">{{ getStatusCount('CANCELLED') }}</span>
       </button>
     </div>
   </div>
@@ -36,8 +75,8 @@
 
   <!-- Desktop Tabelle (ab md) -->
   <div class="table-responsive d-none d-md-block" *ngIf="filteredInvoices.length > 0">
-    <table class="table table-hover table-bordered">
-      <thead class="table-light">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
         <tr>
           <th>Nummer</th>
           <th>Kunde</th>

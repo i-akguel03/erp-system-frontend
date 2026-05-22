@@ -84,7 +84,6 @@ export class OpenItemList implements OnInit {
     
     this.openItemService.getAllOpenItems().subscribe({
       next: data => {
-        console.log('Frontend erhält OpenItems:', data);
         this.openItems = data;
         this.applyCurrentFilter();
         this.loading = false;
@@ -102,7 +101,7 @@ export class OpenItemList implements OnInit {
           !this.openItems.some(item => item.invoiceId === invoice.id)
         );
       },
-      error: err => console.error('Fehler beim Laden der Rechnungen:', err)
+      error: () => {}
     });
   }
 
@@ -121,9 +120,7 @@ export class OpenItemList implements OnInit {
         paidCount: 0, // Could add separate call if needed
         averageAmount: 0 // Could add separate call if needed
       };
-    }).catch(err => {
-      console.error('Fehler beim Laden der Statistiken:', err);
-    });
+    }).catch(() => {});
   }
 
   // --- Filter Methods ---

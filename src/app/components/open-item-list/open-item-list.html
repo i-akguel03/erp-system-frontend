@@ -1,61 +1,112 @@
-<div class="container mt-3">
+<div class="px-3 px-md-4 py-3">
 
-  <!-- Suchleiste & Aktionen -->
-  <div class="d-flex flex-column flex-md-row flex-wrap mb-3 gap-2 align-items-start align-items-md-center">
-    <!-- Suchfeld -->
-    <input type="text" class="form-control flex-grow-1" placeholder="Offene Posten suchen..."
-           [(ngModel)]="searchTerm" (ngModelChange)="filterOpenItems()">
-
-    <!-- Buttons -->
-    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0 w-100 w-md-auto">
-      <button class="btn btn-info flex-grow-1 flex-md-grow-0" (click)="showOverdueOnly()">
-        <i class="fas fa-exclamation-triangle"></i> Überfällig
+  <!-- Page Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h5 class="mb-0 fw-semibold">Offene Posten</h5>
+      <small class="text-muted">{{ openItems.length }} Einträge gesamt</small>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm btn-outline-secondary" (click)="loadOpenItems()">
+        <i class="fas fa-refresh me-1"></i>Aktualisieren
       </button>
-      <button class="btn btn-warning flex-grow-1 flex-md-grow-0" (click)="showOpenOnly()">
-        <i class="fas fa-clock"></i> Offen
-      </button>
-      <button class="btn btn-secondary flex-grow-1 flex-md-grow-0" (click)="loadOpenItems()">
-        <i class="fas fa-refresh"></i> Aktualisieren
-      </button>
-      <button class="btn btn-success flex-grow-1 flex-md-grow-0 ms-auto" (click)="openNewModal()">
-        <i class="fas fa-plus"></i> Neuer Posten
+      <button class="btn btn-sm btn-success" (click)="openNewModal()">
+        <i class="fas fa-plus me-1"></i>Neuer Posten
       </button>
     </div>
   </div>
 
   <!-- Statistik Cards -->
-  <div class="row mb-3" *ngIf="statistics">
-    <div class="col-md-3">
-      <div class="card bg-danger text-white">
-        <div class="card-body text-center">
-          <div class="h4">{{ statistics.totalOutstanding | currency:'EUR' }}</div>
-          <small>Ausstehend</small>
+  <div class="row g-3 mb-3" *ngIf="statistics">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 h-100" style="background: rgba(220,53,69,0.07);">
+        <div class="card-body py-3 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background: rgba(220,53,69,0.15); width:36px; height:36px;">
+              <i class="fas fa-euro-sign text-danger" style="font-size: 0.85rem;"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-danger" style="font-size: 0.95rem; line-height: 1.2;">{{ statistics.totalOutstanding | currency:'EUR' }}</div>
+              <div class="text-muted" style="font-size: 0.72rem;">Ausstehend</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card bg-success text-white">
-        <div class="card-body text-center">
-          <div class="h4">{{ statistics.totalPaid | currency:'EUR' }}</div>
-          <small>Bezahlt</small>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 h-100" style="background: rgba(25,135,84,0.07);">
+        <div class="card-body py-3 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background: rgba(25,135,84,0.15); width:36px; height:36px;">
+              <i class="fas fa-check text-success" style="font-size: 0.85rem;"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-success" style="font-size: 0.95rem; line-height: 1.2;">{{ statistics.totalPaid | currency:'EUR' }}</div>
+              <div class="text-muted" style="font-size: 0.72rem;">Bezahlt</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card bg-warning text-white">
-        <div class="card-body text-center">
-          <div class="h4">{{ statistics.overdueCount }}</div>
-          <small>Überfällig</small>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 h-100" style="background: rgba(255,193,7,0.1);">
+        <div class="card-body py-3 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background: rgba(255,193,7,0.2); width:36px; height:36px;">
+              <i class="fas fa-exclamation-triangle text-warning" style="font-size: 0.85rem;"></i>
+            </div>
+            <div>
+              <div class="fw-bold" style="font-size: 1.1rem; line-height: 1.2; color: #b45309;">{{ statistics.overdueCount }}</div>
+              <div class="text-muted" style="font-size: 0.72rem;">Überfällig</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card bg-info text-white">
-        <div class="card-body text-center">
-          <div class="h4">{{ statistics.openCount }}</div>
-          <small>Offen</small>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 h-100" style="background: rgba(13,202,240,0.08);">
+        <div class="card-body py-3 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background: rgba(13,202,240,0.15); width:36px; height:36px;">
+              <i class="fas fa-clock text-info" style="font-size: 0.85rem;"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-info" style="font-size: 1.1rem; line-height: 1.2;">{{ statistics.openCount }}</div>
+              <div class="text-muted" style="font-size: 0.72rem;">Offen</div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Search + Filter Pills -->
+  <div class="d-flex flex-column flex-md-row gap-2 mb-3 align-items-md-center">
+    <div class="input-group input-group-sm" style="max-width: 300px;">
+      <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted" style="font-size: 0.8rem;"></i></span>
+      <input type="text" class="form-control border-start-0 ps-0"
+             placeholder="Offene Posten suchen..."
+             [(ngModel)]="searchTerm" (ngModelChange)="filterOpenItems()">
+      <button *ngIf="searchTerm" class="btn btn-outline-secondary" type="button" (click)="searchTerm=''; filterOpenItems()">
+        <i class="fas fa-times" style="font-size: 0.75rem;"></i>
+      </button>
+    </div>
+    <div class="d-flex flex-wrap gap-1">
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="currentFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+              (click)="currentFilter = 'all'; applyCurrentFilter()">
+        Alle <span class="badge ms-1" [ngClass]="currentFilter === 'all' ? 'bg-white text-primary' : 'bg-secondary'">{{ openItems.length }}</span>
+      </button>
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="currentFilter === 'open' ? 'btn-info' : 'btn-outline-secondary'"
+              (click)="showOpenOnly()">
+        Offen<span *ngIf="statistics?.openCount" class="badge bg-info ms-1">{{ statistics!.openCount }}</span>
+      </button>
+      <button class="btn btn-sm rounded-pill px-3"
+              [ngClass]="currentFilter === 'overdue' ? 'btn-danger' : 'btn-outline-secondary'"
+              (click)="showOverdueOnly()">
+        Überfällig<span *ngIf="statistics?.overdueCount" class="badge bg-danger ms-1">{{ statistics!.overdueCount }}</span>
+      </button>
     </div>
   </div>
 
@@ -72,8 +123,8 @@
 
   <!-- Desktop Tabelle (ab md) -->
   <div class="table-responsive d-none d-md-block" *ngIf="filteredOpenItems.length > 0">
-    <table class="table table-hover table-bordered">
-      <thead class="table-light">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
         <tr>
           <th>Rechnung</th>
           <th>Kunde</th>

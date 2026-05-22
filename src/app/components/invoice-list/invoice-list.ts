@@ -24,6 +24,7 @@ export class InvoiceListComponent implements OnInit {
   loading = false;
   error: string | null = null;
   searchTerm: string = '';
+  statusFilter: string = '';
 
   customers: Customer[] = [];
 
@@ -64,7 +65,7 @@ export class InvoiceListComponent implements OnInit {
     this.invoiceService.getAllInvoices().subscribe({
       next: data => {
         this.invoices = data;
-        this.filteredInvoices = [...this.invoices];
+        this.filterInvoices();
         this.loading = false;
       },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Rechnungen')
@@ -89,13 +90,26 @@ export class InvoiceListComponent implements OnInit {
 
   filterInvoices(): void {
     const term = this.searchTerm.toLowerCase();
-    this.filteredInvoices = this.invoices.filter(i => {
+    let list = this.invoices.filter(i => {
       const customer = this.getCustomerById(i.customerId);
       const customerString = customer ? `${customer.firstName} ${customer.lastName} ${customer.customerNumber}` : '';
       return (i.invoiceNumber?.toLowerCase().includes(term)) ||
              (i.status?.toLowerCase().includes(term)) ||
              customerString.toLowerCase().includes(term);
     });
+    if (this.statusFilter) {
+      list = list.filter(i => i.status === this.statusFilter);
+    }
+    this.filteredInvoices = list;
+  }
+
+  filterByStatus(status: string): void {
+    this.statusFilter = status;
+    this.filterInvoices();
+  }
+
+  getStatusCount(status: string): number {
+    return this.invoices.filter(i => i.status === status).length;
   }
 
   deleteInvoice(id?: string): void {
