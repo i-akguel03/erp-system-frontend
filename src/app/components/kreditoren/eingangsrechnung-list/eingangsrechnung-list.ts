@@ -81,14 +81,14 @@ export class EingangsrechnungListComponent implements OnInit {
   loadLieferanten(): void {
     this.kreditorenService.getAllLieferanten().subscribe({
       next: data => { this.lieferanten = data.filter(l => l.aktiv !== false); },
-      error: () => {}
+      error: () => this.notification.warn('Lieferanten konnten nicht geladen werden.')
     });
   }
 
   loadAufwandskonten(): void {
     this.kontenplanService.getAll().subscribe({
       next: data => { this.aufwandskonten = data.filter(k => k.kontoTyp === 'AUFWAND'); },
-      error: () => {}
+      error: () => this.notification.warn('Aufwandskonten konnten nicht geladen werden.')
     });
   }
 

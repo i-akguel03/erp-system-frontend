@@ -3,6 +3,7 @@ import { VorgangDTO, VorgangStatus, VorgangTyp, VorgangHelper, VorgangStatistik 
 import { Invoice } from '../../models/Invoice';
 import { Contract } from '../../models/Contract';
 import { VorgangService } from '../../services/vorgang-service';
+import { NotificationService } from '../../services/notification.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -63,7 +64,10 @@ export class VorgaengeListComponent implements OnInit {
   VorgangTyp = VorgangTyp;
   VorgangHelper = VorgangHelper;
 
-  constructor(private vorgangService: VorgangService) {}
+  constructor(
+    private vorgangService: VorgangService,
+    private notification: NotificationService
+  ) {}
 
   ngOnInit(): void {
     this.loadVorgaenge();
@@ -211,7 +215,7 @@ export class VorgaengeListComponent implements OnInit {
 
     this.vorgangService.vorgangAbbrechen(vorgang.id, grund).subscribe({
       next: () => this.loadVorgaenge(),
-      error: () => alert('Fehler beim Abbrechen des Vorgangs')
+      error: () => this.notification.error('Fehler beim Abbrechen des Vorgangs')
     });
   }
 
@@ -223,10 +227,10 @@ export class VorgaengeListComponent implements OnInit {
     
     this.vorgangService.korrigiereHaengengebliebene(stundenSchwellwert).subscribe({
       next: (message) => {
-        alert(message);
+        this.notification.success(message);
         this.loadVorgaenge();
       },
-      error: () => alert('Fehler beim Korrigieren hängengebliebener Vorgänge')
+      error: () => this.notification.error('Fehler beim Korrigieren hängengebliebener Vorgänge')
     });
   }
 

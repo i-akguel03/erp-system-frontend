@@ -310,7 +310,7 @@ export class OpenItemList implements OnInit {
     this.openItemService.addReminder(openItemId).subscribe({
       next: updated => {
         this.updateLocalOpenItem(updated);
-        alert('Mahnung wurde hinzugefügt.');
+        this.notification.success('Mahnung wurde hinzugefügt.');
       },
       error: err => this.handleApiError(err, 'Fehler beim Hinzufügen der Mahnung')
     });

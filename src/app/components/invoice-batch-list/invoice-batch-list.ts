@@ -11,6 +11,7 @@ import { Invoice } from '../../models/Invoice';
 import { Subject, takeUntil, interval } from 'rxjs';
 import { InvoiceBatchService } from '../../services/invoice-batch-service';
 import { VorgangService } from '../../services/vorgang-service';
+import { NotificationService } from '../../services/notification.service';
 
 interface BatchProgress {
   batchId?: string;
@@ -59,7 +60,8 @@ export class InvoiceBatchListComponent implements OnInit, OnDestroy {
 
   constructor(
     private invoiceBatchService: InvoiceBatchService,
-    private vorgangService: VorgangService
+    private vorgangService: VorgangService,
+    private notification: NotificationService
   ) {
     // Heutiges Datum als Standard setzen
     const today = new Date();
@@ -239,10 +241,10 @@ export class InvoiceBatchListComponent implements OnInit, OnDestroy {
     this.vorgangService.vorgangAbbrechen(vorgang.id, grund).subscribe({
       next: () => {
         this.loadRechnungsVorgaenge();
-        alert('Vorgang erfolgreich abgebrochen');
+        this.notification.success('Vorgang erfolgreich abgebrochen.');
       },
       error: (err) => {
-        alert('Fehler beim Abbrechen: ' + this.extractErrorMessage(err));
+        this.notification.error('Fehler beim Abbrechen: ' + this.extractErrorMessage(err));
       }
     });
   }

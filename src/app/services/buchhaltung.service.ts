@@ -15,13 +15,6 @@ export class BuchhaltungService extends BaseApiService {
     return this.http.get<Buchungssatz>(`${this.apiUrl}/buchungen/${id}`, { headers: this.getAuthHeaders() });
   }
 
-  getKontoSaldo(kontonummer: number, jahr: number): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/konten/${kontonummer}/saldo`, {
-      headers: this.getAuthHeaders(),
-      params: { jahr: jahr.toString() }
-    });
-  }
-
   getGuvUebersicht(jahr: number): Observable<{ [bezeichnung: string]: number }> {
     return this.http.get<{ [bezeichnung: string]: number }>(`${this.apiUrl}/berichte/guv`, {
       headers: this.getAuthHeaders(),
