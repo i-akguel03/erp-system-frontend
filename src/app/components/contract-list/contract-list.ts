@@ -71,10 +71,7 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
 
   loadCustomers(): void {
     this.customerService.getCustomers().subscribe({
-      next: data => {
-        console.log('Geladene Kunden:', data);
-        this.customers = data;
-      },
+      next: data => { this.customers = data; },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Kunden')
     });
   }
@@ -151,7 +148,6 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
       this.error = 'Bitte wählen Sie einen Kunden aus.';
       return;
     }
-    console.log('Erstelle Vertrag:', contractToSend);
     if (this.saving) return;
     this.saving = true;
     this.contractService.createContract(contractToSend).subscribe({
@@ -177,7 +173,6 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
       startDate: this.editStartDateString ? new Date(this.editStartDateString) : new Date(),
       endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
     };
-    console.log('Aktualisiere Vertrag:', contractToUpdate);
     if (this.saving) return;
     this.saving = true;
     this.contractService.updateContract(this.editContract.id, contractToUpdate).subscribe({

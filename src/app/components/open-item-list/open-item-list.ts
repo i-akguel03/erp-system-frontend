@@ -9,6 +9,7 @@ import { InvoiceService } from '../../services/invoice-service';
 import { OpenItemService } from '../../services/open-item-service';
 import { EmailService } from '../../services/email.service';
 import { NotificationService } from '../../services/notification.service';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-openitem-list',
@@ -59,7 +60,8 @@ export class OpenItemList implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private emailService: EmailService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -315,14 +317,23 @@ export class OpenItemList implements OnInit {
   }
 
   cancelOpenItem(openItemId: string): void {
-    if (!openItemId || !confirm('Möchten Sie diesen offenen Posten wirklich stornieren?')) return;
-    
-    this.openItemService.cancelOpenItem(openItemId).subscribe({
-      next: updated => {
-        this.updateLocalOpenItem(updated);
-        this.loadStatistics();
-      },
-      error: err => this.handleApiError(err, 'Fehler beim Stornieren des offenen Postens')
+    if (!openItemId) return;
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diesen offenen Posten wirklich stornieren?',
+      header: 'Offenen Posten stornieren',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.openItemService.cancelOpenItem(openItemId).subscribe({
+          next: updated => {
+            this.updateLocalOpenItem(updated);
+            this.loadStatistics();
+          },
+          error: err => this.handleApiError(err, 'Fehler beim Stornieren des offenen Postens')
+        });
+      }
     });
   }
 

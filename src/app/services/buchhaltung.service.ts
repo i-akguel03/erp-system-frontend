@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
-import { Buchungssatz, GuvUebersicht } from '../models/Buchungssatz';
+import { Buchungssatz } from '../models/Buchungssatz';
 
 @Injectable({ providedIn: 'root' })
 export class BuchhaltungService extends BaseApiService {

@@ -32,11 +32,3 @@ export interface Buchungssatz {
   sumHaben?: number;
   ausgeglichen?: boolean;
 }
-
-export interface GuvUebersicht {
-  ertraege: { [bezeichnung: string]: number };
-  aufwendungen: { [bezeichnung: string]: number };
-  gesamtErtrag?: number;
-  gesamtAufwand?: number;
-  ergebnis?: number;
-}

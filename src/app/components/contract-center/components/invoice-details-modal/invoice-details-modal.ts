@@ -26,7 +26,6 @@ export class InvoiceDetailsModal {
   }
 
   onAction(type: string): void {
-    console.log('Modal Action:', type, this.invoice); // Debug-Ausgabe
     if (this.invoice) {
       this.action.emit({ type, invoice: this.invoice });
     }

@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 import { Invoice, InvoiceItem } from '../models/Invoice';
@@ -33,13 +32,7 @@ export class InvoiceService extends BaseApiService {
       .pipe(
         map(res => {
           const invoices = (res.content || res);
-          console.log('Backend Response:', invoices); // Debug-Log
-          const mappedInvoices = invoices.map((dto: any) => {
-            const mapped = this.mapToInvoice(dto);
-            console.log(`Rechnung ${mapped.invoiceNumber}: ${mapped.invoiceItems?.length || 0} Items`); // Debug-Log
-            return mapped;
-          });
-          return mappedInvoices;
+          return invoices.map((dto: any) => this.mapToInvoice(dto));
         })
       );
   }
@@ -47,11 +40,7 @@ export class InvoiceService extends BaseApiService {
   getInvoiceById(id: string): Observable<Invoice> {
     return this.http.get<Invoice>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() })
       .pipe(
-        map(dto => {
-          const mapped = this.mapToInvoice(dto);
-          console.log(`Einzelne Rechnung ${mapped.invoiceNumber}: ${mapped.invoiceItems?.length || 0} Items`); // Debug-Log
-          return mapped;
-        })
+        map(dto => this.mapToInvoice(dto))
       );
   }
 

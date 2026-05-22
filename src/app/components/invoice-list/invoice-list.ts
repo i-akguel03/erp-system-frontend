@@ -9,6 +9,7 @@ import { Invoice } from '../../models/Invoice';
 import { InvoiceService } from '../../services/invoice-service';
 import { EmailService } from '../../services/email.service';
 import { NotificationService } from '../../services/notification.service';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-invoice-list',
@@ -47,7 +48,8 @@ export class InvoiceListComponent implements OnInit {
     private customerService: CustomerService,
     private router: Router,
     private emailService: EmailService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -56,53 +58,27 @@ export class InvoiceListComponent implements OnInit {
   }
 
   // --- Load Methods ---
-  // Ersetzen Sie die loadInvoices() Methode in Ihrer InvoiceListComponent:
-
-loadInvoices(): void {
-  this.loading = true;
-  this.error = null;
-  this.invoiceService.getAllInvoices().subscribe({
-    next: data => {
-      console.log('Frontend erhält Rechnungen:', data); // Debug-Log
-      
-      this.invoices = data;
-      this.filteredInvoices = [...this.invoices];
-      
-      // Debug: Items pro Rechnung loggen
-      this.invoices.forEach(invoice => {
-        console.log(`Rechnung ${invoice.invoiceNumber}: ${invoice.invoiceItems?.length || 0} Items`, invoice.invoiceItems);
-      });
-      
-      this.loading = false;
-    },
-    error: err => this.handleApiError(err, 'Fehler beim Laden der Rechnungen')
-  });
-}
-
-// Zusätzliche Debug-Methode hinzufügen:
-debugInvoiceItems(invoice: Invoice): void {
-  console.log('Debug Invoice Items für:', invoice.invoiceNumber);
-  console.log('Items Array:', invoice.invoiceItems);
-  console.log('Items Length:', invoice.invoiceItems?.length || 0);
-  if (invoice.invoiceItems && invoice.invoiceItems.length > 0) {
-    invoice.invoiceItems.forEach((item, index) => {
-      console.log(`Item ${index + 1}:`, item);
+  loadInvoices(): void {
+    this.loading = true;
+    this.error = null;
+    this.invoiceService.getAllInvoices().subscribe({
+      next: data => {
+        this.invoices = data;
+        this.filteredInvoices = [...this.invoices];
+        this.loading = false;
+      },
+      error: err => this.handleApiError(err, 'Fehler beim Laden der Rechnungen')
     });
   }
-}
 
-// Methode für Items-Gesamtsumme hinzufügen:
-getTotalItemsAmount(invoice: Invoice): number {
-  if (!invoice.invoiceItems || invoice.invoiceItems.length === 0) {
-    return 0;
+  getTotalItemsAmount(invoice: Invoice): number {
+    if (!invoice.invoiceItems || invoice.invoiceItems.length === 0) return 0;
+    return invoice.invoiceItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
   }
-  return invoice.invoiceItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
-}
 
-// Items-Anzahl anzeigen:
-getItemsCount(invoice: Invoice): number {
-  return invoice.invoiceItems?.length || 0;
-}
+  getItemsCount(invoice: Invoice): number {
+    return invoice.invoiceItems?.length || 0;
+  }
 
   loadCustomers(): void {
     this.customerService.getCustomers().subscribe({
@@ -123,13 +99,23 @@ getItemsCount(invoice: Invoice): number {
   }
 
   deleteInvoice(id?: string): void {
-    if (!id || !confirm('Möchten Sie diese Rechnung wirklich löschen?')) return;
-    this.invoiceService.deleteInvoice(id).subscribe({
-      next: () => {
-        this.invoices = this.invoices.filter(i => i.id !== id);
-        this.filterInvoices();
-      },
-      error: err => this.handleApiError(err, 'Fehler beim Löschen der Rechnung')
+    if (!id) return;
+    this.confirmationService.confirm({
+      message: 'Möchten Sie diese Rechnung wirklich löschen?',
+      header: 'Rechnung löschen',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.invoiceService.deleteInvoice(id).subscribe({
+          next: () => {
+            this.invoices = this.invoices.filter(i => i.id !== id);
+            this.filterInvoices();
+          },
+          error: err => this.handleApiError(err, 'Fehler beim Löschen der Rechnung')
+        });
+      }
     });
   }
 
@@ -280,27 +266,21 @@ getItemsCount(invoice: Invoice): number {
 
   // --- Invoice Run Generation ---
   generateInvoiceRun(): void {
-    if (!confirm('Möchten Sie einen Rechnungslauf generieren? Dies erstellt Open Items aus den versendeten Rechnungen.')) {
-      return;
-    }
-
-    this.loading = true;
-    this.error = null;
-
-    // Hier würden Sie Ihren InvoiceRunService aufrufen
-    // this.invoiceRunService.generateInvoiceRun().subscribe({
-    //   next: (result) => {
-    //     this.loading = false;
-    //     alert(`Rechnungslauf erfolgreich generiert! ${result.openItemsCreated} Open Items erstellt.`);
-    //   },
-    //   error: err => this.handleApiError(err, 'Fehler beim Generieren des Rechnungslaufs')
-    // });
-
-    // Placeholder für Demo
-    setTimeout(() => {
-      this.loading = false;
-      alert('Rechnungslauf erfolgreich generiert! Open Items wurden erstellt.');
-    }, 1000);
+    this.confirmationService.confirm({
+      message: 'Möchten Sie einen Rechnungslauf generieren? Dies erstellt Open Items aus den versendeten Rechnungen.',
+      header: 'Rechnungslauf starten',
+      icon: 'pi pi-play',
+      acceptLabel: 'Starten',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        this.loading = true;
+        this.error = null;
+        setTimeout(() => {
+          this.loading = false;
+          this.notification.success('Rechnungslauf erfolgreich generiert! Open Items wurden erstellt.');
+        }, 1000);
+      }
+    });
   }
 
   // --- Navigation to Open Items ---

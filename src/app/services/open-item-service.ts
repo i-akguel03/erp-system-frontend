@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 import { OpenItem } from '../models/OpenItem';
@@ -28,7 +27,6 @@ export class OpenItemService extends BaseApiService {
       .pipe(
         map(res => {
           const openItems = (res.content || res);
-          console.log('OpenItems Backend Response:', openItems); // Debug-Log
           return openItems.map((dto: any) => this.mapToOpenItem(dto));
         })
       );

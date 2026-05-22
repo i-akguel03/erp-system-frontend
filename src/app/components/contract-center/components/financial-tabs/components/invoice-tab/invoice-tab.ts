@@ -35,7 +35,6 @@ export class InvoiceTabComponent {
   }
 
   closeDetailsModal(): void {
-    console.log('Schließe Details Modal. selectedInvoice vor dem Löschen:', this.selectedInvoice);
     this.showDetailsModal = false;
     this.selectedInvoice = null;
   }
@@ -97,20 +96,12 @@ export class InvoiceTabComponent {
   }
 
   editInvoice(invoice: Invoice): void {
-    console.log('editInvoice aufgerufen mit:', invoice);
-    if (!invoice) {
-      console.error('Keine Invoice für editInvoice erhalten');
-      return;
-    }
+    if (!invoice) return;
     this.invoiceAction.emit({ action: 'edit', invoice: invoice });
   }
 
   sendInvoice(invoice: Invoice): void {
-    console.log('sendInvoice aufgerufen mit:', invoice);
-    if (!invoice) {
-      console.error('Keine Invoice für sendInvoice erhalten');
-      return;
-    }
+    if (!invoice) return;
     this.invoiceAction.emit({ action: 'send', invoice: invoice });
   }
 
@@ -175,10 +166,7 @@ export class InvoiceTabComponent {
   // Modal Actions
   openEditModalFromDetails(): void {
     if (this.selectedInvoice) {
-      console.log('Invoice für Bearbeitung:', this.selectedInvoice);
-      // Verwende JSON für eine tiefe Kopie
       const invoiceToEdit = JSON.parse(JSON.stringify(this.selectedInvoice));
-      console.log('Kopierte Invoice:', invoiceToEdit);
       this.closeDetailsModal();
       this.editInvoice(invoiceToEdit);
     } else {

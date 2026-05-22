@@ -5,6 +5,7 @@ import { Buchungssatz, BelegTyp } from '../../../models/Buchungssatz';
 import { BuchhaltungService } from '../../../services/buchhaltung.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthService } from '../../../auth/services/auth';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-buchungssatz-list',
@@ -28,7 +29,8 @@ export class BuchungssatzListComponent implements OnInit {
   constructor(
     private buchhaltungService: BuchhaltungService,
     private notification: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -79,20 +81,29 @@ export class BuchungssatzListComponent implements OnInit {
 
   stornieren(b: Buchungssatz): void {
     if (!b.id || this.storniering) return;
-    if (!confirm(`Buchungssatz ${b.buchungsnummer} wirklich stornieren?`)) return;
-    this.storniering = true;
-    this.buchhaltungService.stornieren(b.id).subscribe({
-      next: stornoSatz => {
-        this.buchungen = this.buchungen.map(x => x.id === b.id ? { ...x, status: 'STORNIERT' } : x);
-        this.buchungen.push(stornoSatz);
-        this.applyFilter();
-        this.notification.success(`Storno-Buchung ${stornoSatz.buchungsnummer} erstellt.`);
-        this.storniering = false;
-        if (this.showDetailsModal) this.closeDetails();
-      },
-      error: err => {
-        this.notification.error(err.error?.message || 'Fehler beim Stornieren.');
-        this.storniering = false;
+    this.confirmationService.confirm({
+      message: `Buchungssatz ${b.buchungsnummer} wirklich stornieren?`,
+      header: 'Buchungssatz stornieren',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren',
+      rejectLabel: 'Abbrechen',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.storniering = true;
+        this.buchhaltungService.stornieren(b.id!).subscribe({
+          next: stornoSatz => {
+            this.buchungen = this.buchungen.map(x => x.id === b.id ? { ...x, status: 'STORNIERT' } : x);
+            this.buchungen.push(stornoSatz);
+            this.applyFilter();
+            this.notification.success(`Storno-Buchung ${stornoSatz.buchungsnummer} erstellt.`);
+            this.storniering = false;
+            if (this.showDetailsModal) this.closeDetails();
+          },
+          error: err => {
+            this.notification.error(err.error?.message || 'Fehler beim Stornieren.');
+            this.storniering = false;
+          }
+        });
       }
     });
   }

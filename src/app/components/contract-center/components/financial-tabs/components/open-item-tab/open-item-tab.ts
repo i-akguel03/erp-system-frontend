@@ -156,12 +156,10 @@ export class OpenItemsTabComponent implements OnChanges {
 
   // Action Methods - Details direkt öffnen
   onDetails(openItem: OpenItem): void {
-    console.log('Open Details for:', openItem);
     this.openDetailsModal(openItem);
   }
 
   onPayment(openItem: OpenItem): void {
-    console.log('Payment Action for:', openItem);
     this.openItemAction.emit({ action: 'payment', openItem });
   }
 
@@ -253,8 +251,4 @@ export class OpenItemsTabComponent implements OnChanges {
   // Math für Template
   Math = Math;
 
-  // DEBUG: Zusätzliche Debug-Methode für Template
-  debugLog(message: string, data?: any): void {
-    console.log(`🔍 Template Debug - ${message}:`, data);
-  }
 }

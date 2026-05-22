@@ -8,6 +8,7 @@ import { KreditorenService } from '../../../services/kreditoren.service';
 import { KontenplanService } from '../../../services/kontenplan.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthService } from '../../../auth/services/auth';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-eingangsrechnung-list',
@@ -42,7 +43,8 @@ export class EingangsrechnungListComponent implements OnInit {
     private kreditorenService: KreditorenService,
     private kontenplanService: KontenplanService,
     private notification: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -148,13 +150,21 @@ export class EingangsrechnungListComponent implements OnInit {
   // --- Freigeben ---
   freigeben(r: Eingangsrechnung): void {
     if (!r.id) return;
-    if (!confirm(`Eingangsrechnung ${r.eingangsrechnungsnummer} freigeben und GL-Buchung erstellen?`)) return;
-    this.kreditorenService.freigeben(r.id).subscribe({
-      next: updated => {
-        this.updateLocal(updated);
-        this.notification.success('Rechnung freigegeben, GL-Buchung erstellt.');
-      },
-      error: err => this.notification.error(err.error?.message || 'Fehler beim Freigeben.')
+    this.confirmationService.confirm({
+      message: `Eingangsrechnung ${r.eingangsrechnungsnummer} freigeben und GL-Buchung erstellen?`,
+      header: 'Eingangsrechnung freigeben',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Freigeben',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        this.kreditorenService.freigeben(r.id!).subscribe({
+          next: updated => {
+            this.updateLocal(updated);
+            this.notification.success('Rechnung freigegeben, GL-Buchung erstellt.');
+          },
+          error: err => this.notification.error(err.error?.message || 'Fehler beim Freigeben.')
+        });
+      }
     });
   }
 
