@@ -11,6 +11,7 @@ import { PaginationComponent } from '../../shared/components/pagination/paginati
 @Component({
   selector: 'app-vorgaenge-list',
   templateUrl: './vorgang-list.html',
+  styleUrls: ['./vorgang-list.scss'],
   imports: [CommonModule, FormsModule, PaginationComponent],
 })
 export class VorgaengeListComponent implements OnInit {

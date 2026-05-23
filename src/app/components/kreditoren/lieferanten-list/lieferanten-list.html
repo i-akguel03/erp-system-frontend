@@ -1,4 +1,4 @@
-<div class="px-3 px-md-4 py-3">
+<div class="list-content px-3 px-md-4 py-2 d-flex flex-column flex-fill overflow-hidden">
 
   <!-- Toolbar -->
   <div class="d-flex flex-column flex-sm-row gap-2 mb-3 align-items-stretch align-items-sm-center">
@@ -34,7 +34,7 @@
   </div>
 
   <!-- Desktop Tabelle -->
-  <div class="table-responsive d-none d-md-block" *ngIf="!loading && filteredLieferanten.length > 0">
+  <div class="table-responsive d-none d-md-block" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="!loading && filteredLieferanten.length > 0">
     <table class="table table-hover align-middle mb-0">
       <thead>
         <tr class="border-bottom border-2">
@@ -70,7 +70,7 @@
   </div>
 
   <!-- Mobile Cards -->
-  <div class="d-md-none" *ngIf="!loading && filteredLieferanten.length > 0">
+  <div class="d-md-none" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="!loading && filteredLieferanten.length > 0">
     <div *ngFor="let l of filteredLieferanten" class="card border-0 shadow-sm mb-2">
       <div class="card-body py-2 px-3">
         <div class="d-flex justify-content-between align-items-start mb-1">

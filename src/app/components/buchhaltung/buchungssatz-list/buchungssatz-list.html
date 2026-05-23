@@ -1,4 +1,4 @@
-<div class="px-3 px-md-4 py-3">
+<div class="list-content px-3 px-md-4 py-2 d-flex flex-column flex-fill overflow-hidden">
 
   <!-- Toolbar -->
   <div class="d-flex flex-column flex-sm-row gap-2 mb-3 align-items-stretch align-items-sm-center">
@@ -35,7 +35,7 @@
   </div>
 
   <!-- Desktop Tabelle -->
-  <div class="table-responsive d-none d-md-block" *ngIf="!loading && filteredBuchungen.length > 0">
+  <div class="table-responsive d-none d-md-block" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="!loading && filteredBuchungen.length > 0">
     <table class="table table-hover align-middle mb-0">
       <thead>
         <tr class="border-bottom border-2">
@@ -79,7 +79,7 @@
   </div>
 
   <!-- Mobile Cards -->
-  <div class="d-md-none" *ngIf="!loading && filteredBuchungen.length > 0">
+  <div class="d-md-none" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="!loading && filteredBuchungen.length > 0">
     <div *ngFor="let b of filteredBuchungen"
          class="card border-0 shadow-sm mb-2"
          [class.border-danger]="b.status === 'STORNIERT'">
