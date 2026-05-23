@@ -1,3 +1,35 @@
 html, body {
   overflow-x: hidden;
 }
+
+/* Routed components fill the flex height of app-main-container */
+.app-main-container > *:not(router-outlet) {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* router-outlet is an empty element — must not consume flex space */
+.app-main-container > router-outlet {
+  flex: 0 0 0 !important;
+  display: block;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Sticky column headers in list table areas */
+.list-content thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: #fff;
+}
+
+/* Non-list pages without their own SCSS: scroll their own content */
+app-admin,
+app-audit-log,
+app-analyse,
+app-notification-list,
+app-init {
+  display: block;
+  overflow-y: auto;
+}
