@@ -1,3 +1,10 @@
+:host {
+  display: block;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .bc-header {
   border-bottom: 1px solid #f0f0f0;
   background: #fff;

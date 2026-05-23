@@ -1,1 +1,8 @@
+:host {
+  display: block;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .table th { white-space: nowrap; font-size: .7rem; letter-spacing: .05em; }
