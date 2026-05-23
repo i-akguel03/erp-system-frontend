@@ -35,6 +35,7 @@
 }
 
 @if (!loading) {
+<div style="flex: 1 1 0; overflow: hidden; display: flex; flex-direction: column; min-height: 0;">
 
 <!-- ── KPI STRIP ──────────────────────────────────────────────── -->
 <div class="kpi-strip px-3 px-md-4 pb-3">
@@ -99,7 +100,7 @@
 }
 
 <!-- ── TABS + SUCHE ───────────────────────────────────────────── -->
-<div class="px-3 px-md-4">
+<div class="list-content px-3 px-md-4 d-flex flex-column overflow-hidden" style="flex: 1 1 0; min-height: 0;">
 
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
     <!-- Tabs -->
@@ -141,7 +142,7 @@
   </div>
 
   <!-- ── DESKTOP TABELLE ────────────────────────────────────────── -->
-  <div class="table-responsive d-none d-md-block mb-4" *ngIf="filtered.length > 0">
+  <div class="table-responsive d-none d-md-block" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="filtered.length > 0">
     <table class="table table-hover align-middle mb-0">
       <thead>
         <tr class="border-bottom border-2">
@@ -219,7 +220,7 @@
   </div>
 
   <!-- ── MOBILE CARDS ───────────────────────────────────────────── -->
-  <div class="d-md-none mb-4">
+  <div class="d-md-none" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="filtered.length > 0">
     @for (item of filtered; track item.id) {
       <div class="card border-0 shadow-sm mb-3" [class.border-danger]="item.status === 'OVERDUE'" [class.border-start]="item.status === 'OVERDUE'" style="border-left-width: 3px !important;">
         <div class="card-body">
@@ -285,6 +286,7 @@
     </div>
   }
 
+</div>
 </div>
 } <!-- end !loading -->
 
