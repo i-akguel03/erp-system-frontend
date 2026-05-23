@@ -1,15 +1,27 @@
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { HttpHeaders } from '@angular/common/http';
 import { BaseApiService } from './base-api-service';
 import { Customer } from '../models/Customer';
+import { PagedResult } from '../models/PagedResult';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CustomerService extends BaseApiService {
   private apiUrl = `${this.apiBaseUrl}/api/customers`;
+
+  getCustomersPaginated(page = 0, size = 20): Observable<PagedResult<Customer>> {
+    const params = { page: page.toString(), size: size.toString() };
+    return this.http.get<Customer[]>(this.apiUrl, { headers: this.getAuthHeaders(), params, observe: 'response' }).pipe(
+      map(res => ({
+        content: res.body ?? [],
+        totalElements: Number(res.headers.get('X-Total-Count') ?? 0),
+        totalPages: Number(res.headers.get('X-Total-Pages') ?? 1),
+        currentPage: Number(res.headers.get('X-Current-Page') ?? 0)
+      }))
+    );
+  }
 
   getCustomers(): Observable<Customer[]> {
     return this.http.get(this.apiUrl, { headers: this.getAuthHeaders(), responseType: 'text' }).pipe(

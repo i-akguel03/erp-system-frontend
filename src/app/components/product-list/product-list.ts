@@ -22,6 +22,11 @@ export class ProductListComponent extends ListBase<Product> implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   newProduct: Product = this.createEmptyProduct();
   editProduct: Product = this.createEmptyProduct();
 
@@ -40,14 +45,34 @@ export class ProductListComponent extends ListBase<Product> implements OnInit {
   loadProducts(): void {
     this.loading = true;
     this.error = null;
-    this.productService.getProducts().subscribe({
-      next: data => {
-        this.products = data;
+    this.productService.getProductsPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.products = result.content;
         this.filteredProducts = [...this.products];
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.loading = false;
       },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Produkte')
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadProducts();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadProducts();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   filterProducts(): void {

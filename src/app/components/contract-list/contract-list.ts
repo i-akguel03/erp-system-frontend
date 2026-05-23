@@ -25,6 +25,11 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
   contracts: Contract[] = [];
   filteredContracts: Contract[] = [];
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   customers: Customer[] = [];
 
   newContract: Contract = this.createEmptyContract();
@@ -59,14 +64,34 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
   loadContracts(): void {
     this.loading = true;
     this.error = null;
-    this.contractService.getContracts(false).subscribe({
-      next: data => {
-        this.contracts = data;
+    this.contractService.getContractsPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.contracts = result.content;
         this.filteredContracts = [...this.contracts];
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.loading = false;
       },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Verträge')
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadContracts();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadContracts();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   loadCustomers(): void {

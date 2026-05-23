@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 import { Contract } from '../models/Contract';
+import { PagedResult } from '../models/PagedResult';
 
 @Injectable({
   providedIn: 'root',
@@ -15,16 +16,17 @@ export class ContractService extends BaseApiService {
     size: number = 20,
     sortBy: string = 'startDate',
     sortDirection: string = 'DESC'
-  ): Observable<Contract[]> {
-    const params = { 
-      paginated: 'true', 
-      page: page.toString(), 
-      size: size.toString(), 
-      sortBy, 
-      sortDirection
-    };
-    return this.http.get<Contract[]>(this.apiUrl, { headers: this.getAuthHeaders(), params });
-  } 
+  ): Observable<PagedResult<Contract>> {
+    const params = { paginated: 'true', page: page.toString(), size: size.toString(), sortBy, sortDirection };
+    return this.http.get<Contract[]>(this.apiUrl, { headers: this.getAuthHeaders(), params, observe: 'response' }).pipe(
+      map(res => ({
+        content: res.body ?? [],
+        totalElements: Number(res.headers.get('X-Total-Count') ?? 0),
+        totalPages: Number(res.headers.get('X-Total-Pages') ?? 1),
+        currentPage: Number(res.headers.get('X-Current-Page') ?? 0)
+      }))
+    );
+  }
 
   getContracts(
     paginated: boolean = false,

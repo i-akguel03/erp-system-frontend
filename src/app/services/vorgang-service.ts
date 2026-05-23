@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { BaseApiService } from './base-api-service';
 import { HttpParams } from '@angular/common/http';
 import { VorgangDTO, VorgangStatistik, VorgangTyp, VorgangStatus } from '../models/Vorgang';
 import { Invoice } from '../models/Invoice';
 import { Contract } from '../models/Contract';
+import { PagedResult } from '../models/PagedResult';
 
 // Interface für paginierte Antworten
 export interface PageResponse<T> {
@@ -41,6 +43,21 @@ export interface PageResponse<T> {
 })
 export class VorgangService extends BaseApiService {
   private apiUrl = `${this.apiBaseUrl}/api/vorgaenge`;
+
+  getVorgaengePaginated(page: number = 0, size: number = 20): Observable<PagedResult<VorgangDTO>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sort', 'startZeitpunkt,desc');
+    return this.http.get<PageResponse<VorgangDTO>>(this.apiUrl, { headers: this.getAuthHeaders(), params }).pipe(
+      map(res => ({
+        content: res.content,
+        totalElements: res.totalElements,
+        totalPages: res.totalPages,
+        currentPage: res.number
+      }))
+    );
+  }
 
   /**
    * Alle Vorgänge paginiert

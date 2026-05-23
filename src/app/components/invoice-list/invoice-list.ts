@@ -26,6 +26,11 @@ export class InvoiceListComponent implements OnInit {
   searchTerm: string = '';
   statusFilter: string = '';
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   customers: Customer[] = [];
 
   newInvoice: Invoice = this.createEmptyInvoice();
@@ -62,14 +67,34 @@ export class InvoiceListComponent implements OnInit {
   loadInvoices(): void {
     this.loading = true;
     this.error = null;
-    this.invoiceService.getAllInvoices().subscribe({
-      next: data => {
-        this.invoices = data;
-        this.filterInvoices();
+    this.invoiceService.getInvoicesPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.invoices = result.content;
+        this.filteredInvoices = [...this.invoices];
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.loading = false;
       },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Rechnungen')
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadInvoices();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadInvoices();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   getTotalItemsAmount(invoice: Invoice): number {

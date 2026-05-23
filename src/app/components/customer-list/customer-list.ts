@@ -27,6 +27,11 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
   customers: Customer[] = [];
   filteredCustomers: Customer[] = [];
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   newCustomer: Customer = this.createEmptyCustomer();
   editCustomer: Customer = this.createEmptyCustomer();
 
@@ -52,10 +57,13 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
   loadCustomers(): void {
     this.loading = true;
     this.error = null;
-    this.customerService.getCustomers().subscribe({
-      next: (data) => {
-        this.customers = data;
+    this.customerService.getCustomersPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.customers = result.content;
         this.filteredCustomers = [...this.customers];
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.loading = false;
       },
       error: (err) => {
@@ -63,6 +71,23 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
         this.loading = false;
       }
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadCustomers();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadCustomers();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   filterCustomers(): void {

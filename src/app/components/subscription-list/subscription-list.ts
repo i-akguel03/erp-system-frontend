@@ -27,6 +27,11 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
   subscriptions: Subscription[] = [];
   filteredSubscriptions: Subscription[] = [];
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   contracts: Contract[] = [];
   products: Product[] = [];
 
@@ -63,14 +68,34 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
   loadSubscriptions(): void {
     this.loading = true;
     this.error = null;
-    this.subscriptionService.getSubscriptions(false).subscribe({
-      next: data => {
-        this.subscriptions = data;
+    this.subscriptionService.getSubscriptionsPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.subscriptions = result.content;
         this.filteredSubscriptions = [...this.subscriptions];
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.loading = false;
       },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Abos')
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadSubscriptions();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadSubscriptions();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   loadContracts(): void {

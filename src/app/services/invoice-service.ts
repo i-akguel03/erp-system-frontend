@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 import { Invoice, InvoiceItem } from '../models/Invoice';
+import { PagedResult } from '../models/PagedResult';
 
 @Injectable({
   providedIn: 'root',
@@ -27,6 +28,18 @@ export class InvoiceService extends BaseApiService {
   }
 
   // --- CRUD ---
+  getInvoicesPaginated(page = 0, size = 20): Observable<PagedResult<Invoice>> {
+    const params = { paginated: 'true', page: page.toString(), size: size.toString() };
+    return this.http.get<any[]>(this.apiUrl, { headers: this.getAuthHeaders(), params, observe: 'response' }).pipe(
+      map(res => ({
+        content: (res.body ?? []).map((dto: any) => this.mapToInvoice(dto)),
+        totalElements: Number(res.headers.get('X-Total-Count') ?? 0),
+        totalPages: Number(res.headers.get('X-Total-Pages') ?? 1),
+        currentPage: Number(res.headers.get('X-Current-Page') ?? 0)
+      }))
+    );
+  }
+
   getAllInvoices(): Observable<Invoice[]> {
     return this.http.get<any>(this.apiUrl, { headers: this.getAuthHeaders() })
       .pipe(

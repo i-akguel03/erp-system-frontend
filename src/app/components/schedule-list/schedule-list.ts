@@ -20,6 +20,11 @@ export class DueScheduleListComponent extends ListBase<DueSchedule> implements O
   schedules: DueSchedule[] = [];
   filteredSchedules: DueSchedule[] = [];
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   showNewScheduleModal = false;
   newSchedule: Partial<DueSchedule> = {};
 
@@ -34,14 +39,34 @@ export class DueScheduleListComponent extends ListBase<DueSchedule> implements O
   loadSchedules(): void {
     this.loading = true;
     this.error = null;
-    this.scheduleService.getAllDueSchedules().subscribe({
-      next: data => {
-        this.schedules = data;
+    this.scheduleService.getDueSchedulesPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.schedules = result.content;
         this.filteredSchedules = [...this.schedules];
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.loading = false;
       },
       error: err => this.handleApiError(err, 'Fehler beim Laden der Fälligkeiten')
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadSchedules();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadSchedules();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   filterSchedules(): void {

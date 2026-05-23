@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { BaseApiService } from './base-api-service';
 import { Address } from '../models/Address';
+import { PagedResult } from '../models/PagedResult';
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +12,18 @@ export class AddressService extends BaseApiService {
   private apiUrl = `${this.apiBaseUrl}/api/addresses`;
 
   // --- CRUD ---
+  getAddressesPagedResult(page = 0, size = 20): Observable<PagedResult<Address>> {
+    const params = { paginated: 'true', page: page.toString(), size: size.toString() };
+    return this.http.get<Address[]>(this.apiUrl, { headers: this.getAuthHeaders(), params, observe: 'response' }).pipe(
+      map(res => ({
+        content: res.body ?? [],
+        totalElements: Number(res.headers.get('X-Total-Count') ?? 0),
+        totalPages: Number(res.headers.get('X-Total-Pages') ?? 1),
+        currentPage: Number(res.headers.get('X-Current-Page') ?? 0)
+      }))
+    );
+  }
+
   getAddressesPaginated(
     page: number = 0,
     size: number = 20,

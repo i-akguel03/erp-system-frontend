@@ -26,6 +26,11 @@ export class EingangsrechnungListComponent implements OnInit {
   filterStatus: EingangsrechnungStatus | '' = '';
   showNurUeberfaellig = false;
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   lieferanten: Lieferant[] = [];
   aufwandskonten: Konto[] = [];
 
@@ -56,13 +61,31 @@ export class EingangsrechnungListComponent implements OnInit {
   loadRechnungen(): void {
     this.loading = true;
     this.error = null;
-    const obs = this.showNurUeberfaellig
-      ? this.kreditorenService.getUeberfaellige()
-      : this.kreditorenService.getAllEingangsrechnungen();
 
-    obs.subscribe({
-      next: data => {
-        this.rechnungen = data;
+    if (this.showNurUeberfaellig) {
+      this.kreditorenService.getUeberfaellige().subscribe({
+        next: data => {
+          this.rechnungen = data;
+          this.totalElements = data.length;
+          this.totalPages = 1;
+          this.currentPage = 0;
+          this.applyFilter();
+          this.loading = false;
+        },
+        error: err => {
+          this.error = err.error?.message || 'Fehler beim Laden der Eingangsrechnungen';
+          this.loading = false;
+        }
+      });
+      return;
+    }
+
+    this.kreditorenService.getEingangsrechnungenPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.rechnungen = result.content;
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.applyFilter();
         this.loading = false;
       },
@@ -73,8 +96,26 @@ export class EingangsrechnungListComponent implements OnInit {
     });
   }
 
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadRechnungen();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadRechnungen();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }
+
   toggleUeberfaellig(): void {
     this.showNurUeberfaellig = !this.showNurUeberfaellig;
+    this.currentPage = 0;
     this.loadRechnungen();
   }
 

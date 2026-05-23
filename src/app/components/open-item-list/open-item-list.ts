@@ -25,6 +25,11 @@ export class OpenItemList implements OnInit {
   error: string | null = null;
   searchTerm: string = '';
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   // Für neue/bearbeitete OpenItems
   availableInvoices: Invoice[] = [];
   newOpenItem: OpenItem = this.createEmptyOpenItem();
@@ -81,15 +86,35 @@ export class OpenItemList implements OnInit {
   loadOpenItems(): void {
     this.loading = true;
     this.error = null;
-    
-    this.openItemService.getAllOpenItems().subscribe({
-      next: data => {
-        this.openItems = data;
+
+    this.openItemService.getOpenItemsPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.openItems = result.content;
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.applyCurrentFilter();
         this.loading = false;
       },
       error: err => this.handleApiError(err, 'Fehler beim Laden der offenen Posten')
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadOpenItems();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadOpenItems();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   loadAvailableInvoices(): void {

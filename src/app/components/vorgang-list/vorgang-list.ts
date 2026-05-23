@@ -17,6 +17,11 @@ export class VorgaengeListComponent implements OnInit {
   filteredVorgaenge: VorgangDTO[] = [];
   loading = false;
   errorMsg = '';
+
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
   
   // Filter-Eigenschaften
   selectedTyp: VorgangTyp | '' = '';
@@ -80,10 +85,13 @@ export class VorgaengeListComponent implements OnInit {
   loadVorgaenge(): void {
     this.loading = true;
     this.errorMsg = '';
-    
-    this.vorgangService.getAllVorgaengeOhnePaging().subscribe({
-      next: (data) => {
-        this.vorgaenge = data;
+
+    this.vorgangService.getVorgaengePaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.vorgaenge = result.content;
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.applyFiltersAndSort();
         this.loadStatistiken();
         this.loading = false;
@@ -93,6 +101,23 @@ export class VorgaengeListComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadVorgaenge();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadVorgaenge();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   /**

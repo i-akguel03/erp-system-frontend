@@ -22,6 +22,11 @@ export class BuchungssatzListComponent implements OnInit {
   searchTerm = '';
   filterStatus: string = '';
 
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   selectedBuchung: Buchungssatz | null = null;
   showDetailsModal = false;
   storniering = false;
@@ -40,9 +45,12 @@ export class BuchungssatzListComponent implements OnInit {
   loadBuchungen(): void {
     this.loading = true;
     this.error = null;
-    this.buchhaltungService.getAllBuchungen().subscribe({
-      next: data => {
-        this.buchungen = data;
+    this.buchhaltungService.getBuchungenPaginated(this.currentPage, this.pageSize).subscribe({
+      next: result => {
+        this.buchungen = result.content;
+        this.totalElements = result.totalElements;
+        this.totalPages = result.totalPages;
+        this.currentPage = result.currentPage;
         this.applyFilter();
         this.loading = false;
       },
@@ -51,6 +59,23 @@ export class BuchungssatzListComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadBuchungen();
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadBuchungen();
+  }
+
+  getPageNumbers(): number[] {
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   applyFilter(): void {
