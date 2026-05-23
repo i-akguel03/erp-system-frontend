@@ -10,11 +10,12 @@ import { OpenItemService } from '../../services/open-item-service';
 import { EmailService } from '../../services/email.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmationService } from 'primeng/api';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-openitem-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './open-item-list.html',
   styleUrls: ['./open-item-list.scss'],
 })

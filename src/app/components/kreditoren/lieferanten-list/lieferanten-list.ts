@@ -5,11 +5,12 @@ import { Lieferant } from '../../../models/Lieferant';
 import { KreditorenService } from '../../../services/kreditoren.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthService } from '../../../auth/services/auth';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-lieferanten-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './lieferanten-list.html',
   styleUrls: ['./lieferanten-list.scss']
 })

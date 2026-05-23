@@ -6,11 +6,12 @@ import { VorgangService } from '../../services/vorgang-service';
 import { NotificationService } from '../../services/notification.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-vorgaenge-list',
   templateUrl: './vorgang-list.html',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
 })
 export class VorgaengeListComponent implements OnInit {
   vorgaenge: VorgangDTO[] = [];

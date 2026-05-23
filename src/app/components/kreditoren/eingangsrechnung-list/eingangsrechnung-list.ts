@@ -9,11 +9,12 @@ import { KontenplanService } from '../../../services/kontenplan.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthService } from '../../../auth/services/auth';
 import { ConfirmationService } from 'primeng/api';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-eingangsrechnung-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './eingangsrechnung-list.html',
   styleUrls: ['./eingangsrechnung-list.scss']
 })

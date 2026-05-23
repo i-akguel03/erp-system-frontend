@@ -10,11 +10,12 @@ import { InvoiceService } from '../../services/invoice-service';
 import { EmailService } from '../../services/email.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmationService } from 'primeng/api';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-invoice-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './invoice-list.html',
   styleUrls: ['./invoice-list.scss'],
 })

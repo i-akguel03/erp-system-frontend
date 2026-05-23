@@ -15,22 +15,18 @@ import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
 import { EmailService } from '../../services/email.service';
 import { Dialog } from 'primeng/dialog';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-customer-list',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent, AddressAutocompleteComponent],
+  imports: [CommonModule, HttpClientModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent, AddressAutocompleteComponent, PaginationComponent],
   templateUrl: './customer-list.html',
   styleUrls: ['./customer-list.scss'],
 })
 export class CustomerListComponent extends ListBase<Customer> implements OnInit {
   customers: Customer[] = [];
   filteredCustomers: Customer[] = [];
-
-  currentPage = 0;
-  pageSize = 20;
-  totalPages = 0;
-  totalElements = 0;
 
   newCustomer: Customer = this.createEmptyCustomer();
   editCustomer: Customer = this.createEmptyCustomer();
@@ -73,22 +69,7 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
     });
   }
 
-  goToPage(page: number): void {
-    if (page < 0 || page >= this.totalPages) return;
-    this.currentPage = page;
-    this.loadCustomers();
-  }
-
-  onPageSizeChange(): void {
-    this.currentPage = 0;
-    this.loadCustomers();
-  }
-
-  getPageNumbers(): number[] {
-    const start = Math.max(0, this.currentPage - 2);
-    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  }
+  protected loadPage(): void { this.loadCustomers(); }
 
   filterCustomers(): void {
     const term = this.searchTerm.toLowerCase();

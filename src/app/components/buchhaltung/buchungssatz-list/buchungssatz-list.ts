@@ -6,11 +6,12 @@ import { BuchhaltungService } from '../../../services/buchhaltung.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthService } from '../../../auth/services/auth';
 import { ConfirmationService } from 'primeng/api';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-buchungssatz-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './buchungssatz-list.html',
   styleUrls: ['./buchungssatz-list.scss']
 })

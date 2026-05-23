@@ -10,22 +10,18 @@ import { Address } from '../../models/Address';
 import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
 import { Dialog } from 'primeng/dialog';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-address-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent, PaginationComponent],
   templateUrl: './address-list.html',
   styleUrls: ['./address-list.scss'],
 })
 export class AddressListComponent extends ListBase<Address> implements OnInit {
   addresses: Address[] = [];
   filteredAddresses: Address[] = [];
-
-  currentPage = 0;
-  pageSize = 20;
-  totalPages = 0;
-  totalElements = 0;
 
   newAddress: Address = this.createEmptyAddress();
   editAddress: Address = this.createEmptyAddress();
@@ -58,22 +54,7 @@ export class AddressListComponent extends ListBase<Address> implements OnInit {
     });
   }
 
-  goToPage(page: number): void {
-    if (page < 0 || page >= this.totalPages) return;
-    this.currentPage = page;
-    this.loadAddresses();
-  }
-
-  onPageSizeChange(): void {
-    this.currentPage = 0;
-    this.loadAddresses();
-  }
-
-  getPageNumbers(): number[] {
-    const start = Math.max(0, this.currentPage - 2);
-    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  }
+  protected loadPage(): void { this.loadAddresses(); }
 
   filterAddresses(): void {
     const term = this.searchTerm.toLowerCase();

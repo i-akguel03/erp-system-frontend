@@ -13,22 +13,18 @@ import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
 import { EmailService } from '../../services/email.service';
 import { Dialog } from 'primeng/dialog';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-contract-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent, PaginationComponent],
   templateUrl: './contract-list.html',
   styleUrls: ['./contract-list.scss'],
 })
 export class ContractListComponent extends ListBase<Contract> implements OnInit {
   contracts: Contract[] = [];
   filteredContracts: Contract[] = [];
-
-  currentPage = 0;
-  pageSize = 20;
-  totalPages = 0;
-  totalElements = 0;
 
   customers: Customer[] = [];
 
@@ -77,22 +73,7 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
     });
   }
 
-  goToPage(page: number): void {
-    if (page < 0 || page >= this.totalPages) return;
-    this.currentPage = page;
-    this.loadContracts();
-  }
-
-  onPageSizeChange(): void {
-    this.currentPage = 0;
-    this.loadContracts();
-  }
-
-  getPageNumbers(): number[] {
-    const start = Math.max(0, this.currentPage - 2);
-    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  }
+  protected loadPage(): void { this.loadContracts(); }
 
   loadCustomers(): void {
     this.customerService.getCustomers().subscribe({

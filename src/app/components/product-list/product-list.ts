@@ -10,22 +10,18 @@ import { Product } from '../../models/Product';
 import { ConfirmationService } from 'primeng/api';
 import { NotificationService } from '../../services/notification.service';
 import { Dialog } from 'primeng/dialog';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent, PaginationComponent],
   templateUrl: './product-list.html',
   styleUrls: ['./product-list.scss'],
 })
 export class ProductListComponent extends ListBase<Product> implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
-
-  currentPage = 0;
-  pageSize = 20;
-  totalPages = 0;
-  totalElements = 0;
 
   newProduct: Product = this.createEmptyProduct();
   editProduct: Product = this.createEmptyProduct();
@@ -58,22 +54,7 @@ export class ProductListComponent extends ListBase<Product> implements OnInit {
     });
   }
 
-  goToPage(page: number): void {
-    if (page < 0 || page >= this.totalPages) return;
-    this.currentPage = page;
-    this.loadProducts();
-  }
-
-  onPageSizeChange(): void {
-    this.currentPage = 0;
-    this.loadProducts();
-  }
-
-  getPageNumbers(): number[] {
-    const start = Math.max(0, this.currentPage - 2);
-    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  }
+  protected loadPage(): void { this.loadProducts(); }
 
   filterProducts(): void {
     const term = this.searchTerm.toLowerCase();

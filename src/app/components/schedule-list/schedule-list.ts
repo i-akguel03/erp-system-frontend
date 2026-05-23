@@ -8,22 +8,18 @@ import { ListStatusComponent } from '../../shared/components/list-status/list-st
 import { DueScheduleService } from '../../services/due-schedule-service';
 import { DueSchedule, ScheduleStatus } from '../../models/DueSchedule';
 import { Dialog } from 'primeng/dialog';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-due-schedule-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent],
+  imports: [CommonModule, FormsModule, Dialog, SortPipe, ListToolbarComponent, ListStatusComponent, PaginationComponent],
   templateUrl: './schedule-list.html',
   styleUrls: ['./schedule-list.scss'],
 })
 export class DueScheduleListComponent extends ListBase<DueSchedule> implements OnInit {
   schedules: DueSchedule[] = [];
   filteredSchedules: DueSchedule[] = [];
-
-  currentPage = 0;
-  pageSize = 20;
-  totalPages = 0;
-  totalElements = 0;
 
   showNewScheduleModal = false;
   newSchedule: Partial<DueSchedule> = {};
@@ -52,22 +48,7 @@ export class DueScheduleListComponent extends ListBase<DueSchedule> implements O
     });
   }
 
-  goToPage(page: number): void {
-    if (page < 0 || page >= this.totalPages) return;
-    this.currentPage = page;
-    this.loadSchedules();
-  }
-
-  onPageSizeChange(): void {
-    this.currentPage = 0;
-    this.loadSchedules();
-  }
-
-  getPageNumbers(): number[] {
-    const start = Math.max(0, this.currentPage - 2);
-    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  }
+  protected loadPage(): void { this.loadSchedules(); }
 
   filterSchedules(): void {
     const term = this.searchTerm.toLowerCase();
