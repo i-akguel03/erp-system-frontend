@@ -1,4 +1,7 @@
-<div *ngIf="totalPages > 0" class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 px-3 py-2 border-top mt-2">
+<!-- spacer keeps the same space in normal flow as the fixed bar occupies -->
+<div *ngIf="totalPages > 0" style="height: 52px;"></div>
+
+<div *ngIf="totalPages > 0" class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 px-3 py-2 border-top" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 999; background: var(--bs-body-bg, #fff); box-shadow: 0 -2px 6px rgba(0,0,0,.08);">
   <small class="text-muted">Seite {{ currentPage + 1 }} von {{ totalPages }} &middot; {{ totalElements }} Einträge</small>
   <nav *ngIf="totalPages > 1">
     <ul class="pagination pagination-sm mb-0">
