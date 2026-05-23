@@ -24,7 +24,7 @@ export class OpenItemService extends BaseApiService {
 
   // --- CRUD ---
   getOpenItemsPaginated(page = 0, size = 20): Observable<PagedResult<OpenItem>> {
-    const params = { page: page.toString(), size: size.toString() };
+    const params = { paginated: 'true', page: page.toString(), size: size.toString() };
     return this.http.get<any[]>(this.apiUrl, { headers: this.getAuthHeaders(), params, observe: 'response' }).pipe(
       map(res => ({
         content: (res.body ?? []).map((dto: any) => this.mapToOpenItem(dto)),
