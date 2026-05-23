@@ -12,7 +12,7 @@ export class CustomerService extends BaseApiService {
   private apiUrl = `${this.apiBaseUrl}/api/customers`;
 
   getCustomersPaginated(page = 0, size = 20): Observable<PagedResult<Customer>> {
-    const params = { page: page.toString(), size: size.toString() };
+    const params = { paginated: 'true', page: page.toString(), size: size.toString() };
     return this.http.get<Customer[]>(this.apiUrl, { headers: this.getAuthHeaders(), params, observe: 'response' }).pipe(
       map(res => ({
         content: res.body ?? [],
