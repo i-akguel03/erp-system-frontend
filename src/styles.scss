@@ -22,6 +22,9 @@ html, body {
   top: 0;
   z-index: 5;
   background-color: #fff;
+  /* box-shadow ersetzt border-bottom auf dem tr-Element,
+     da border nicht mit sticky th mitgeht beim Scrollen */
+  box-shadow: 0 2px 0 #dee2e6;
 }
 
 /* Non-list pages without their own SCSS: scroll their own content */
