@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { forkJoin } from 'rxjs';
 
 import { OpenItemService } from '../../services/open-item-service';
@@ -26,7 +27,7 @@ interface EnrichedItem extends OpenItem {
 @Component({
   selector: 'app-billing-center',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, PaginationComponent],
   templateUrl: './billing-center.html',
   styleUrls: ['./billing-center.scss'],
 })
@@ -59,6 +60,10 @@ export class BillingCenterComponent implements OnInit {
 
   // Email sending tracker
   emailSendingId: string | null = null;
+
+  // Pagination
+  currentPage = 0;
+  pageSize = 20;
 
   constructor(
     private openItemService: OpenItemService,
@@ -117,7 +122,7 @@ export class BillingCenterComponent implements OnInit {
     });
   }
 
-  get filtered(): EnrichedItem[] {
+  get filteredAll(): EnrichedItem[] {
     const term = this.searchTerm.toLowerCase();
     return this.tabItems.filter(i =>
       !term ||
@@ -125,6 +130,32 @@ export class BillingCenterComponent implements OnInit {
       i.invoiceNumber?.toLowerCase().includes(term) ||
       i.contractNumber?.toLowerCase().includes(term)
     );
+  }
+
+  get filtered(): EnrichedItem[] {
+    const start = this.currentPage * this.pageSize;
+    return this.filteredAll.slice(start, start + this.pageSize);
+  }
+
+  get totalElements(): number { return this.filteredAll.length; }
+  get totalPages(): number { return Math.ceil(this.totalElements / this.pageSize); }
+
+  setTab(tab: Tab): void {
+    this.activeTab = tab;
+    this.currentPage = 0;
+  }
+
+  onSearchChange(): void {
+    this.currentPage = 0;
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
   }
 
   get tabItems(): EnrichedItem[] {

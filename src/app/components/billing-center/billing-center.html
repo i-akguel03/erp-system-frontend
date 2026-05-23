@@ -106,25 +106,25 @@
     <!-- Tabs -->
     <ul class="nav nav-pills gap-1">
       <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='overdue'" (click)="activeTab='overdue'">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='overdue'" (click)="setTab('overdue')">
           Überfällig
           <span class="badge bg-danger ms-1">{{ countOf('overdue') }}</span>
         </button>
       </li>
       <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='open'" (click)="activeTab='open'">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='open'" (click)="setTab('open')">
           Offen
           <span class="badge bg-primary ms-1">{{ countOf('open') }}</span>
         </button>
       </li>
       <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='partial'" (click)="activeTab='partial'">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='partial'" (click)="setTab('partial')">
           Teilbezahlt
           <span class="badge bg-warning text-dark ms-1">{{ countOf('partial') }}</span>
         </button>
       </li>
       <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='all'" (click)="activeTab='all'">
+        <button class="nav-link py-1 px-3" [class.active]="activeTab==='all'" (click)="setTab('all')">
           Alle aktiven
         </button>
       </li>
@@ -137,7 +137,7 @@
       </span>
       <input type="text" class="form-control border-start-0"
              placeholder="Kunde, Rechnung, Vertrag…"
-             [(ngModel)]="searchTerm">
+             [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
     </div>
   </div>
 
@@ -287,6 +287,16 @@
   }
 
 </div>
+
+<app-pagination
+  [currentPage]="currentPage"
+  [totalPages]="totalPages"
+  [totalElements]="totalElements"
+  [pageSize]="pageSize"
+  (pageChange)="goToPage($event)"
+  (pageSizeChange)="pageSize=$event; onPageSizeChange()">
+</app-pagination>
+
 </div>
 } <!-- end !loading -->
 
