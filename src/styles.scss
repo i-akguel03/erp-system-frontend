@@ -16,15 +16,21 @@ html, body {
   overflow: hidden;
 }
 
-/* Sticky column headers in list table areas */
+/* Sticky column headers in list table areas.
+   border-collapse: separate stellt sicher, dass der border-bottom
+   am th-Element selbst hängt und beim Scrollen mitsticked.
+   border-spacing: 0 hält das visuelle Aussehen identisch. */
+.list-content .table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+}
+
 .list-content thead th {
   position: sticky;
   top: 0;
   z-index: 5;
   background-color: #fff;
-  /* box-shadow ersetzt border-bottom auf dem tr-Element,
-     da border nicht mit sticky th mitgeht beim Scrollen */
-  box-shadow: 0 2px 0 #dee2e6;
+  border-bottom: 2px solid #dee2e6 !important;
 }
 
 /* Non-list pages without their own SCSS: scroll their own content */
