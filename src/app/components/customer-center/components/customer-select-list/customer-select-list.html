@@ -1,0 +1,103 @@
+<!-- Suchfeld -->
+<div class="px-3 pt-3 pb-2 border-bottom bg-white sticky-top" style="z-index:10;">
+  <div class="input-group input-group-sm">
+    <span class="input-group-text bg-white border-end-0">
+      <i class="bi bi-search text-muted"></i>
+    </span>
+    <input type="text"
+           class="form-control border-start-0 ps-0"
+           placeholder="Name, Nr., E-Mail …"
+           [(ngModel)]="searchTerm"
+           (ngModelChange)="applyFilter()" />
+    <button *ngIf="searchTerm"
+            class="btn btn-outline-secondary btn-sm border-start-0"
+            type="button"
+            (click)="clearSearch()">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Ladezustand -->
+<div *ngIf="loading" class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+  <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+  <small>Kunden werden geladen …</small>
+</div>
+
+<!-- Fehler -->
+<div *ngIf="!loading && error" class="alert alert-danger mx-3 mt-3 py-2 small">
+  <i class="bi bi-exclamation-triangle me-1"></i>
+  {{ error }}
+  <button class="btn btn-sm btn-outline-danger ms-2" (click)="retry.emit()">Neu laden</button>
+</div>
+
+<!-- Leer -->
+<div *ngIf="!loading && !error && filtered.length === 0 && !searchTerm"
+     class="text-center text-muted py-5">
+  <i class="bi bi-people" style="font-size:2rem; opacity:.3;"></i>
+  <p class="mt-2 mb-0 small">Keine Kunden vorhanden</p>
+</div>
+
+<!-- Keine Treffer -->
+<div *ngIf="!loading && !error && filtered.length === 0 && searchTerm"
+     class="text-center text-muted py-4">
+  <i class="bi bi-search" style="font-size:1.5rem; opacity:.3;"></i>
+  <p class="mt-2 mb-0 small">Keine Treffer für „{{ searchTerm }}"</p>
+</div>
+
+<!-- Kundenliste -->
+<div *ngIf="!loading && !error" class="py-2">
+  <div *ngFor="let customer of filtered; trackBy: trackByFn"
+       class="cc-list-item d-flex align-items-center px-3 py-2 gap-3"
+       [class.cc-list-item--selected]="isSelected(customer)"
+       (click)="select(customer)">
+
+    <!-- Avatar -->
+    <div class="cc-avatar flex-shrink-0"
+         [class.cc-avatar--selected]="isSelected(customer)">
+      {{ getInitials(customer) }}
+    </div>
+
+    <!-- Info -->
+    <div class="flex-grow-1 overflow-hidden">
+      <div class="fw-semibold text-truncate" style="font-size:.9rem;">
+        {{ customer.firstName }} {{ customer.lastName }}
+      </div>
+      <div class="text-muted text-truncate" style="font-size:.75rem;">
+        {{ customer.customerNumber }}
+        <span *ngIf="customer.email"> · {{ customer.email }}</span>
+      </div>
+    </div>
+
+    <!-- Chevron -->
+    <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size:.8rem;"></i>
+  </div>
+</div>
+
+<ng-template #trackByFn let-i="index" let-item>{{ item.id }}</ng-template>
+
+<style>
+.cc-list-item {
+  cursor: pointer;
+  transition: background 0.1s;
+  border-radius: 6px;
+  margin: 0 8px;
+}
+.cc-list-item:hover { background: #f0f4ff; }
+.cc-list-item--selected { background: #e8f0fe; }
+
+.cc-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #dee2e6;
+  color: #495057;
+  font-size: .8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cc-avatar--selected { background: #0d6efd; color: #fff; }
+</style>

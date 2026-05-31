@@ -40,6 +40,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       icon: 'bi-database',
       public: false,
       children: [
+        { label: 'Kundencenter', icon: 'bi-person-lines-fill', routerLink: '/customer-center' },
         { label: 'Kunden', icon: 'bi-people', routerLink: '/customer' },
         { label: 'Adressen', icon: 'bi-geo-alt', routerLink: '/address' },
         { label: 'Produkte', icon: 'bi-box-seam', routerLink: '/product' }

@@ -1,0 +1,215 @@
+<div class="cc-root">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MOBILE HEADER
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="cc-mobile-header d-md-none" *ngIf="isMobile">
+    <button *ngIf="mobileView === 'detail'"
+            class="btn btn-sm border-0 bg-transparent text-primary cc-back-btn"
+            (click)="navigateBack()">
+      <i class="bi bi-chevron-left" style="font-size: 1.2rem;"></i>
+    </button>
+    <div *ngIf="mobileView === 'list'" style="width:44px;"></div>
+
+    <div class="cc-mobile-title">
+      <span class="fw-semibold">
+        {{ mobileView === 'list' ? 'Kundencenter' : (selectedCustomer ? (selectedCustomer.firstName + ' ' + selectedCustomer.lastName) : 'Kunde') }}
+      </span>
+      <span *ngIf="mobileView === 'detail' && selectedCustomer?.customerNumber" class="text-muted" style="font-size:.75rem;">
+        {{ selectedCustomer!.customerNumber }}
+      </span>
+    </div>
+
+    <div style="width:44px;"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       DESKTOP LAYOUT — Sidebar + Detail
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="cc-desktop d-none d-md-flex">
+
+    <!-- Sidebar: Kundenliste -->
+    <div class="cc-sidebar">
+      <div class="cc-sidebar-header">
+        <i class="bi bi-people text-primary me-2 fs-5"></i>
+        <span class="fw-semibold">Kunden</span>
+        <span class="badge bg-primary ms-2" *ngIf="customers.length">{{ customers.length }}</span>
+        <button class="btn btn-sm border-0 ms-auto text-secondary" title="Neu laden" (click)="loadCustomers()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+      <div class="cc-sidebar-body">
+        <app-customer-select-list
+          [customers]="customers"
+          [loading]="loadingCustomers"
+          [error]="error"
+          [selectedCustomer]="selectedCustomer"
+          (customerSelected)="onCustomerSelected($event)"
+          (retry)="loadCustomers()">
+        </app-customer-select-list>
+      </div>
+    </div>
+
+    <!-- Detail-Bereich -->
+    <div class="cc-detail">
+      <app-customer-detail-tabs
+        [customer]="selectedCustomer"
+        [contracts]="contracts"
+        [invoices]="invoices"
+        [openItems]="openItems"
+        [notes]="notes"
+        [activities]="activities"
+        [contacts]="contacts"
+        [documents]="documents"
+        [loading]="loadingDetail"
+        (noteCreated)="onNoteCreated($event)"
+        (noteDeleted)="onNoteDeleted($event)"
+        (activityCreated)="onActivityCreated($event)"
+        (activityCompleted)="onActivityCompleted($event)"
+        (activityDeleted)="onActivityDeleted($event)"
+        (contactCreated)="onContactCreated($event)"
+        (contactDeleted)="onContactDeleted($event)"
+        (documentUploaded)="onDocumentUploaded($event)"
+        (documentDeleted)="onDocumentDeleted($event)">
+      </app-customer-detail-tabs>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MOBILE LAYOUT — Slide-In Views
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="cc-mobile-content d-md-none">
+
+    <!-- Kundenliste -->
+    <div class="cc-mobile-panel"
+         [class.cc-mobile-panel--active]="mobileView === 'list'"
+         [class.cc-mobile-panel--left]="mobileView === 'detail'">
+      <app-customer-select-list
+        [customers]="customers"
+        [loading]="loadingCustomers"
+        [error]="error"
+        [selectedCustomer]="selectedCustomer"
+        (customerSelected)="onCustomerSelected($event)"
+        (retry)="loadCustomers()">
+      </app-customer-select-list>
+    </div>
+
+    <!-- Detail-Tabs -->
+    <div class="cc-mobile-panel"
+         [class.cc-mobile-panel--active]="mobileView === 'detail'"
+         [class.cc-mobile-panel--right]="mobileView === 'list'">
+      <app-customer-detail-tabs
+        [customer]="selectedCustomer"
+        [contracts]="contracts"
+        [invoices]="invoices"
+        [openItems]="openItems"
+        [notes]="notes"
+        [activities]="activities"
+        [contacts]="contacts"
+        [documents]="documents"
+        [loading]="loadingDetail"
+        (noteCreated)="onNoteCreated($event)"
+        (noteDeleted)="onNoteDeleted($event)"
+        (activityCreated)="onActivityCreated($event)"
+        (activityCompleted)="onActivityCompleted($event)"
+        (activityDeleted)="onActivityDeleted($event)"
+        (contactCreated)="onContactCreated($event)"
+        (contactDeleted)="onContactDeleted($event)"
+        (documentUploaded)="onDocumentUploaded($event)"
+        (documentDeleted)="onDocumentDeleted($event)">
+      </app-customer-detail-tabs>
+    </div>
+  </div>
+</div>
+
+<style>
+:host { display: block; height: 100%; overflow: hidden; }
+
+.cc-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Mobile Header */
+.cc-mobile-header {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+  z-index: 1000;
+  padding: 0 4px;
+}
+.cc-back-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+.cc-mobile-title {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 4px;
+}
+.cc-mobile-title span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* Desktop */
+.cc-desktop {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.cc-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #dee2e6;
+  background: #fff;
+  overflow: hidden;
+}
+.cc-sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+  background: #f8f9fa;
+}
+.cc-sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.cc-detail {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile panels */
+.cc-mobile-content {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.cc-mobile-panel {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.cc-mobile-panel--active { transform: translateX(0); z-index: 200; }
+.cc-mobile-panel--left { transform: translateX(-100%); z-index: 100; }
+.cc-mobile-panel--right { transform: translateX(100%); z-index: 100; }
+
+.cc-sidebar-body::-webkit-scrollbar { width: 5px; }
+.cc-sidebar-body::-webkit-scrollbar-thumb { background: #adb5bd; border-radius: 3px; }
+</style>

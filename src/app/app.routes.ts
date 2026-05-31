@@ -11,6 +11,7 @@ import { AddressListComponent } from './components/address-list/address-list';
 import { ProductListComponent } from './components/product-list/product-list';
 import { SubscriptionListComponent } from './components/subscription-list/subscription-list';
 import { ContractCenterComponent } from './components/contract-center/contract-center';
+import { CustomerCenterComponent } from './components/customer-center/customer-center';
 import { DueScheduleListComponent } from './components/schedule-list/schedule-list';
 import { InvoiceListComponent } from './components/invoice-list/invoice-list';
 import { OpenItemList } from './components/open-item-list/open-item-list';
@@ -44,6 +45,7 @@ export const routes: Routes = [
   { path: 'subscription', component: SubscriptionListComponent, canActivate: [AuthGuard] },
   { path: 'product', component: ProductListComponent, canActivate: [AuthGuard] },
   { path: 'contract-center', component: ContractCenterComponent, canActivate: [AuthGuard] },
+  { path: 'customer-center', component: CustomerCenterComponent, canActivate: [AuthGuard] },
   { path: 'billing-center', component: BillingCenterComponent, canActivate: [AuthGuard] },
   { path: 'due-schedule', component: DueScheduleListComponent, canActivate: [AuthGuard] },
   { path: 'invoice', component: InvoiceListComponent, canActivate: [AuthGuard] },
