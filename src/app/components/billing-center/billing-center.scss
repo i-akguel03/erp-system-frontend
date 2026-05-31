@@ -6,111 +6,245 @@
   overflow: hidden;
 }
 
+// ─── Root ────────────────────────────────────────────────────────────────────
+.bc-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+// ─── Blue Header (gleicher Stil wie cc-contract-header) ──────────────────────
 .bc-header {
-  border-bottom: 1px solid #f0f0f0;
-  background: #fff;
+  background: linear-gradient(135deg, #1a56db 0%, #0e3fa8 100%);
+  color: #fff;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(0,0,0,.15);
+  flex-shrink: 0;
 }
 
-// ── KPI CARDS ─────────────────────────────────────────────────
-.kpi-strip {
-  background: #fff;
+.bc-header-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.kpi-card {
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
+.bc-kpi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: .77rem;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,.25);
+
+  &--red    { background: rgba(220,53,69,.55); border-color: rgba(220,53,69,.4); }
+  &--yellow { background: rgba(255,193,7,.4); border-color: rgba(255,193,7,.3); color: #fff3cd; }
+}
+
+.bc-btn-header {
+  background: rgba(255,255,255,.18) !important;
+  border: 1px solid rgba(255,255,255,.3) !important;
+  color: #fff !important;
+  &:hover { background: rgba(255,255,255,.3) !important; }
+  &:disabled { opacity: .5; }
+}
+
+// ─── KPI Strip ───────────────────────────────────────────────────────────────
+.bc-kpi-strip {
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.bc-kpi-card {
+  border-radius: 10px;
+  padding: .9rem 1.1rem;
   color: #fff;
   position: relative;
   overflow: hidden;
-
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
   &::after {
     content: '';
     position: absolute;
-    top: -16px;
-    right: -16px;
-    width: 64px;
-    height: 64px;
+    top: -14px; right: -14px;
+    width: 56px; height: 56px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,.1);
   }
 }
 
-.kpi-red    { background: linear-gradient(135deg, #dc3545, #c82333); }
-.kpi-orange { background: linear-gradient(135deg, #fd7e14, #e8610a); }
-.kpi-blue   { background: linear-gradient(135deg, #0d6efd, #0b5ed7); }
-.kpi-yellow { background: linear-gradient(135deg, #ffc107, #e0a800); color: #212529 !important; }
+.bc-kpi-red    { background: linear-gradient(135deg, #dc3545, #b02a37); }
+.bc-kpi-orange { background: linear-gradient(135deg, #fd7e14, #d1650a); }
+.bc-kpi-blue   { background: linear-gradient(135deg, #0d6efd, #0a58ca); }
+.bc-kpi-yellow { background: linear-gradient(135deg, #e0a800, #c69500); color: #fff !important; }
 
-.kpi-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.85;
-  margin-bottom: 4px;
+.bc-kpi-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; opacity: .85; margin-bottom: 3px; }
+.bc-kpi-value { font-size: 1.25rem; font-weight: 800; line-height: 1.1; margin-bottom: 2px; }
+.bc-kpi-sub   { font-size: .71rem; opacity: .75; }
+
+// ─── Aging ───────────────────────────────────────────────────────────────────
+.bc-aging {
+  padding: 0 20px 14px;
+  background: #fff;
 }
 
-.kpi-value {
-  font-size: 1.35rem;
-  font-weight: 800;
-  line-height: 1;
-  margin-bottom: 4px;
-
-  @media (max-width: 576px) { font-size: 1rem; }
-}
-
-.kpi-sub {
-  font-size: 0.72rem;
-  opacity: 0.75;
-}
-
-// ── AGING ─────────────────────────────────────────────────────
 .aging-row {
   display: grid;
-  grid-template-columns: 110px 1fr 80px 110px;
+  grid-template-columns: 110px 1fr 60px 110px;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 
   @media (max-width: 576px) {
-    grid-template-columns: 90px 1fr 60px;
+    grid-template-columns: 85px 1fr 50px;
     .aging-amount { display: none; }
   }
 }
+.aging-label    { font-size: .8rem; color: #6c757d; white-space: nowrap; }
+.aging-bar-wrap { height: 9px; background: #f0f0f0; border-radius: 999px; overflow: hidden; }
+.aging-bar      { height: 100%; border-radius: 999px; transition: width .5s ease; min-width: 2px; }
+.aging-count    { font-size: .78rem; text-align: right; }
+.aging-amount   { font-size: .82rem; text-align: right; }
 
-.aging-label { font-size: 0.8rem; color: #6c757d; white-space: nowrap; }
-
-.aging-bar-wrap {
-  height: 10px;
-  background: #f0f0f0;
-  border-radius: 999px;
-  overflow: hidden;
+// ─── Tab-Leiste + Suche ──────────────────────────────────────────────────────
+.bc-tab-section {
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 2px solid #e9ecef;
 }
 
-.aging-bar {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.6s ease;
-  min-width: 2px;
+.bc-tab-bar {
+  display: flex;
+  overflow-x: auto;
+  gap: 0;
+  padding: 0;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
-.aging-count  { font-size: 0.8rem; text-align: right; }
-.aging-amount { font-size: 0.85rem; text-align: right; }
+.bc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  font-size: .83rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
 
-// ── TABLE ─────────────────────────────────────────────────────
-.th-small {
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  &:hover { color: #1a56db; }
+  &--active { color: #1a56db; border-bottom-color: #1a56db; font-weight: 600; }
+}
+
+.bc-badge {
+  background: #0d6efd; color: #fff; border-radius: 999px;
+  font-size: .62rem; padding: 1px 5px; font-weight: 700;
+  &--red  { background: #dc3545; }
+  &--warn { background: #ffc107; color: #212529; }
+}
+
+.bc-search { max-width: 260px; margin: 8px 0; }
+
+// ─── Liste ───────────────────────────────────────────────────────────────────
+.bc-list-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  scrollbar-width: thin;
+  min-height: 0;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-thumb { background: #adb5bd; border-radius: 3px; }
+}
+
+.bc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
   color: #6c757d;
 }
 
-// ── NAV PILLS ─────────────────────────────────────────────────
-.nav-pills .nav-link {
-  font-size: 0.85rem;
-  color: #495057;
-  border-radius: 8px;
+// ─── Tabelle ─────────────────────────────────────────────────────────────────
+.bc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
 
-  &.active {
-    background: #dc3545;
-    color: #fff;
+  th {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6c757d;
+    padding: 8px 10px;
+    border-bottom: 2px solid #e9ecef;
+    background: #f8f9fa;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 10px;
+    border-bottom: 1px solid #f1f3f5;
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    cursor: default;
+    transition: background .1s;
+    &:hover { background: #f8f9fa; }
   }
 }
+
+.bc-row-overdue {
+  background: rgba(220,53,69,.04) !important;
+  &:hover { background: rgba(220,53,69,.08) !important; }
+}
+
+// ─── Mobile Karten ───────────────────────────────────────────────────────────
+.bc-mobile-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+
+  &--overdue {
+    border-left: 3px solid #dc3545;
+    background: rgba(220,53,69,.02);
+  }
+}
+
+// ─── Pagination ──────────────────────────────────────────────────────────────
+.bc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 20px;
+  border-top: 1px solid #e9ecef;
+  background: #fff;
+  font-size: .78rem;
+}
+
+// ─── Utility ─────────────────────────────────────────────────────────────────
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .8s linear infinite; display: inline-block; }

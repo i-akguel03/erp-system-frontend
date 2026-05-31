@@ -1,375 +1,373 @@
-<!-- ── HEADER ─────────────────────────────────────────────────── -->
-<div class="bc-header px-3 px-md-4 pt-4 pb-3">
-  <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
-    <div>
-      <h4 class="mb-0 fw-bold">
-        <i class="fas fa-file-invoice-dollar me-2 text-danger"></i>Abrechnungscenter
-      </h4>
-      <small class="text-muted">Offene Posten, Mahnwesen und Zahlungsübersicht</small>
-    </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-sm btn-outline-secondary" (click)="load()" [disabled]="loading" title="Aktualisieren">
-        <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
-      </button>
-      <a routerLink="/open-item" class="btn btn-sm btn-outline-primary">
-        <i class="fas fa-list me-1"></i>Alle Posten
-      </a>
-    </div>
-  </div>
-</div>
+<div class="bc-root">
 
-<!-- ── ERROR ─────────────────────────────────────────────────── -->
-@if (error) {
-  <div class="mx-3 mx-md-4 alert alert-danger d-flex align-items-center gap-2">
-    <i class="fas fa-exclamation-triangle"></i>{{ error }}
-    <button class="btn-close ms-auto" (click)="clearError()"></button>
-  </div>
-}
-
-<!-- ── LOADING ────────────────────────────────────────────────── -->
-@if (loading) {
-  <div class="text-center py-5">
-    <div class="spinner-border text-danger" role="status"></div>
-    <p class="mt-2 text-muted small">Abrechnungsdaten werden geladen…</p>
-  </div>
-}
-
-@if (!loading) {
-<div style="flex: 1 1 0; overflow: hidden; display: flex; flex-direction: column; min-height: 0;">
-
-<!-- ── KPI STRIP ──────────────────────────────────────────────── -->
-<div class="kpi-strip px-3 px-md-4 pb-3">
-  <div class="row g-3">
-    <div class="col-6 col-lg-3">
-      <div class="kpi-card kpi-red">
-        <div class="kpi-label">Überfällig</div>
-        <div class="kpi-value">{{ fmt(totalOverdueAmount) }}</div>
-        <div class="kpi-sub">{{ countOf('overdue') }} Posten</div>
+  <!-- ═══ BLUE HEADER ════════════════════════════════════════════════════ -->
+  <div class="bc-header flex-shrink-0">
+    <div class="d-flex align-items-center gap-3">
+      <div class="bc-header-icon flex-shrink-0">
+        <i class="bi bi-cash-coin" style="font-size:1.2rem;"></i>
       </div>
-    </div>
-    <div class="col-6 col-lg-3">
-      <div class="kpi-card kpi-orange">
-        <div class="kpi-label">Mahnung fällig</div>
-        <div class="kpi-value">{{ reminderDueCount }}</div>
-        <div class="kpi-sub">nicht kontaktiert (30 d)</div>
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-bold" style="font-size:1.1rem; line-height:1.2;">Abrechnungscenter</div>
+        <div class="text-white-50" style="font-size:.78rem;">Offene Posten, Mahnwesen und Zahlungsübersicht</div>
       </div>
-    </div>
-    <div class="col-6 col-lg-3">
-      <div class="kpi-card kpi-blue">
-        <div class="kpi-label">Gesamtausstehend</div>
-        <div class="kpi-value">{{ fmt(totalOutstanding) }}</div>
-        <div class="kpi-sub">{{ countOf('all') }} aktive Posten</div>
+      <!-- KPI-Chips -->
+      <div class="d-none d-lg-flex gap-2 align-items-center flex-shrink-0">
+        <span class="bc-kpi-chip bc-kpi-chip--red" *ngIf="countOf('overdue') > 0">
+          <i class="bi bi-exclamation-circle"></i> {{ countOf('overdue') }} überfällig
+        </span>
+        <span class="bc-kpi-chip bc-kpi-chip--yellow" *ngIf="reminderDueCount > 0">
+          <i class="bi bi-bell"></i> {{ reminderDueCount }} Mahnung fällig
+        </span>
+        <span class="bc-kpi-chip">
+          <i class="bi bi-cash-stack"></i> {{ fmt(totalOutstanding) }} ausstehend
+        </span>
       </div>
-    </div>
-    <div class="col-6 col-lg-3">
-      <div class="kpi-card kpi-yellow">
-        <div class="kpi-label">Teilbezahlt</div>
-        <div class="kpi-value">{{ countOf('partial') }}</div>
-        <div class="kpi-sub">offene Teilzahlungen</div>
+      <!-- Aktionsbuttons -->
+      <div class="d-flex gap-1 flex-shrink-0">
+        <button class="btn btn-sm bc-btn-header" (click)="load()" [disabled]="loading" title="Aktualisieren">
+          <i class="bi bi-arrow-clockwise" [class.spin]="loading"></i>
+        </button>
+        <a routerLink="/open-item" class="btn btn-sm bc-btn-header">
+          <i class="bi bi-list-ul me-1"></i><span class="d-none d-md-inline">Alle Posten</span>
+        </a>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ── AGING ANALYSE ──────────────────────────────────────────── -->
-@if (countOf('overdue') > 0) {
-<div class="px-3 px-md-4 mb-3">
-  <div class="card border-0 shadow-sm">
-    <div class="card-body">
-      <h6 class="fw-semibold mb-3">
-        <i class="fas fa-chart-bar me-2 text-danger"></i>Aging-Analyse – Überfälligkeitsdauer
-      </h6>
-      <div class="d-flex flex-column gap-2">
-        @for (bucket of agingBuckets; track bucket.label) {
-          <div class="aging-row">
-            <div class="aging-label">{{ bucket.label }}</div>
-            <div class="aging-bar-wrap">
-              <div class="aging-bar"
-                   [style.width.%]="(bucket.amount / agingMaxAmount) * 100"
-                   [style.background]="bucket.color">
-              </div>
-            </div>
-            <div class="aging-count text-muted">{{ bucket.count }} Posten</div>
-            <div class="aging-amount fw-semibold" [style.color]="bucket.color">{{ fmt(bucket.amount) }}</div>
+  <!-- Fehler -->
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center gap-2 mx-3 mt-3 py-2 small flex-shrink-0">
+    <i class="bi bi-exclamation-triangle"></i>{{ error }}
+    <button class="btn-close btn-sm ms-auto" (click)="clearError()"></button>
+  </div>
+
+  <!-- Laden -->
+  <div *ngIf="loading" class="d-flex flex-column align-items-center justify-content-center py-5 flex-shrink-0">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted small">Abrechnungsdaten werden geladen …</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- ═══ KPI STRIP ═══════════════════════════════════════════════════════ -->
+    <div class="bc-kpi-strip flex-shrink-0">
+      <div class="row g-3">
+        <div class="col-6 col-lg-3">
+          <div class="bc-kpi-card bc-kpi-red">
+            <div class="bc-kpi-label"><i class="bi bi-exclamation-triangle me-1"></i>Überfällig</div>
+            <div class="bc-kpi-value">{{ fmt(totalOverdueAmount) }}</div>
+            <div class="bc-kpi-sub">{{ countOf('overdue') }} Posten</div>
           </div>
-        }
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="bc-kpi-card bc-kpi-orange">
+            <div class="bc-kpi-label"><i class="bi bi-bell me-1"></i>Mahnung fällig</div>
+            <div class="bc-kpi-value">{{ reminderDueCount }}</div>
+            <div class="bc-kpi-sub">nicht kontaktiert (30 d)</div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="bc-kpi-card bc-kpi-blue">
+            <div class="bc-kpi-label"><i class="bi bi-cash-stack me-1"></i>Gesamtausstehend</div>
+            <div class="bc-kpi-value">{{ fmt(totalOutstanding) }}</div>
+            <div class="bc-kpi-sub">{{ countOf('all') }} aktive Posten</div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="bc-kpi-card bc-kpi-yellow">
+            <div class="bc-kpi-label"><i class="bi bi-circle-half me-1"></i>Teilbezahlt</div>
+            <div class="bc-kpi-value">{{ countOf('partial') }}</div>
+            <div class="bc-kpi-sub">offene Teilzahlungen</div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-}
 
-<!-- ── TABS + SUCHE ───────────────────────────────────────────── -->
-<div class="list-content px-3 px-md-4 d-flex flex-column overflow-hidden" style="flex: 1 1 0; min-height: 0;">
-
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-    <!-- Tabs -->
-    <ul class="nav nav-pills gap-1">
-      <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='overdue'" (click)="setTab('overdue')">
-          Überfällig
-          <span class="badge bg-danger ms-1">{{ countOf('overdue') }}</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='open'" (click)="setTab('open')">
-          Offen
-          <span class="badge bg-primary ms-1">{{ countOf('open') }}</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='partial'" (click)="setTab('partial')">
-          Teilbezahlt
-          <span class="badge bg-warning text-dark ms-1">{{ countOf('partial') }}</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link py-1 px-3" [class.active]="activeTab==='all'" (click)="setTab('all')">
-          Alle aktiven
-        </button>
-      </li>
-    </ul>
-
-    <!-- Suche -->
-    <div class="input-group input-group-sm" style="max-width: 260px;">
-      <span class="input-group-text bg-white border-end-0">
-        <i class="fas fa-search text-muted" style="font-size: 0.75rem;"></i>
-      </span>
-      <input type="text" class="form-control border-start-0"
-             placeholder="Kunde, Rechnung, Vertrag…"
-             [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
-    </div>
-  </div>
-
-  <!-- ── DESKTOP TABELLE ────────────────────────────────────────── -->
-  <div class="table-responsive d-none d-md-block" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="filtered.length > 0">
-    <table class="table table-hover align-middle mb-0">
-      <thead>
-        <tr class="border-bottom border-2">
-          <th class="th-small border-0">Status</th>
-          <th class="th-small border-0">Kunde</th>
-          <th class="th-small border-0">Rechnung</th>
-          <th class="th-small border-0">Vertrag</th>
-          <th class="th-small border-0 text-end">Betrag</th>
-          <th class="th-small border-0 text-end">Ausstehend</th>
-          <th class="th-small border-0">Fälligkeit</th>
-          <th class="th-small border-0">Mahnungen</th>
-          <th class="border-0" style="width: 130px;"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of filtered; track item.id) {
-          <tr [class.table-danger]="item.status === 'OVERDUE'">
-            <td>
-              <span [class]="statusClass(item.status)" style="font-size: 0.72rem;">
-                {{ statusLabel(item.status) }}
-              </span>
-            </td>
-            <td class="fw-medium">{{ item.customerName || '–' }}</td>
-            <td class="text-muted small">{{ item.invoiceNumber || '–' }}</td>
-            <td class="text-muted small">
-              @if (item.contractNumber) {
-                <span class="badge bg-light text-dark border">{{ item.contractNumber }}</span>
-              } @else { <span class="text-muted">–</span> }
-            </td>
-            <td class="text-end fw-medium">{{ fmt(item.amount) }}</td>
-            <td class="text-end">
-              <span class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0">
-                {{ fmt(item.outstandingAmount) }}
-              </span>
-            </td>
-            <td>
-              <div class="small">{{ item.dueDate | date:'dd.MM.yyyy' }}</div>
-              @if (item.daysOverdue && item.daysOverdue > 0) {
-                <div class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">
-                  {{ item.daysOverdue }} Tage
+    <!-- ═══ AGING ANALYSE ════════════════════════════════════════════════════ -->
+    <div class="bc-aging flex-shrink-0" *ngIf="countOf('overdue') > 0">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+          <i class="bi bi-bar-chart text-danger"></i>
+          <span class="fw-semibold small">Aging-Analyse — Überfälligkeitsdauer</span>
+        </div>
+        <div class="card-body py-3">
+          <div class="d-flex flex-column gap-2">
+            @for (bucket of agingBuckets; track bucket.label) {
+              <div class="aging-row">
+                <div class="aging-label">{{ bucket.label }}</div>
+                <div class="aging-bar-wrap">
+                  <div class="aging-bar" [style.width.%]="(bucket.amount / agingMaxAmount) * 100" [style.background]="bucket.color"></div>
                 </div>
-              }
-            </td>
-            <td>
-              @if ((item.reminderCount ?? 0) > 0) {
-                <span class="badge bg-warning text-dark">{{ item.reminderCount }}×</span>
-              } @else {
-                <span class="text-muted small">–</span>
-              }
-            </td>
-            <td>
-              <div class="d-flex gap-1 justify-content-end">
-                <button class="btn btn-sm btn-outline-success" (click)="openPayModal(item)"
-                        title="Zahlung erfassen" [disabled]="item.status === 'CANCELLED'">
-                  <i class="fas fa-coins"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-warning" (click)="sendReminder(item)"
-                        [disabled]="emailSendingId === item.id" title="Mahnung senden">
-                  @if (emailSendingId === item.id) {
-                    <span class="spinner-border spinner-border-sm"></span>
-                  } @else {
-                    <i class="fas fa-paper-plane"></i>
-                  }
-                </button>
-                <button class="btn btn-sm btn-outline-danger" (click)="openCancelModal(item)"
-                        title="Stornieren" [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
-                  <i class="fas fa-ban"></i>
-                </button>
+                <div class="aging-count text-muted">{{ bucket.count }}</div>
+                <div class="aging-amount fw-semibold" [style.color]="bucket.color">{{ fmt(bucket.amount) }}</div>
               </div>
-            </td>
-          </tr>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB-LEISTE + SUCHE ══════════════════════════════════════════════ -->
+    <div class="bc-tab-section flex-shrink-0">
+      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+        <!-- Tab-Leiste -->
+        <div class="bc-tab-bar">
+          <button class="bc-tab" [class.bc-tab--active]="activeTab==='overdue'" (click)="setTab('overdue')">
+            <i class="bi bi-exclamation-circle"></i><span>Überfällig</span>
+            <span class="bc-badge bc-badge--red" *ngIf="countOf('overdue')>0">{{ countOf('overdue') }}</span>
+          </button>
+          <button class="bc-tab" [class.bc-tab--active]="activeTab==='open'" (click)="setTab('open')">
+            <i class="bi bi-circle"></i><span>Offen</span>
+            <span class="bc-badge" *ngIf="countOf('open')>0">{{ countOf('open') }}</span>
+          </button>
+          <button class="bc-tab" [class.bc-tab--active]="activeTab==='partial'" (click)="setTab('partial')">
+            <i class="bi bi-circle-half"></i><span>Teilbezahlt</span>
+            <span class="bc-badge bc-badge--warn" *ngIf="countOf('partial')>0">{{ countOf('partial') }}</span>
+          </button>
+          <button class="bc-tab" [class.bc-tab--active]="activeTab==='all'" (click)="setTab('all')">
+            <i class="bi bi-list-ul"></i><span>Alle aktiven</span>
+          </button>
+        </div>
+        <!-- Suche -->
+        <div class="input-group input-group-sm bc-search">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control border-start-0" placeholder="Kunde, Rechnung, Vertrag …"
+                 [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+          <button *ngIf="searchTerm" class="btn btn-outline-secondary" (click)="searchTerm=''; onSearchChange()">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ LISTE ════════════════════════════════════════════════════════════ -->
+    <div class="bc-list-area">
+
+      <!-- Leer -->
+      <div *ngIf="filtered.length === 0" class="bc-empty">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem; opacity:.4;"></i>
+        <p class="mt-3 mb-0 fw-semibold">Keine Posten in dieser Ansicht</p>
+        <p class="text-muted small">
+          <ng-container *ngIf="searchTerm">Keine Treffer für „{{ searchTerm }}"</ng-container>
+          <ng-container *ngIf="!searchTerm">Alles erledigt oder keine aktiven Posten</ng-container>
+        </p>
+      </div>
+
+      <!-- Desktop Tabelle -->
+      <div class="d-none d-md-block" *ngIf="filtered.length > 0">
+        <table class="bc-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Kunde</th>
+              <th>Rechnung</th>
+              <th>Vertrag</th>
+              <th class="text-end">Betrag</th>
+              <th class="text-end">Ausstehend</th>
+              <th>Fälligkeit</th>
+              <th>Mahnungen</th>
+              <th style="width:120px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filtered; track item.id) {
+              <tr [class.bc-row-overdue]="item.status === 'OVERDUE'">
+                <td>
+                  <div class="d-flex align-items-center gap-1">
+                    <i class="bi {{ statusIcon(item.status) }}" style="font-size:.85rem;"></i>
+                    <span [class]="statusClass(item.status)" style="font-size:.68rem;">{{ statusLabel(item.status) }}</span>
+                  </div>
+                </td>
+                <td class="fw-semibold">{{ item.customerName || '–' }}</td>
+                <td class="text-muted small">{{ item.invoiceNumber || '–' }}</td>
+                <td>
+                  <span *ngIf="item.contractNumber" class="badge bg-light text-dark border" style="font-size:.72rem;">{{ item.contractNumber }}</span>
+                  <span *ngIf="!item.contractNumber" class="text-muted">–</span>
+                </td>
+                <td class="text-end fw-medium">{{ fmt(item.amount) }}</td>
+                <td class="text-end">
+                  <span class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0">{{ fmt(item.outstandingAmount) }}</span>
+                  <div *ngIf="item.daysOverdue && item.daysOverdue > 0" class="text-danger" style="font-size:.68rem;">{{ item.daysOverdue }} Tage</div>
+                </td>
+                <td class="small text-muted">{{ formatDate(item.dueDate) }}</td>
+                <td>
+                  <span *ngIf="(item.reminderCount ?? 0) > 0" class="badge bg-warning text-dark">{{ item.reminderCount }}×</span>
+                  <span *ngIf="(item.reminderCount ?? 0) === 0" class="text-muted small">–</span>
+                </td>
+                <td>
+                  <div class="d-flex gap-1 justify-content-end">
+                    <button class="btn btn-sm btn-outline-success px-2" (click)="openPayModal(item)"
+                            title="Zahlung erfassen" [disabled]="item.status === 'CANCELLED'">
+                      <i class="bi bi-check2-circle"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning px-2" (click)="sendReminder(item)"
+                            [disabled]="emailSendingId === item.id" title="Mahnung senden">
+                      <span *ngIf="emailSendingId === item.id" class="spinner-border spinner-border-sm"></span>
+                      <i *ngIf="emailSendingId !== item.id" class="bi bi-send"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger px-2" (click)="openCancelModal(item)"
+                            title="Stornieren" [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Kartenliste -->
+      <div class="d-md-none" *ngIf="filtered.length > 0">
+        @for (item of filtered; track item.id) {
+          <div class="bc-mobile-card" [class.bc-mobile-card--overdue]="item.status === 'OVERDUE'">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <div class="flex-grow-1 overflow-hidden">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                  <i class="bi {{ statusIcon(item.status) }}" style="font-size:.9rem;"></i>
+                  <span [class]="statusClass(item.status)" style="font-size:.68rem;">{{ statusLabel(item.status) }}</span>
+                  <span *ngIf="item.contractNumber" class="badge bg-light text-dark border" style="font-size:.68rem;">{{ item.contractNumber }}</span>
+                </div>
+                <div class="fw-semibold text-truncate">{{ item.customerName || '–' }}</div>
+                <div class="text-muted small">{{ item.invoiceNumber }}</div>
+              </div>
+              <div class="text-end flex-shrink-0">
+                <div class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0">{{ fmt(item.outstandingAmount) }}</div>
+                <div *ngIf="item.daysOverdue && item.daysOverdue > 0" class="text-danger" style="font-size:.72rem;">{{ item.daysOverdue }} Tage</div>
+                <div *ngIf="(item.reminderCount ?? 0) > 0" class="badge bg-warning text-dark" style="font-size:.65rem;">{{ item.reminderCount }}× Mahnung</div>
+              </div>
+            </div>
+            <div class="text-muted small mb-2">
+              <i class="bi bi-calendar me-1"></i>Fällig: {{ formatDate(item.dueDate) }}
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-success flex-grow-1" (click)="openPayModal(item)" [disabled]="item.status === 'CANCELLED'">
+                <i class="bi bi-check2-circle me-1"></i>Zahlung
+              </button>
+              <button class="btn btn-sm btn-outline-warning flex-grow-1" (click)="sendReminder(item)" [disabled]="emailSendingId === item.id">
+                <span *ngIf="emailSendingId === item.id" class="spinner-border spinner-border-sm me-1"></span>
+                <i *ngIf="emailSendingId !== item.id" class="bi bi-send me-1"></i>Mahnung
+              </button>
+              <button class="btn btn-sm btn-outline-danger px-2" (click)="openCancelModal(item)" [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </div>
+          </div>
         }
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ── MOBILE CARDS ───────────────────────────────────────────── -->
-  <div class="d-md-none" style="flex: 1 1 0; overflow-y: auto; min-height: 0;" *ngIf="filtered.length > 0">
-    @for (item of filtered; track item.id) {
-      <div class="card border-0 shadow-sm mb-3" [class.border-danger]="item.status === 'OVERDUE'" [class.border-start]="item.status === 'OVERDUE'" style="border-left-width: 3px !important;">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <span [class]="statusClass(item.status)" style="font-size: 0.7rem;">{{ statusLabel(item.status) }}</span>
-              <div class="fw-semibold mt-1">{{ item.customerName || '–' }}</div>
-              <div class="text-muted small">{{ item.invoiceNumber }}</div>
-            </div>
-            <div class="text-end">
-              <div class="fw-bold text-danger">{{ fmt(item.outstandingAmount) }}</div>
-              @if (item.daysOverdue && item.daysOverdue > 0) {
-                <div class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">{{ item.daysOverdue }} Tage</div>
-              }
-            </div>
-          </div>
-
-          <div class="d-flex gap-2 flex-wrap text-muted small mb-3">
-            @if (item.contractNumber) {
-              <span><i class="fas fa-file-contract me-1"></i>{{ item.contractNumber }}</span>
-            }
-            @if (item.dueDate) {
-              <span><i class="fas fa-calendar me-1"></i>{{ item.dueDate | date:'dd.MM.yy' }}</span>
-            }
-            @if ((item.reminderCount ?? 0) > 0) {
-              <span><i class="fas fa-bell me-1"></i>{{ item.reminderCount }}× Mahnung</span>
-            }
-          </div>
-
-          <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-success flex-grow-1" (click)="openPayModal(item)"
-                    [disabled]="item.status === 'CANCELLED'">
-              <i class="fas fa-coins me-1"></i>Zahlung
-            </button>
-            <button class="btn btn-sm btn-outline-warning flex-grow-1" (click)="sendReminder(item)"
-                    [disabled]="emailSendingId === item.id">
-              @if (emailSendingId === item.id) {
-                <span class="spinner-border spinner-border-sm me-1"></span>
-              } @else {
-                <i class="fas fa-paper-plane me-1"></i>
-              }
-              Mahnung
-            </button>
-            <button class="btn btn-sm btn-outline-danger" (click)="openCancelModal(item)"
-                    [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
-              <i class="fas fa-ban"></i>
-            </button>
-          </div>
-        </div>
       </div>
-    }
-  </div>
-
-  <!-- ── LEER ───────────────────────────────────────────────────── -->
-  @if (filtered.length === 0) {
-    <div class="text-center py-5 text-muted">
-      <i class="fas fa-check-circle fa-3x mb-3 text-success opacity-50"></i>
-      <h6>Keine Posten in dieser Ansicht</h6>
-      <small>
-        @if (searchTerm) { Keine Treffer für „{{ searchTerm }}" }
-        @else { Alles erledigt oder keine aktiven Posten }
-      </small>
     </div>
-  }
 
+    <!-- ═══ PAGINATION ════════════════════════════════════════════════════ -->
+    <div *ngIf="totalPages > 1" class="bc-pagination flex-shrink-0">
+      <button class="btn btn-sm btn-outline-secondary px-2" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <div class="d-flex gap-1">
+        <button *ngIf="pageNumbers[0] > 0" class="btn btn-sm btn-outline-secondary px-2" (click)="goToPage(0)">1</button>
+        <span *ngIf="pageNumbers[0] > 1" class="px-1 text-muted align-self-center">…</span>
+        @for (p of pageNumbers; track p) {
+          <button class="btn btn-sm px-2"
+                  [class.btn-primary]="p === currentPage"
+                  [class.btn-outline-secondary]="p !== currentPage"
+                  (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+        <span *ngIf="pageNumbers[pageNumbers.length - 1] < totalPages - 2" class="px-1 text-muted align-self-center">…</span>
+        <button *ngIf="pageNumbers[pageNumbers.length - 1] < totalPages - 1" class="btn btn-sm btn-outline-secondary px-2" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary px-2" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+      <span class="text-muted small ms-2">{{ totalElements }} Einträge</span>
+    </div>
+
+  </ng-container>
 </div>
 
-<app-pagination
-  [currentPage]="currentPage"
-  [totalPages]="totalPages"
-  [totalElements]="totalElements"
-  [pageSize]="pageSize"
-  (pageChange)="goToPage($event)"
-  (pageSizeChange)="pageSize=$event; onPageSizeChange()">
-</app-pagination>
+<!-- ═══ DIALOG: Zahlung erfassen ════════════════════════════════════════ -->
+<p-dialog [(visible)]="showPayModal" header="Zahlung erfassen" [modal]="true" [closable]="true"
+          [draggable]="false" [resizable]="false" [style]="{ width: '520px', maxWidth: '95vw' }"
+          (onHide)="showPayModal = false">
+  <div *ngIf="payItem" class="d-flex flex-column gap-3 py-2">
+    <div class="alert alert-light border py-2 mb-0" style="font-size:.85rem;">
+      <div class="fw-semibold">{{ payItem.customerName }}</div>
+      <div class="d-flex flex-wrap gap-3 mt-1 text-muted small">
+        <span><i class="bi bi-receipt me-1"></i>{{ payItem.invoiceNumber }}</span>
+        <span><i class="bi bi-cash me-1"></i>Ausstehend: <strong class="text-danger">{{ fmt(payItem.outstandingAmount) }}</strong></span>
+        <span *ngIf="payItem.contractNumber"><i class="bi bi-file-earmark-check me-1"></i>{{ payItem.contractNumber }}</span>
+      </div>
+    </div>
 
-</div>
-} <!-- end !loading -->
-
-<!-- ═══════════════ MODAL: ZAHLUNG ERFASSEN ═══════════════════ -->
-@if (showPayModal && payItem) {
-  <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.45);" (click)="showPayModal=false">
-    <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title"><i class="fas fa-coins me-2 text-success"></i>Zahlung erfassen</h5>
-          <button class="btn-close" (click)="showPayModal=false"></button>
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="form-floating">
+          <input type="number" class="form-control" id="bcPayAmt" placeholder=" "
+                 [(ngModel)]="payAmount" min="0.01" step="0.01" [max]="payItem.outstandingAmount" />
+          <label for="bcPayAmt">Betrag (€) *</label>
         </div>
-        <div class="modal-body d-flex flex-column gap-3">
-          <div class="alert alert-light border mb-0">
-            <div class="fw-semibold">{{ payItem.customerName }}</div>
-            <div class="text-muted small">{{ payItem.invoiceNumber }} · Ausstehend: {{ fmt(payItem.outstandingAmount) }}</div>
-          </div>
-          <div class="form-floating">
-            <input type="number" class="form-control" id="payAmt" placeholder=" "
-                   [(ngModel)]="payAmount" min="0.01" step="0.01">
-            <label for="payAmt">Betrag (€)</label>
-          </div>
-          <div class="form-floating">
-            <select class="form-select" id="payMeth" [(ngModel)]="payMethod">
-              <option value="">– Zahlungsart –</option>
-              <option value="BANK_TRANSFER">Überweisung</option>
-              <option value="CASH">Bar</option>
-              <option value="CREDIT_CARD">Kreditkarte</option>
-              <option value="DIRECT_DEBIT">Lastschrift</option>
-              <option value="PAYPAL">PayPal</option>
-            </select>
-            <label for="payMeth">Zahlungsart</label>
-          </div>
-          <div class="form-floating">
-            <input type="text" class="form-control" id="payRef" placeholder=" " [(ngModel)]="payRef">
-            <label for="payRef">Referenz / Buchungsnummer (optional)</label>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline-secondary" (click)="showPayModal=false">Abbrechen</button>
-          <button class="btn btn-success" (click)="confirmPayment()" [disabled]="!payAmount || paying">
-            @if (paying) { <span class="spinner-border spinner-border-sm me-1"></span> }
-            Zahlung buchen
+        <div class="d-flex gap-1 mt-1">
+          <button class="btn btn-outline-success btn-sm flex-fill" (click)="setFullPayment()" style="font-size:.75rem;">
+            <i class="bi bi-check2 me-1"></i>Vollzahlung
+          </button>
+          <button class="btn btn-outline-secondary btn-sm flex-fill" (click)="setHalfPayment()" style="font-size:.75rem;">
+            ½ Hälfte
           </button>
         </div>
       </div>
-    </div>
-  </div>
-}
-
-<!-- ═══════════════ MODAL: STORNIEREN ════════════════════════ -->
-@if (showCancelModal && cancelItem) {
-  <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.45);" (click)="showCancelModal=false">
-    <div class="modal-dialog modal-dialog-centered modal-sm" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title text-danger"><i class="fas fa-ban me-2"></i>Stornieren</h5>
-          <button class="btn-close" (click)="showCancelModal=false"></button>
+      <div class="col-6">
+        <div class="form-floating">
+          <select class="form-select" id="bcPayMeth" [(ngModel)]="payMethod">
+            <option value="">– Bitte wählen –</option>
+            <option value="BANK_TRANSFER">Überweisung</option>
+            <option value="CASH">Bar</option>
+            <option value="CREDIT_CARD">Kreditkarte</option>
+            <option value="DIRECT_DEBIT">Lastschrift</option>
+            <option value="PAYPAL">PayPal</option>
+            <option value="SEPA">SEPA</option>
+            <option value="OTHER">Sonstige</option>
+          </select>
+          <label for="bcPayMeth">Zahlungsart</label>
         </div>
-        <div class="modal-body">
-          <p class="text-muted mb-0">
-            Posten <strong>{{ cancelItem.invoiceNumber }}</strong> ({{ fmt(cancelItem.outstandingAmount) }}) von
-            <strong>{{ cancelItem.customerName }}</strong> stornieren?
-          </p>
-        </div>
-        <div class="modal-footer border-0 pt-0">
-          <button class="btn btn-secondary btn-sm" (click)="showCancelModal=false">Abbrechen</button>
-          <button class="btn btn-danger btn-sm" (click)="confirmCancel()" [disabled]="cancelling">
-            @if (cancelling) { <span class="spinner-border spinner-border-sm me-1"></span> }
-            Stornieren
-          </button>
+      </div>
+      <div class="col-6">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="bcPayRef" placeholder=" " [(ngModel)]="payRef" />
+          <label for="bcPayRef">Referenz (optional)</label>
         </div>
       </div>
     </div>
+
+    <div class="d-flex justify-content-end gap-2 border-top pt-2">
+      <button class="btn btn-outline-secondary" (click)="showPayModal = false">Abbrechen</button>
+      <button class="btn btn-success d-flex align-items-center gap-2" (click)="confirmPayment()"
+              [disabled]="!payAmount || payAmount <= 0 || paying">
+        <span *ngIf="paying" class="spinner-border spinner-border-sm"></span>
+        <i *ngIf="!paying" class="bi bi-check2-circle"></i>
+        Zahlung buchen
+      </button>
+    </div>
   </div>
-}
+</p-dialog>
+
+<!-- ═══ DIALOG: Stornieren ══════════════════════════════════════════════ -->
+<p-dialog [(visible)]="showCancelModal" header="Posten stornieren" [modal]="true" [closable]="true"
+          [draggable]="false" [resizable]="false" [style]="{ width: '420px', maxWidth: '95vw' }"
+          (onHide)="showCancelModal = false">
+  <div *ngIf="cancelItem" class="d-flex flex-column gap-3 py-2">
+    <div class="alert alert-warning border py-2 mb-0" style="font-size:.85rem;">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      Diese Aktion kann nicht rückgängig gemacht werden.
+    </div>
+    <div style="font-size:.9rem;">
+      Posten <strong>{{ cancelItem.invoiceNumber }}</strong>
+      (<strong class="text-danger">{{ fmt(cancelItem.outstandingAmount) }}</strong>) von
+      <strong>{{ cancelItem.customerName }}</strong> stornieren?
+    </div>
+    <div class="d-flex justify-content-end gap-2 border-top pt-2">
+      <button class="btn btn-outline-secondary" (click)="showCancelModal = false">Abbrechen</button>
+      <button class="btn btn-danger d-flex align-items-center gap-2" (click)="confirmCancel()" [disabled]="cancelling">
+        <span *ngIf="cancelling" class="spinner-border spinner-border-sm"></span>
+        <i *ngIf="!cancelling" class="bi bi-x-circle"></i>
+        Stornieren
+      </button>
+    </div>
+  </div>
+</p-dialog>
