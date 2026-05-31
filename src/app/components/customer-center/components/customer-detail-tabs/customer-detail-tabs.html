@@ -1,136 +1,138 @@
-<!-- Kein Kunde ausgewählt -->
+<!-- Kein Kunde -->
 <div *ngIf="!customer" class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-  <i class="bi bi-person-circle" style="font-size:3.5rem; opacity:.2;"></i>
-  <p class="mt-3 mb-0">Bitte wählen Sie einen Kunden aus der Liste aus</p>
+  <i class="bi bi-person-circle" style="font-size:3.5rem;opacity:.2;"></i>
+  <p class="mt-3 mb-0">Bitte einen Kunden auswählen</p>
 </div>
 
-<!-- Kunde ausgewählt -->
 <div *ngIf="customer" class="d-flex flex-column h-100 overflow-hidden">
 
-  <!-- ═══ TAB-LEISTE ══════════════════════════════════════════════════════ -->
-  <div class="cc-tabs-header border-bottom bg-white flex-shrink-0">
-    <div class="cc-tabs-scroll">
-
-      <button class="cc-tab" [class.cc-tab--active]="activeTab === 'uebersicht'" (click)="setTab('uebersicht')">
-        <i class="bi bi-person-vcard"></i><span>Übersicht</span>
-      </button>
-      <button class="cc-tab" [class.cc-tab--active]="activeTab === 'vertraege'" (click)="setTab('vertraege')">
-        <i class="bi bi-file-earmark-check"></i>
-        <span>Verträge</span>
-        <span class="cc-tab-badge" *ngIf="contracts.length">{{ contracts.length }}</span>
-      </button>
-      <button class="cc-tab" [class.cc-tab--active]="activeTab === 'rechnungen'" (click)="setTab('rechnungen')">
-        <i class="bi bi-receipt-cutoff"></i>
-        <span>Rechnungen</span>
-        <span class="cc-tab-badge" *ngIf="invoices.length">{{ invoices.length }}</span>
-      </button>
-      <button class="cc-tab" [class.cc-tab--active]="activeTab === 'zahlungen'" (click)="setTab('zahlungen')">
-        <i class="bi bi-cash-stack"></i>
-        <span>Off. Posten</span>
-        <span class="cc-tab-badge cc-tab-badge--danger" *ngIf="ueberfaelligePosten > 0">{{ ueberfaelligePosten }}</span>
-        <span class="cc-tab-badge" *ngIf="!ueberfaelligePosten && openItems.length">{{ openItems.length }}</span>
-      </button>
-      <button class="cc-tab" [class.cc-tab--active]="activeTab === 'crm'" (click)="setTab('crm')">
-        <i class="bi bi-chat-left-text"></i>
-        <span>CRM</span>
-        <span class="cc-tab-badge cc-tab-badge--warn" *ngIf="offeneAktivitaetenCount > 0">{{ offeneAktivitaetenCount }}</span>
-      </button>
-      <button class="cc-tab" [class.cc-tab--active]="activeTab === 'kontenblatt'" (click)="setTab('kontenblatt')">
-        <i class="bi bi-journal-text"></i><span>Kontenblatt</span>
-      </button>
+  <!-- ═══ KUNDEN-HEADER ════════════════════════════════════════════════════ -->
+  <div class="cc-customer-header flex-shrink-0">
+    <div class="d-flex align-items-center gap-3">
+      <!-- Avatar -->
+      <div class="cc-header-avatar">
+        {{ (customer.firstName?.[0] ?? '') + (customer.lastName?.[0] ?? '') | uppercase }}
+      </div>
+      <!-- Info -->
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-bold" style="font-size:1.05rem;line-height:1.2;">
+          {{ customer.firstName }} {{ customer.lastName }}
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-1" style="font-size:.78rem;">
+          <span class="text-muted"><i class="bi bi-hash me-1"></i>{{ customer.customerNumber ?? '–' }}</span>
+          <a *ngIf="customer.email" [href]="'mailto:' + customer.email" class="text-decoration-none text-muted">
+            <i class="bi bi-envelope me-1"></i>{{ customer.email }}
+          </a>
+          <a *ngIf="customer.tel" [href]="'tel:' + customer.tel" class="text-decoration-none text-muted">
+            <i class="bi bi-telephone me-1"></i>{{ customer.tel }}
+          </a>
+        </div>
+      </div>
+      <!-- KPI Chips -->
+      <div class="d-none d-lg-flex gap-2 flex-shrink-0">
+        <span class="cc-kpi-chip cc-kpi-chip--blue">
+          <i class="bi bi-file-earmark-check"></i> {{ aktiverVertragCount }} aktiv
+        </span>
+        <span class="cc-kpi-chip" [class.cc-kpi-chip--red]="ueberfaelligePosten > 0" [class.cc-kpi-chip--green]="ueberfaelligePosten === 0">
+          <i class="bi bi-cash-stack"></i> {{ formatCurrency(offenePostenSumme) }}
+        </span>
+      </div>
     </div>
   </div>
 
-  <!-- ═══ TAB-INHALT ═════════════════════════════════════════════════════ -->
-  <div class="cc-tab-content flex-grow-1 overflow-auto p-3" style="scrollbar-width:thin;">
+  <!-- ═══ TAB-LEISTE ══════════════════════════════════════════════════════ -->
+  <div class="cc-tab-bar flex-shrink-0">
+    <button class="cc-tab" [class.cc-tab--active]="activeTab==='uebersicht'" (click)="setTab('uebersicht')">
+      <i class="bi bi-grid-1x2"></i><span>Übersicht</span>
+    </button>
+    <button class="cc-tab" [class.cc-tab--active]="activeTab==='vertraege'" (click)="setTab('vertraege')">
+      <i class="bi bi-file-earmark-check"></i><span>Verträge</span>
+      <span class="cc-badge" *ngIf="contracts.length">{{ contracts.length }}</span>
+    </button>
+    <button class="cc-tab" [class.cc-tab--active]="activeTab==='rechnungen'" (click)="setTab('rechnungen')">
+      <i class="bi bi-receipt-cutoff"></i><span>Rechnungen</span>
+      <span class="cc-badge" *ngIf="invoices.length">{{ invoices.length }}</span>
+    </button>
+    <button class="cc-tab" [class.cc-tab--active]="activeTab==='zahlungen'" (click)="setTab('zahlungen')">
+      <i class="bi bi-cash-stack"></i><span>Off. Posten</span>
+      <span class="cc-badge cc-badge--red" *ngIf="ueberfaelligePosten>0">{{ ueberfaelligePosten }}</span>
+      <span class="cc-badge" *ngIf="!ueberfaelligePosten && openItems.length">{{ openItems.length }}</span>
+    </button>
+    <button class="cc-tab" [class.cc-tab--active]="activeTab==='crm'" (click)="setTab('crm')">
+      <i class="bi bi-chat-left-text"></i><span>CRM</span>
+      <span class="cc-badge cc-badge--orange" *ngIf="offeneAktivitaetenCount>0">{{ offeneAktivitaetenCount }}</span>
+    </button>
+    <button class="cc-tab" [class.cc-tab--active]="activeTab==='kontenblatt'" (click)="setTab('kontenblatt')">
+      <i class="bi bi-journal-text"></i><span>Kontenblatt</span>
+    </button>
+  </div>
 
-    <!-- Laden -->
-    <div *ngIf="loading" class="d-flex justify-content-center align-items-center py-5">
+  <!-- ═══ INHALT ══════════════════════════════════════════════════════════ -->
+  <div class="cc-content">
+    <div *ngIf="loading" class="d-flex justify-content-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
     </div>
 
     <ng-container *ngIf="!loading">
 
-      <!-- ─────────────── ÜBERSICHT ─────────────────────────────────── -->
-      <div *ngIf="activeTab === 'uebersicht'">
-
-        <!-- KPI-Karten -->
+      <!-- ─── ÜBERSICHT ─────────────────────────────────────────────── -->
+      <div *ngIf="activeTab==='uebersicht'">
+        <!-- KPI -->
         <div class="row g-3 mb-4">
           <div class="col-6 col-lg-3">
-            <div class="card text-center border-0 shadow-sm h-100">
-              <div class="card-body py-3">
-                <div class="fs-3 fw-bold text-primary">{{ aktiverVertragCount }}</div>
-                <div class="text-muted small">Aktive Verträge</div>
-              </div>
+            <div class="cc-kpi-card">
+              <div class="cc-kpi-value text-primary">{{ aktiverVertragCount }}</div>
+              <div class="cc-kpi-label">Aktive Verträge</div>
             </div>
           </div>
           <div class="col-6 col-lg-3">
-            <div class="card text-center border-0 shadow-sm h-100">
-              <div class="card-body py-3">
-                <div class="fs-3 fw-bold text-warning">{{ invoices.length }}</div>
-                <div class="text-muted small">Rechnungen</div>
-              </div>
+            <div class="cc-kpi-card">
+              <div class="cc-kpi-value text-secondary">{{ invoices.length }}</div>
+              <div class="cc-kpi-label">Rechnungen gesamt</div>
             </div>
           </div>
           <div class="col-6 col-lg-3">
-            <div class="card text-center border-0 shadow-sm h-100" [class.border-danger]="ueberfaelligePosten > 0">
-              <div class="card-body py-3">
-                <div class="fs-3 fw-bold" [class.text-danger]="ueberfaelligePosten > 0" [class.text-success]="ueberfaelligePosten === 0">
-                  {{ formatCurrency(offenePostenSumme) }}
-                </div>
-                <div class="text-muted small">Offene Posten</div>
+            <div class="cc-kpi-card" [class.border-danger]="ueberfaelligePosten>0">
+              <div class="cc-kpi-value" [class.text-danger]="ueberfaelligePosten>0" [class.text-success]="ueberfaelligePosten===0">
+                {{ formatCurrency(offenePostenSumme) }}
               </div>
+              <div class="cc-kpi-label">Offene Posten</div>
             </div>
           </div>
           <div class="col-6 col-lg-3">
-            <div class="card text-center border-0 shadow-sm h-100">
-              <div class="card-body py-3">
-                <div class="fs-3 fw-bold text-info">{{ activities.length }}</div>
-                <div class="text-muted small">CRM-Aktivitäten</div>
-              </div>
+            <div class="cc-kpi-card">
+              <div class="cc-kpi-value text-info">{{ formatCurrency(gesamtUmsatz) }}</div>
+              <div class="cc-kpi-label">Gesamtumsatz</div>
             </div>
           </div>
         </div>
 
-        <!-- Stammdaten -->
         <div class="row g-3">
+          <!-- Stammdaten -->
           <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light py-2">
-                <i class="bi bi-person me-2 text-primary"></i>
-                <span class="fw-semibold">Stammdaten</span>
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-person text-primary"></i><span class="fw-semibold small">Stammdaten</span>
               </div>
               <div class="card-body">
-                <dl class="row mb-0 small">
-                  <dt class="col-5 text-muted fw-normal">Kundennr.</dt>
-                  <dd class="col-7 fw-semibold">{{ customer.customerNumber ?? '–' }}</dd>
-
-                  <dt class="col-5 text-muted fw-normal">Name</dt>
-                  <dd class="col-7">{{ customer.firstName }} {{ customer.lastName }}</dd>
-
+                <dl class="row mb-0" style="font-size:.85rem;">
+                  <dt class="col-5 text-muted fw-normal">Kundennr.</dt><dd class="col-7 fw-semibold">{{ customer.customerNumber ?? '–' }}</dd>
+                  <dt class="col-5 text-muted fw-normal">Name</dt><dd class="col-7">{{ customer.firstName }} {{ customer.lastName }}</dd>
                   <dt class="col-5 text-muted fw-normal">E-Mail</dt>
-                  <dd class="col-7">
-                    <a *ngIf="customer.email" [href]="'mailto:' + customer.email" class="text-decoration-none">{{ customer.email }}</a>
-                    <span *ngIf="!customer.email">–</span>
-                  </dd>
-
+                  <dd class="col-7"><a *ngIf="customer.email" [href]="'mailto:'+customer.email" class="text-decoration-none">{{ customer.email }}</a><span *ngIf="!customer.email">–</span></dd>
                   <dt class="col-5 text-muted fw-normal">Telefon</dt>
-                  <dd class="col-7">
-                    <a *ngIf="customer.tel" [href]="'tel:' + customer.tel" class="text-decoration-none">{{ customer.tel }}</a>
-                    <span *ngIf="!customer.tel">–</span>
-                  </dd>
+                  <dd class="col-7"><a *ngIf="customer.tel" [href]="'tel:'+customer.tel" class="text-decoration-none">{{ customer.tel }}</a><span *ngIf="!customer.tel">–</span></dd>
                 </dl>
               </div>
             </div>
           </div>
-
+          <!-- Adresse -->
           <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light py-2">
-                <i class="bi bi-geo-alt me-2 text-primary"></i>
-                <span class="fw-semibold">Rechnungsadresse</span>
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-geo-alt text-primary"></i><span class="fw-semibold small">Rechnungsadresse</span>
               </div>
-              <div class="card-body small">
+              <div class="card-body" style="font-size:.85rem;">
                 <ng-container *ngIf="customer.billingAddress; else noAddr">
                   <div>{{ customer.billingAddress.street }}</div>
                   <div>{{ customer.billingAddress.postalCode }} {{ customer.billingAddress.city }}</div>
@@ -140,333 +142,409 @@
               </div>
             </div>
           </div>
-
-          <!-- Primärer Ansprechpartner -->
-          <div class="col-12" *ngIf="contacts.length > 0">
+          <!-- Hauptansprechpartner -->
+          <div class="col-12" *ngIf="hasPrimaryContact">
             <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light py-2">
-                <i class="bi bi-person-check me-2 text-success"></i>
-                <span class="fw-semibold">Hauptansprechpartner</span>
+              <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-person-check text-success"></i><span class="fw-semibold small">Hauptansprechpartner</span>
               </div>
-              <div class="card-body small" *ngFor="let c of contacts">
-                <ng-container *ngIf="c.primaryContact">
-                  <div class="fw-semibold">{{ c.fullName }}</div>
-                  <div class="text-muted">{{ c.position }}<span *ngIf="c.department">, {{ c.department }}</span></div>
-                  <div *ngIf="c.email"><a [href]="'mailto:' + c.email" class="text-decoration-none">{{ c.email }}</a></div>
-                  <div *ngIf="c.phone">{{ c.phone }}</div>
+              <div class="card-body" style="font-size:.85rem;">
+                @for (c of contacts; track c.id) {
+                  @if (c.primaryContact) {
+                    <div class="fw-semibold">{{ c.fullName ?? (c.firstName + ' ' + c.lastName) }}</div>
+                    <div class="text-muted">{{ c.position }}<span *ngIf="c.department">, {{ c.department }}</span></div>
+                    <div class="d-flex gap-3 mt-1">
+                      <a *ngIf="c.email" [href]="'mailto:'+c.email" class="text-decoration-none small"><i class="bi bi-envelope me-1"></i>{{ c.email }}</a>
+                      <a *ngIf="c.phone" [href]="'tel:'+c.phone" class="text-decoration-none small"><i class="bi bi-telephone me-1"></i>{{ c.phone }}</a>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── VERTRÄGE (Accordion) ──────────────────────────────────── -->
+      <div *ngIf="activeTab==='vertraege'">
+        <div *ngIf="contracts.length===0" class="cc-empty">
+          <i class="bi bi-file-earmark-x"></i><p>Keine Verträge vorhanden</p>
+        </div>
+        <div class="d-flex flex-column gap-2" *ngIf="contracts.length>0">
+          @for (c of contracts; track c.id) {
+            <div class="cc-accordion" [class.cc-accordion--open]="expandedContractId===c.id">
+              <!-- Vertrag-Kopf -->
+              <div class="cc-accordion-header" (click)="toggleContract(c.id!)">
+                <div class="d-flex align-items-start gap-2 flex-grow-1 overflow-hidden">
+                  <i class="bi bi-file-earmark-text text-primary mt-1 flex-shrink-0"></i>
+                  <div class="overflow-hidden">
+                    <div class="fw-semibold text-truncate" style="font-size:.9rem;">{{ c.contractTitle }}</div>
+                    <div class="text-muted" style="font-size:.75rem;">
+                      {{ c.contractNumber }} · {{ formatDate(c.startDate) }}
+                      <span *ngIf="c.endDate"> – {{ formatDate(c.endDate) }}</span>
+                      <span *ngIf="!c.endDate"> – unbefristet</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <span [class]="contractStatusBadge(c.contractStatus)">{{ contractStatusLabel(c.contractStatus) }}</span>
+                  <i class="bi" [class.bi-chevron-down]="expandedContractId!==c.id" [class.bi-chevron-up]="expandedContractId===c.id" style="font-size:.8rem;color:#6c757d;"></i>
+                </div>
+              </div>
+
+              <!-- Vertrag-Detail (Expanded) -->
+              <div class="cc-accordion-body" *ngIf="expandedContractId===c.id">
+                <!-- Notiz -->
+                <div *ngIf="c.notes" class="alert alert-light py-2 mb-3 small">
+                  <i class="bi bi-info-circle me-1 text-muted"></i>{{ c.notes }}
+                </div>
+
+                <!-- Laden -->
+                <div *ngIf="isLoadingContractSubs(c.id!)" class="d-flex align-items-center gap-2 text-muted small py-2">
+                  <span class="spinner-border spinner-border-sm"></span> Abonnements werden geladen …
+                </div>
+
+                <ng-container *ngIf="!isLoadingContractSubs(c.id!)">
+                  <!-- Abonnements -->
+                  <div class="cc-section-title"><i class="bi bi-arrow-repeat me-1"></i>Abonnements</div>
+                  <div *ngIf="getSubscriptionsForContract(c.id!).length===0" class="text-muted small mb-3">Keine Abonnements</div>
+                  <div class="table-responsive mb-3" *ngIf="getSubscriptionsForContract(c.id!).length>0">
+                    <table class="table table-sm table-hover align-middle mb-0" style="font-size:.83rem;">
+                      <thead class="table-light"><tr><th>Produkt</th><th>Zyklus</th><th>Start</th><th>Ende</th><th>Status</th></tr></thead>
+                      <tbody>
+                        @for (sub of getSubscriptionsForContract(c.id!); track sub.id) {
+                          <tr>
+                            <td class="fw-semibold">{{ sub.productName ?? '–' }}</td>
+                            <td>{{ billingCycleLabel(sub.billingCycle) }}</td>
+                            <td>{{ formatDate(sub.startDate) }}</td>
+                            <td>{{ sub.endDate ? formatDate(sub.endDate) : '∞' }}</td>
+                            <td><span [class]="subStatusBadge(sub.subscriptionStatus)">{{ sub.subscriptionStatus ?? 'ACTIVE' }}</span></td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Rechnungen dieses Vertrags -->
+                  <div class="cc-section-title"><i class="bi bi-receipt-cutoff me-1"></i>Rechnungen</div>
+                  <div *ngIf="getInvoicesForContract(c.id!).length===0" class="text-muted small mb-3">Keine direkt zuordenbaren Rechnungen</div>
+                  <div class="table-responsive mb-3" *ngIf="getInvoicesForContract(c.id!).length>0">
+                    <table class="table table-sm table-hover align-middle mb-0" style="font-size:.83rem;">
+                      <thead class="table-light"><tr><th>Nr.</th><th>Datum</th><th class="text-end">Betrag</th><th>Status</th></tr></thead>
+                      <tbody>
+                        @for (inv of getInvoicesForContract(c.id!); track inv.id) {
+                          <tr>
+                            <td class="fw-semibold">{{ inv.invoiceNumber ?? '–' }}</td>
+                            <td>{{ formatDate(inv.invoiceDate) }}</td>
+                            <td class="text-end">{{ formatCurrency(inv.totalAmount) }}</td>
+                            <td><span [class]="invoiceStatusBadge(inv.status)">{{ invoiceStatusLabel(inv.status) }}</span></td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
                 </ng-container>
               </div>
             </div>
-          </div>
+          }
         </div>
       </div>
 
-      <!-- ─────────────── VERTRÄGE ──────────────────────────────────── -->
-      <div *ngIf="activeTab === 'vertraege'">
-        <div *ngIf="contracts.length === 0" class="text-center text-muted py-5">
-          <i class="bi bi-file-earmark-x" style="font-size:2rem; opacity:.3;"></i>
-          <p class="mt-2 mb-0">Keine Verträge vorhanden</p>
+      <!-- ─── RECHNUNGEN ────────────────────────────────────────────── -->
+      <div *ngIf="activeTab==='rechnungen'">
+        <div *ngIf="invoices.length===0" class="cc-empty">
+          <i class="bi bi-receipt"></i><p>Keine Rechnungen vorhanden</p>
         </div>
-        <div class="list-group list-group-flush" *ngIf="contracts.length > 0">
-          <div class="list-group-item list-group-item-action border rounded mb-2"
-               *ngFor="let c of contracts; trackBy: trackById">
-            <div class="d-flex align-items-start justify-content-between gap-2">
-              <div class="flex-grow-1 overflow-hidden">
-                <div class="fw-semibold text-truncate">{{ c.contractTitle }}</div>
-                <div class="small text-muted">
-                  {{ c.contractNumber }}
-                  · {{ formatDate(c.startDate) }} – {{ c.endDate ? formatDate(c.endDate) : 'unbefristet' }}
-                </div>
-              </div>
-              <span [class]="contractStatusBadge(c.contractStatus)" class="flex-shrink-0">
-                {{ contractStatusLabel(c.contractStatus) }}
-              </span>
-            </div>
-            <div *ngIf="c.notes" class="small text-muted mt-1 text-truncate">{{ c.notes }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─────────────── RECHNUNGEN ────────────────────────────────── -->
-      <div *ngIf="activeTab === 'rechnungen'">
-        <div *ngIf="invoices.length === 0" class="text-center text-muted py-5">
-          <i class="bi bi-receipt" style="font-size:2rem; opacity:.3;"></i>
-          <p class="mt-2 mb-0">Keine Rechnungen vorhanden</p>
-        </div>
-        <div class="table-responsive" *ngIf="invoices.length > 0">
-          <table class="table table-hover table-sm align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Rechnungsnr.</th>
-                <th>Datum</th>
-                <th>Fällig</th>
-                <th class="text-end">Betrag</th>
-                <th>Status</th>
-              </tr>
+        <div class="table-responsive" *ngIf="invoices.length>0">
+          <table class="table table-hover table-sm align-middle">
+            <thead class="table-light sticky-top">
+              <tr><th>Rechnungsnr.</th><th>Datum</th><th>Fällig</th><th class="text-end">Betrag</th><th>Status</th></tr>
             </thead>
             <tbody>
-              <tr *ngFor="let inv of invoices; trackBy: trackById">
-                <td class="fw-semibold">{{ inv.invoiceNumber ?? '–' }}</td>
-                <td class="small">{{ formatDate(inv.invoiceDate) }}</td>
-                <td class="small" [class.text-danger]="inv.status === 'OVERDUE'">{{ formatDate(inv.dueDate) }}</td>
-                <td class="text-end">{{ formatCurrency(inv.totalAmount) }}</td>
-                <td><span [class]="invoiceStatusBadge(inv.status)">{{ invoiceStatusLabel(inv.status) }}</span></td>
-              </tr>
+              @for (inv of invoices; track inv.id) {
+                <tr [class.table-danger]="inv.status==='OVERDUE'">
+                  <td class="fw-semibold">{{ inv.invoiceNumber ?? '–' }}</td>
+                  <td>{{ formatDate(inv.invoiceDate) }}</td>
+                  <td [class.text-danger]="inv.status==='OVERDUE'">{{ formatDate(inv.dueDate) }}</td>
+                  <td class="text-end">{{ formatCurrency(inv.totalAmount) }}</td>
+                  <td><span [class]="invoiceStatusBadge(inv.status)">{{ invoiceStatusLabel(inv.status) }}</span></td>
+                </tr>
+              }
             </tbody>
+            <tfoot class="table-light">
+              <tr><td colspan="3" class="fw-semibold">Gesamt</td><td class="text-end fw-bold">{{ formatCurrency(gesamtUmsatz) }}</td><td></td></tr>
+            </tfoot>
           </table>
         </div>
       </div>
 
-      <!-- ─────────────── OFFENE POSTEN ─────────────────────────────── -->
-      <div *ngIf="activeTab === 'zahlungen'">
-        <div *ngIf="openItems.length === 0" class="text-center text-muted py-5">
-          <i class="bi bi-cash-coin" style="font-size:2rem; opacity:.3;"></i>
-          <p class="mt-2 mb-0">Keine offenen Posten vorhanden</p>
+      <!-- ─── OFFENE POSTEN ─────────────────────────────────────────── -->
+      <div *ngIf="activeTab==='zahlungen'">
+        <div *ngIf="openItems.length===0" class="cc-empty">
+          <i class="bi bi-cash-coin"></i><p>Keine offenen Posten</p>
         </div>
-        <div *ngIf="openItems.length > 0">
-          <!-- Zusammenfassung -->
-          <div class="alert py-2 mb-3" [class.alert-danger]="ueberfaelligePosten > 0" [class.alert-info]="ueberfaelligePosten === 0">
+        <ng-container *ngIf="openItems.length>0">
+          <div class="alert py-2 mb-3" [class.alert-danger]="ueberfaelligePosten>0" [class.alert-success]="ueberfaelligePosten===0">
             <i class="bi bi-info-circle me-1"></i>
-            Gesamtausstehend: <strong>{{ formatCurrency(offenePostenSumme) }}</strong>
-            <span *ngIf="ueberfaelligePosten > 0" class="ms-2 text-danger">
-              ({{ ueberfaelligePosten }} überfällig)
-            </span>
+            Ausstehend: <strong>{{ formatCurrency(offenePostenSumme) }}</strong>
+            <span *ngIf="ueberfaelligePosten>0" class="ms-2">({{ ueberfaelligePosten }} überfällig)</span>
           </div>
           <div class="table-responsive">
-            <table class="table table-hover table-sm align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Rechnungsnr.</th>
-                  <th>Fällig</th>
-                  <th class="text-end">Offen</th>
-                  <th class="text-end">Gesamt</th>
-                  <th>Status</th>
-                </tr>
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light sticky-top">
+                <tr><th>Rechnungsnr.</th><th>Fällig</th><th class="text-end">Offen</th><th class="text-end">Gesamt</th><th>Status</th></tr>
               </thead>
               <tbody>
-                <tr *ngFor="let oi of openItems; trackBy: trackById"
-                    [class.table-danger]="oi.status === 'OVERDUE'">
-                  <td class="fw-semibold small">{{ oi.invoiceNumber ?? '–' }}</td>
-                  <td class="small">{{ formatDate(oi.dueDate) }}</td>
-                  <td class="text-end">{{ formatCurrency(oi.remainingAmount) }}</td>
-                  <td class="text-end text-muted small">{{ formatCurrency(oi.amount) }}</td>
-                  <td><span [class]="openItemStatusBadge(oi.status)">{{ openItemStatusLabel(oi.status) }}</span></td>
-                </tr>
+                @for (oi of openItems; track oi.id) {
+                  <tr [class.table-danger]="oi.status==='OVERDUE'">
+                    <td class="fw-semibold">{{ oi.invoiceNumber ?? '–' }}</td>
+                    <td>{{ formatDate(oi.dueDate) }}</td>
+                    <td class="text-end fw-semibold">{{ formatCurrency(oi.outstandingAmount) }}</td>
+                    <td class="text-end text-muted">{{ formatCurrency(oi.amount) }}</td>
+                    <td><span [class]="openItemStatusBadge(oi.status)">{{ openItemStatusLabel(oi.status) }}</span></td>
+                  </tr>
+                }
               </tbody>
             </table>
           </div>
-        </div>
+        </ng-container>
       </div>
 
-      <!-- ─────────────── CRM ────────────────────────────────────────── -->
-      <div *ngIf="activeTab === 'crm'">
-
-        <!-- CRM Sub-Tabs -->
-        <div class="d-flex gap-2 mb-3 border-bottom pb-2 flex-wrap">
-          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab === 'aktivitaeten'" [class.btn-outline-secondary]="activeCrmSubTab !== 'aktivitaeten'" (click)="setCrmSubTab('aktivitaeten')">
-            <i class="bi bi-lightning me-1"></i>Aktivitäten
-            <span class="badge bg-light text-dark ms-1" *ngIf="activities.length">{{ activities.length }}</span>
+      <!-- ─── CRM ───────────────────────────────────────────────────── -->
+      <div *ngIf="activeTab==='crm'">
+        <!-- Sub-Tab-Leiste -->
+        <div class="d-flex gap-2 mb-3 pb-2 border-bottom flex-wrap">
+          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab==='aktivitaeten'" [class.btn-outline-secondary]="activeCrmSubTab!='aktivitaeten'" (click)="setCrmSubTab('aktivitaeten')">
+            <i class="bi bi-lightning me-1"></i>Aktivitäten<span class="badge bg-light text-dark ms-1" *ngIf="activities.length">{{ activities.length }}</span>
           </button>
-          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab === 'notizen'" [class.btn-outline-secondary]="activeCrmSubTab !== 'notizen'" (click)="setCrmSubTab('notizen')">
-            <i class="bi bi-sticky me-1"></i>Notizen
-            <span class="badge bg-light text-dark ms-1" *ngIf="notes.length">{{ notes.length }}</span>
+          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab==='notizen'" [class.btn-outline-secondary]="activeCrmSubTab!='notizen'" (click)="setCrmSubTab('notizen')">
+            <i class="bi bi-sticky me-1"></i>Notizen<span class="badge bg-light text-dark ms-1" *ngIf="notes.length">{{ notes.length }}</span>
           </button>
-          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab === 'kontakte'" [class.btn-outline-secondary]="activeCrmSubTab !== 'kontakte'" (click)="setCrmSubTab('kontakte')">
-            <i class="bi bi-people me-1"></i>Ansprechpartner
-            <span class="badge bg-light text-dark ms-1" *ngIf="contacts.length">{{ contacts.length }}</span>
+          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab==='kontakte'" [class.btn-outline-secondary]="activeCrmSubTab!='kontakte'" (click)="setCrmSubTab('kontakte')">
+            <i class="bi bi-people me-1"></i>Ansprechpartner<span class="badge bg-light text-dark ms-1" *ngIf="contacts.length">{{ contacts.length }}</span>
           </button>
-          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab === 'dokumente'" [class.btn-outline-secondary]="activeCrmSubTab !== 'dokumente'" (click)="setCrmSubTab('dokumente')">
-            <i class="bi bi-folder me-1"></i>Dokumente
-            <span class="badge bg-light text-dark ms-1" *ngIf="documents.length">{{ documents.length }}</span>
+          <button class="btn btn-sm" [class.btn-primary]="activeCrmSubTab==='dokumente'" [class.btn-outline-secondary]="activeCrmSubTab!='dokumente'" (click)="setCrmSubTab('dokumente')">
+            <i class="bi bi-folder me-1"></i>Dokumente<span class="badge bg-light text-dark ms-1" *ngIf="documents.length">{{ documents.length }}</span>
           </button>
         </div>
 
         <!-- AKTIVITÄTEN -->
-        <div *ngIf="activeCrmSubTab === 'aktivitaeten'">
+        <ng-container *ngIf="activeCrmSubTab==='aktivitaeten'">
           <div class="d-flex justify-content-end mb-2">
-            <button class="btn btn-sm btn-primary" (click)="openActivityModal()">
-              <i class="bi bi-plus me-1"></i>Neue Aktivität
-            </button>
+            <button class="btn btn-sm btn-primary" (click)="openActivityModal()"><i class="bi bi-plus me-1"></i>Neue Aktivität</button>
           </div>
-          <div *ngIf="activities.length === 0" class="text-center text-muted py-4">
-            <i class="bi bi-lightning" style="font-size:2rem; opacity:.3;"></i>
-            <p class="mt-2 mb-0 small">Noch keine Aktivitäten</p>
-          </div>
-          <div class="d-flex flex-column gap-2" *ngIf="activities.length > 0">
-            <div class="card border-0 shadow-sm" *ngFor="let a of activities; trackBy: trackById">
-              <div class="card-body py-2 px-3">
-                <div class="d-flex align-items-start gap-2">
-                  <i [class]="'bi ' + activityTypeIcon(a.activityType) + ' text-primary mt-1 flex-shrink-0'"></i>
-                  <div class="flex-grow-1 overflow-hidden">
-                    <div class="fw-semibold small text-truncate">{{ a.title }}</div>
-                    <div class="d-flex flex-wrap gap-1 mt-1">
-                      <span [class]="activityStatusBadge(a.status)" style="font-size:.7rem;">{{ a.status }}</span>
-                      <span class="text-muted" style="font-size:.72rem;" *ngIf="a.activityDate">{{ formatDate(a.activityDate) }}</span>
-                      <span class="text-danger" style="font-size:.72rem;" *ngIf="a.dueDate">Fällig: {{ formatDate(a.dueDate) }}</span>
+          <div *ngIf="activities.length===0" class="cc-empty"><i class="bi bi-lightning"></i><p>Noch keine Aktivitäten</p></div>
+          <div class="d-flex flex-column gap-2" *ngIf="activities.length>0">
+            @for (a of activities; track a.id) {
+              <div class="card border-0 shadow-sm">
+                <div class="card-body py-2 px-3">
+                  <div class="d-flex align-items-start gap-2">
+                    <i [class]="'bi ' + activityTypeIcon(a.activityType) + ' text-primary mt-1 flex-shrink-0'"></i>
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="fw-semibold text-truncate" style="font-size:.88rem;">{{ a.title }}</div>
+                      <div class="d-flex flex-wrap gap-2 mt-1">
+                        <span [class]="activityStatusBadge(a.status)" style="font-size:.7rem;">{{ a.status }}</span>
+                        <span class="text-muted" style="font-size:.73rem;" *ngIf="a.activityDate">{{ formatDate(a.activityDate) }}</span>
+                        <span class="text-danger" style="font-size:.73rem;" *ngIf="a.dueDate">Fällig: {{ formatDate(a.dueDate) }}</span>
+                      </div>
+                      <div class="text-muted small mt-1" *ngIf="a.description">{{ a.description }}</div>
+                      <div class="small text-success mt-1" *ngIf="a.result"><i class="bi bi-check-circle me-1"></i>{{ a.result }}</div>
                     </div>
-                    <div class="text-muted small mt-1" *ngIf="a.description">{{ a.description }}</div>
-                    <div class="small text-success mt-1" *ngIf="a.result"><i class="bi bi-check-circle me-1"></i>{{ a.result }}</div>
-                  </div>
-                  <div class="d-flex gap-1 flex-shrink-0">
-                    <button *ngIf="a.status !== 'ABGESCHLOSSEN' && a.status !== 'ABGESAGT'"
-                            class="btn btn-sm btn-outline-success py-0 px-1" title="Abschließen"
-                            (click)="activityCompleted.emit(a.id!)">
-                      <i class="bi bi-check2"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger py-0 px-1" title="Löschen"
-                            (click)="activityDeleted.emit(a.id!)">
-                      <i class="bi bi-trash3"></i>
-                    </button>
+                    <div class="d-flex gap-1 flex-shrink-0">
+                      <button *ngIf="a.status!=='ABGESCHLOSSEN' && a.status!=='ABGESAGT'" class="btn btn-sm btn-outline-success py-0 px-1" title="Abschließen" (click)="activityCompleted.emit(a.id!)"><i class="bi bi-check2"></i></button>
+                      <button class="btn btn-sm btn-outline-danger py-0 px-1" (click)="activityDeleted.emit(a.id!)"><i class="bi bi-trash3"></i></button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            }
           </div>
-        </div>
+        </ng-container>
 
         <!-- NOTIZEN -->
-        <div *ngIf="activeCrmSubTab === 'notizen'">
+        <ng-container *ngIf="activeCrmSubTab==='notizen'">
           <div class="d-flex justify-content-end mb-2">
-            <button class="btn btn-sm btn-primary" (click)="openNoteModal()">
-              <i class="bi bi-plus me-1"></i>Neue Notiz
-            </button>
+            <button class="btn btn-sm btn-primary" (click)="openNoteModal()"><i class="bi bi-plus me-1"></i>Neue Notiz</button>
           </div>
-          <div *ngIf="notes.length === 0" class="text-center text-muted py-4">
-            <i class="bi bi-sticky" style="font-size:2rem; opacity:.3;"></i>
-            <p class="mt-2 mb-0 small">Noch keine Notizen</p>
-          </div>
-          <div class="d-flex flex-column gap-2" *ngIf="notes.length > 0">
-            <div class="card border-0 shadow-sm" *ngFor="let n of notes; trackBy: trackById">
-              <div class="card-body py-2 px-3">
-                <div class="d-flex align-items-start justify-content-between gap-2">
-                  <div class="flex-grow-1 overflow-hidden">
-                    <div class="fw-semibold small">{{ n.title }}</div>
-                    <div class="d-flex gap-2 mt-1">
-                      <span [class]="priorityBadge(n.priority)" style="font-size:.7rem;">{{ n.priority }}</span>
-                      <span class="text-muted" style="font-size:.72rem;">{{ formatDate(n.createdAt) }}</span>
+          <div *ngIf="notes.length===0" class="cc-empty"><i class="bi bi-sticky"></i><p>Noch keine Notizen</p></div>
+          <div class="d-flex flex-column gap-2" *ngIf="notes.length>0">
+            @for (n of notes; track n.id) {
+              <div class="card border-0 shadow-sm">
+                <div class="card-body py-2 px-3">
+                  <div class="d-flex align-items-start gap-2">
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="fw-semibold" style="font-size:.88rem;">{{ n.title }}</div>
+                      <div class="d-flex gap-2 mt-1"><span [class]="priorityBadge(n.priority)" style="font-size:.7rem;">{{ n.priority }}</span><span class="text-muted" style="font-size:.73rem;">{{ formatDate(n.createdAt) }}</span></div>
+                      <div class="text-muted small mt-1" *ngIf="n.content">{{ n.content }}</div>
                     </div>
-                    <div class="text-muted small mt-1" *ngIf="n.content">{{ n.content }}</div>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-1 flex-shrink-0" (click)="noteDeleted.emit(n.id!)"><i class="bi bi-trash3"></i></button>
                   </div>
-                  <button class="btn btn-sm btn-outline-danger py-0 px-1 flex-shrink-0" (click)="noteDeleted.emit(n.id!)">
-                    <i class="bi bi-trash3"></i>
-                  </button>
                 </div>
               </div>
-            </div>
+            }
           </div>
-        </div>
+        </ng-container>
 
         <!-- ANSPRECHPARTNER -->
-        <div *ngIf="activeCrmSubTab === 'kontakte'">
+        <ng-container *ngIf="activeCrmSubTab==='kontakte'">
           <div class="d-flex justify-content-end mb-2">
-            <button class="btn btn-sm btn-primary" (click)="openContactModal()">
-              <i class="bi bi-plus me-1"></i>Neuer Ansprechpartner
-            </button>
+            <button class="btn btn-sm btn-primary" (click)="openContactModal()"><i class="bi bi-plus me-1"></i>Neuer Ansprechpartner</button>
           </div>
-          <div *ngIf="contacts.length === 0" class="text-center text-muted py-4">
-            <i class="bi bi-person-x" style="font-size:2rem; opacity:.3;"></i>
-            <p class="mt-2 mb-0 small">Keine Ansprechpartner hinterlegt</p>
-          </div>
-          <div class="d-flex flex-column gap-2" *ngIf="contacts.length > 0">
-            <div class="card border-0 shadow-sm" [class.border-start]="c.primaryContact" [class.border-primary]="c.primaryContact" [style.border-left-width]="c.primaryContact ? '3px' : ''" *ngFor="let c of contacts; trackBy: trackById">
-              <div class="card-body py-2 px-3">
-                <div class="d-flex align-items-start justify-content-between gap-2">
-                  <div class="flex-grow-1 overflow-hidden">
-                    <div class="fw-semibold small">
-                      {{ c.fullName ?? (c.firstName + ' ' + c.lastName) }}
-                      <span *ngIf="c.primaryContact" class="badge bg-primary ms-1" style="font-size:.65rem;">Haupt</span>
+          <div *ngIf="contacts.length===0" class="cc-empty"><i class="bi bi-person-x"></i><p>Keine Ansprechpartner hinterlegt</p></div>
+          <div class="d-flex flex-column gap-2" *ngIf="contacts.length>0">
+            @for (c of contacts; track c.id) {
+              <div class="card border-0 shadow-sm" [style.border-left]="c.primaryContact ? '3px solid #0d6efd' : ''">
+                <div class="card-body py-2 px-3">
+                  <div class="d-flex align-items-start gap-2">
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="fw-semibold" style="font-size:.88rem;">{{ c.fullName ?? (c.firstName + ' ' + c.lastName) }}<span *ngIf="c.primaryContact" class="badge bg-primary ms-2" style="font-size:.65rem;">Haupt</span></div>
+                      <div class="text-muted" style="font-size:.8rem;">{{ c.position }}<span *ngIf="c.department">, {{ c.department }}</span></div>
+                      <div class="d-flex flex-wrap gap-3 mt-1" style="font-size:.8rem;">
+                        <a *ngIf="c.email" [href]="'mailto:'+c.email" class="text-decoration-none"><i class="bi bi-envelope me-1"></i>{{ c.email }}</a>
+                        <a *ngIf="c.phone" [href]="'tel:'+c.phone" class="text-decoration-none"><i class="bi bi-telephone me-1"></i>{{ c.phone }}</a>
+                      </div>
                     </div>
-                    <div class="text-muted small">{{ c.position }}<span *ngIf="c.department">, {{ c.department }}</span></div>
-                    <div class="small mt-1 d-flex flex-wrap gap-2">
-                      <a *ngIf="c.email" [href]="'mailto:' + c.email" class="text-decoration-none">
-                        <i class="bi bi-envelope me-1"></i>{{ c.email }}
-                      </a>
-                      <a *ngIf="c.phone" [href]="'tel:' + c.phone" class="text-decoration-none">
-                        <i class="bi bi-telephone me-1"></i>{{ c.phone }}
-                      </a>
-                    </div>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-1 flex-shrink-0" (click)="contactDeleted.emit(c.id!)"><i class="bi bi-trash3"></i></button>
                   </div>
-                  <button class="btn btn-sm btn-outline-danger py-0 px-1 flex-shrink-0" (click)="contactDeleted.emit(c.id!)">
-                    <i class="bi bi-trash3"></i>
-                  </button>
                 </div>
               </div>
-            </div>
+            }
           </div>
-        </div>
+        </ng-container>
 
         <!-- DOKUMENTE -->
-        <div *ngIf="activeCrmSubTab === 'dokumente'">
+        <ng-container *ngIf="activeCrmSubTab==='dokumente'">
           <div class="d-flex justify-content-end mb-2">
-            <button class="btn btn-sm btn-primary" (click)="openDocumentModal()">
-              <i class="bi bi-upload me-1"></i>Dokument hochladen
-            </button>
+            <button class="btn btn-sm btn-primary" (click)="openDocumentModal()"><i class="bi bi-upload me-1"></i>Hochladen</button>
           </div>
-          <div *ngIf="documents.length === 0" class="text-center text-muted py-4">
-            <i class="bi bi-folder" style="font-size:2rem; opacity:.3;"></i>
-            <p class="mt-2 mb-0 small">Keine Dokumente vorhanden</p>
-          </div>
-          <div class="d-flex flex-column gap-2" *ngIf="documents.length > 0">
-            <div class="card border-0 shadow-sm" *ngFor="let d of documents; trackBy: trackById">
-              <div class="card-body py-2 px-3">
-                <div class="d-flex align-items-center gap-2">
-                  <i [class]="'bi ' + docTypeIcon(d.documentType) + ' fs-5 flex-shrink-0'"></i>
-                  <div class="flex-grow-1 overflow-hidden">
-                    <div class="fw-semibold small text-truncate">{{ d.originalFileName }}</div>
-                    <div class="text-muted" style="font-size:.72rem;">
-                      {{ d.documentType }} · {{ formatFileSize(d.fileSize) }} · {{ formatDate(d.createdAt) }}
-                      <span *ngIf="d.uploadedBy"> · {{ d.uploadedBy }}</span>
+          <div *ngIf="documents.length===0" class="cc-empty"><i class="bi bi-folder"></i><p>Keine Dokumente vorhanden</p></div>
+          <div class="d-flex flex-column gap-2" *ngIf="documents.length>0">
+            @for (d of documents; track d.id) {
+              <div class="card border-0 shadow-sm">
+                <div class="card-body py-2 px-3">
+                  <div class="d-flex align-items-center gap-2">
+                    <i [class]="'bi ' + docTypeIcon(d.documentType) + ' fs-5 flex-shrink-0'"></i>
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="fw-semibold text-truncate" style="font-size:.88rem;">{{ d.originalFileName }}</div>
+                      <div class="text-muted" style="font-size:.73rem;">{{ d.documentType }} · {{ formatFileSize(d.fileSize) }} · {{ formatDate(d.createdAt) }}<span *ngIf="d.uploadedBy"> · {{ d.uploadedBy }}</span></div>
+                      <div class="text-muted small" *ngIf="d.description">{{ d.description }}</div>
                     </div>
-                    <div class="text-muted small" *ngIf="d.description">{{ d.description }}</div>
-                  </div>
-                  <div class="d-flex gap-1 flex-shrink-0">
-                    <a *ngIf="d.id" [href]="'/api/crm/documents/' + d.id + '/download'" target="_blank"
-                       class="btn btn-sm btn-outline-primary py-0 px-1" title="Herunterladen">
-                      <i class="bi bi-download"></i>
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger py-0 px-1" (click)="documentDeleted.emit(d.id!)">
-                      <i class="bi bi-trash3"></i>
-                    </button>
+                    <div class="d-flex gap-1 flex-shrink-0">
+                      <a *ngIf="d.id" [href]="'/api/crm/documents/'+d.id+'/download'" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-1" title="Herunterladen"><i class="bi bi-download"></i></a>
+                      <button class="btn btn-sm btn-outline-danger py-0 px-1" (click)="documentDeleted.emit(d.id!)"><i class="bi bi-trash3"></i></button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            }
           </div>
-        </div>
+        </ng-container>
       </div>
 
-      <!-- ─────────────── KONTENBLATT ───────────────────────────────── -->
-      <div *ngIf="activeTab === 'kontenblatt'" class="text-center text-muted py-5">
-        <i class="bi bi-journal-text" style="font-size:2.5rem; opacity:.2;"></i>
-        <p class="mt-3 mb-1">Kontenblatt</p>
-        <p class="small">Die Buchungsjournal-Filterung nach Kunde ist über das
-          <a routerLink="/buchhaltung/buchungen" class="text-decoration-none">Buchungsjournal</a> verfügbar.
-        </p>
+      <!-- ─── KONTENBLATT ───────────────────────────────────────────── -->
+      <div *ngIf="activeTab==='kontenblatt'">
+        <div *ngIf="invoices.length===0 && openItems.length===0" class="cc-empty">
+          <i class="bi bi-journal-text"></i><p>Keine Buchungsdaten vorhanden</p>
+        </div>
+
+        <ng-container *ngIf="invoices.length>0 || openItems.length>0">
+          <!-- Saldo-Übersicht -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="cc-kpi-card border-start border-4 border-success">
+                <div class="text-muted small mb-1"><i class="bi bi-arrow-down-circle me-1 text-success"></i>Gesamtumsatz (Brutto)</div>
+                <div class="fs-4 fw-bold text-success">{{ formatCurrency(gesamtUmsatz) }}</div>
+                <div class="text-muted" style="font-size:.78rem;">{{ invoices.length }} Rechnung(en)</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="cc-kpi-card border-start border-4 border-primary">
+                <div class="text-muted small mb-1"><i class="bi bi-check-circle me-1 text-primary"></i>Bezahlt</div>
+                <div class="fs-4 fw-bold text-primary">{{ formatCurrency(bezahlterUmsatz) }}</div>
+                <div class="text-muted" style="font-size:.78rem;">{{ bezahlteRechnungenCount }} Rechnung(en)</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="cc-kpi-card border-start border-4" [class.border-danger]="offenePostenSumme>0" [class.border-secondary]="offenePostenSumme===0">
+                <div class="text-muted small mb-1"><i class="bi bi-clock me-1" [class.text-danger]="offenePostenSumme>0"></i>Ausstehend</div>
+                <div class="fs-4 fw-bold" [class.text-danger]="offenePostenSumme>0" [class.text-secondary]="offenePostenSumme===0">{{ formatCurrency(offenePostenSumme) }}</div>
+                <div class="text-muted" style="font-size:.78rem;">{{ offenePostenCount }} offene Posten</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monatliche Aufstellung -->
+          <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+              <i class="bi bi-calendar3 text-primary"></i>
+              <span class="fw-semibold small">Umsatz nach Monat</span>
+            </div>
+            <div class="card-body p-0">
+              <div *ngIf="kontenblattRows.length===0" class="text-muted text-center py-3 small">Keine Rechnungen mit Datum</div>
+              <table class="table table-sm table-hover align-middle mb-0" *ngIf="kontenblattRows.length>0" style="font-size:.85rem;">
+                <thead class="table-light"><tr><th>Monat</th><th class="text-end">Einnahmen (Brutto)</th><th class="text-center">Rechnungen</th><th class="text-end">Anteil</th></tr></thead>
+                <tbody>
+                  @for (row of kontenblattRows; track row.month) {
+                    <tr>
+                      <td class="fw-semibold">{{ row.month }}</td>
+                      <td class="text-end text-success fw-semibold">{{ formatCurrency(row.einnahmen) }}</td>
+                      <td class="text-center text-muted">{{ row.count }}</td>
+                      <td class="text-end text-muted">{{ kontenblattGesamtEinnahmen > 0 ? ((row.einnahmen / kontenblattGesamtEinnahmen) * 100).toFixed(1) + '%' : '–' }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                  <tr><td>Gesamt</td><td class="text-end text-success">{{ formatCurrency(kontenblattGesamtEinnahmen) }}</td><td class="text-center">{{ invoices.length }}</td><td class="text-end">100%</td></tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Alle Rechnungen + Zahlungsstatus -->
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+              <i class="bi bi-list-ul text-primary"></i>
+              <span class="fw-semibold small">Buchungsjournal</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" style="font-size:.83rem;">
+                  <thead class="table-light"><tr><th>Datum</th><th>Rechnungsnr.</th><th>Fällig</th><th class="text-end">Betrag</th><th class="text-end">Offen</th><th>Status</th></tr></thead>
+                  <tbody>
+                    @for (inv of invoices; track inv.id) {
+                      <tr [class.table-danger]="inv.status==='OVERDUE'">
+                        <td>{{ formatDate(inv.invoiceDate) }}</td>
+                        <td class="fw-semibold">{{ inv.invoiceNumber ?? '–' }}</td>
+                        <td>{{ formatDate(inv.dueDate) }}</td>
+                        <td class="text-end">{{ formatCurrency(inv.totalAmount) }}</td>
+                        <td class="text-end">
+                          {{ getOutstandingForInvoice(inv.invoiceNumber) != null ? formatCurrency(getOutstandingForInvoice(inv.invoiceNumber)) : '–' }}
+                        </td>
+                        <td><span [class]="invoiceStatusBadge(inv.status)">{{ invoiceStatusLabel(inv.status) }}</span></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </ng-container>
       </div>
 
     </ng-container>
   </div>
 </div>
 
-<!-- ═══ MODALS ═══════════════════════════════════════════════════════════ -->
-
-<!-- Notiz-Modal -->
-<p-dialog [(visible)]="showNoteModal" header="Neue Notiz" [modal]="true" [closable]="true"
-          [style]="{ width: '460px', maxWidth: '95vw' }" (onHide)="closeNoteModal()">
+<!-- ═══ MODALS ══════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="showNoteModal" header="Neue Notiz" [modal]="true" [closable]="true" [style]="{ width: '460px', maxWidth: '95vw' }" (onHide)="closeNoteModal()">
   <div class="d-flex flex-column gap-3 py-2">
+    <div class="form-floating"><input type="text" class="form-control" id="nTitle" placeholder=" " [(ngModel)]="noteForm.title" /><label for="nTitle">Titel *</label></div>
+    <div class="form-floating"><textarea class="form-control" id="nContent" placeholder=" " style="height:90px;" [(ngModel)]="noteForm.content"></textarea><label for="nContent">Inhalt</label></div>
     <div class="form-floating">
-      <input type="text" class="form-control" id="noteTitle" placeholder=" " [(ngModel)]="noteForm.title" />
-      <label for="noteTitle">Titel *</label>
-    </div>
-    <div class="form-floating">
-      <textarea class="form-control" id="noteContent" placeholder=" " style="height:100px;" [(ngModel)]="noteForm.content"></textarea>
-      <label for="noteContent">Inhalt</label>
-    </div>
-    <div class="form-floating">
-      <select class="form-select" id="notePriority" [(ngModel)]="noteForm.priority">
+      <select class="form-select" id="nPrio" [(ngModel)]="noteForm.priority">
         <option *ngFor="let o of notePriorityOptions" [value]="o.value">{{ o.label }}</option>
       </select>
-      <label for="notePriority">Priorität</label>
+      <label for="nPrio">Priorität</label>
     </div>
     <div class="d-flex justify-content-end gap-2 border-top pt-2">
       <button class="btn btn-outline-secondary" (click)="closeNoteModal()">Abbrechen</button>
@@ -475,42 +553,21 @@
   </div>
 </p-dialog>
 
-<!-- Aktivität-Modal -->
-<p-dialog [(visible)]="showActivityModal" header="Neue Aktivität" [modal]="true" [closable]="true"
-          [style]="{ width: '500px', maxWidth: '95vw' }" (onHide)="closeActivityModal()">
+<p-dialog [(visible)]="showActivityModal" header="Neue Aktivität" [modal]="true" [closable]="true" [style]="{ width: '500px', maxWidth: '95vw' }" (onHide)="closeActivityModal()">
   <div class="d-flex flex-column gap-3 py-2">
+    <div class="form-floating"><input type="text" class="form-control" id="aTitle" placeholder=" " [(ngModel)]="activityForm.title" /><label for="aTitle">Titel *</label></div>
     <div class="form-floating">
-      <input type="text" class="form-control" id="actTitle" placeholder=" " [(ngModel)]="activityForm.title" />
-      <label for="actTitle">Titel *</label>
-    </div>
-    <div class="form-floating">
-      <select class="form-select" id="actType" [(ngModel)]="activityForm.activityType">
+      <select class="form-select" id="aType" [(ngModel)]="activityForm.activityType">
         <option *ngFor="let o of activityTypeOptions" [value]="o.value">{{ o.label }}</option>
       </select>
-      <label for="actType">Art der Aktivität *</label>
+      <label for="aType">Art *</label>
     </div>
     <div class="row g-3">
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="datetime-local" class="form-control" id="actDate" placeholder=" " [(ngModel)]="activityDateString" />
-          <label for="actDate">Datum</label>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="datetime-local" class="form-control" id="actDue" placeholder=" " [(ngModel)]="dueDateString" />
-          <label for="actDue">Fällig bis</label>
-        </div>
-      </div>
+      <div class="col-6"><div class="form-floating"><input type="datetime-local" class="form-control" id="aDate" placeholder=" " [(ngModel)]="activityDateString" /><label for="aDate">Datum</label></div></div>
+      <div class="col-6"><div class="form-floating"><input type="datetime-local" class="form-control" id="aDue" placeholder=" " [(ngModel)]="dueDateString" /><label for="aDue">Fällig bis</label></div></div>
     </div>
-    <div class="form-floating">
-      <input type="text" class="form-control" id="actContact" placeholder=" " [(ngModel)]="activityForm.contactPerson" />
-      <label for="actContact">Ansprechpartner</label>
-    </div>
-    <div class="form-floating">
-      <textarea class="form-control" id="actDesc" placeholder=" " style="height:80px;" [(ngModel)]="activityForm.description"></textarea>
-      <label for="actDesc">Beschreibung</label>
-    </div>
+    <div class="form-floating"><input type="text" class="form-control" id="aContact" placeholder=" " [(ngModel)]="activityForm.contactPerson" /><label for="aContact">Ansprechpartner</label></div>
+    <div class="form-floating"><textarea class="form-control" id="aDesc" placeholder=" " style="height:70px;" [(ngModel)]="activityForm.description"></textarea><label for="aDesc">Beschreibung</label></div>
     <div class="d-flex justify-content-end gap-2 border-top pt-2">
       <button class="btn btn-outline-secondary" (click)="closeActivityModal()">Abbrechen</button>
       <button class="btn btn-primary" (click)="saveActivity()" [disabled]="!activityForm.title?.trim()">Erstellen</button>
@@ -518,60 +575,19 @@
   </div>
 </p-dialog>
 
-<!-- Ansprechpartner-Modal -->
-<p-dialog [(visible)]="showContactModal" header="Neuer Ansprechpartner" [modal]="true" [closable]="true"
-          [style]="{ width: '500px', maxWidth: '95vw' }" (onHide)="closeContactModal()">
+<p-dialog [(visible)]="showContactModal" header="Neuer Ansprechpartner" [modal]="true" [closable]="true" [style]="{ width: '500px', maxWidth: '95vw' }" (onHide)="closeContactModal()">
   <div class="d-flex flex-column gap-3 py-2">
     <div class="row g-3">
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="text" class="form-control" id="ctcFirst" placeholder=" " [(ngModel)]="contactForm.firstName" />
-          <label for="ctcFirst">Vorname *</label>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="text" class="form-control" id="ctcLast" placeholder=" " [(ngModel)]="contactForm.lastName" />
-          <label for="ctcLast">Nachname *</label>
-        </div>
-      </div>
+      <div class="col-6"><div class="form-floating"><input type="text" class="form-control" id="cFirst" placeholder=" " [(ngModel)]="contactForm.firstName" /><label for="cFirst">Vorname *</label></div></div>
+      <div class="col-6"><div class="form-floating"><input type="text" class="form-control" id="cLast" placeholder=" " [(ngModel)]="contactForm.lastName" /><label for="cLast">Nachname *</label></div></div>
     </div>
-    <div class="form-floating">
-      <input type="email" class="form-control" id="ctcEmail" placeholder=" " [(ngModel)]="contactForm.email" />
-      <label for="ctcEmail">E-Mail</label>
-    </div>
+    <div class="form-floating"><input type="email" class="form-control" id="cEmail" placeholder=" " [(ngModel)]="contactForm.email" /><label for="cEmail">E-Mail</label></div>
     <div class="row g-3">
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="text" class="form-control" id="ctcPhone" placeholder=" " [(ngModel)]="contactForm.phone" />
-          <label for="ctcPhone">Telefon</label>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="text" class="form-control" id="ctcMobile" placeholder=" " [(ngModel)]="contactForm.mobile" />
-          <label for="ctcMobile">Mobil</label>
-        </div>
-      </div>
+      <div class="col-6"><div class="form-floating"><input type="text" class="form-control" id="cPhone" placeholder=" " [(ngModel)]="contactForm.phone" /><label for="cPhone">Telefon</label></div></div>
+      <div class="col-6"><div class="form-floating"><input type="text" class="form-control" id="cPos" placeholder=" " [(ngModel)]="contactForm.position" /><label for="cPos">Position</label></div></div>
     </div>
-    <div class="row g-3">
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="text" class="form-control" id="ctcPos" placeholder=" " [(ngModel)]="contactForm.position" />
-          <label for="ctcPos">Position</label>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="form-floating">
-          <input type="text" class="form-control" id="ctcDept" placeholder=" " [(ngModel)]="contactForm.department" />
-          <label for="ctcDept">Abteilung</label>
-        </div>
-      </div>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" id="ctcPrimary" [(ngModel)]="contactForm.primaryContact" />
-      <label class="form-check-label" for="ctcPrimary">Als Hauptansprechpartner setzen</label>
-    </div>
+    <div class="form-floating"><input type="text" class="form-control" id="cDept" placeholder=" " [(ngModel)]="contactForm.department" /><label for="cDept">Abteilung</label></div>
+    <div class="form-check"><input class="form-check-input" type="checkbox" id="cPrimary" [(ngModel)]="contactForm.primaryContact" /><label class="form-check-label" for="cPrimary">Als Hauptansprechpartner setzen</label></div>
     <div class="d-flex justify-content-end gap-2 border-top pt-2">
       <button class="btn btn-outline-secondary" (click)="closeContactModal()">Abbrechen</button>
       <button class="btn btn-primary" (click)="saveContact()" [disabled]="!contactForm.firstName?.trim() || !contactForm.lastName?.trim()">Erstellen</button>
@@ -579,27 +595,16 @@
   </div>
 </p-dialog>
 
-<!-- Dokument-Upload-Modal -->
-<p-dialog [(visible)]="showDocumentModal" header="Dokument hochladen" [modal]="true" [closable]="true"
-          [style]="{ width: '460px', maxWidth: '95vw' }" (onHide)="closeDocumentModal()">
+<p-dialog [(visible)]="showDocumentModal" header="Dokument hochladen" [modal]="true" [closable]="true" [style]="{ width: '460px', maxWidth: '95vw' }" (onHide)="closeDocumentModal()">
   <div class="d-flex flex-column gap-3 py-2">
-    <div>
-      <label class="form-label small fw-semibold">Datei auswählen *</label>
-      <input type="file" class="form-control" (change)="onFileSelected($event)" />
-      <div *ngIf="selectedFile" class="small text-muted mt-1">
-        {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})
-      </div>
-    </div>
+    <div><label class="form-label small fw-semibold">Datei *</label><input type="file" class="form-control" (change)="onFileSelected($event)" /><div *ngIf="selectedFile" class="small text-muted mt-1">{{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})</div></div>
     <div class="form-floating">
-      <select class="form-select" id="docType" [(ngModel)]="docType">
+      <select class="form-select" id="dType" [(ngModel)]="docType">
         <option *ngFor="let o of documentTypeOptions" [value]="o.value">{{ o.label }}</option>
       </select>
-      <label for="docType">Dokumentart</label>
+      <label for="dType">Dokumentart</label>
     </div>
-    <div class="form-floating">
-      <input type="text" class="form-control" id="docDesc" placeholder=" " [(ngModel)]="docDescription" />
-      <label for="docDesc">Beschreibung (optional)</label>
-    </div>
+    <div class="form-floating"><input type="text" class="form-control" id="dDesc" placeholder=" " [(ngModel)]="docDescription" /><label for="dDesc">Beschreibung (optional)</label></div>
     <div class="d-flex justify-content-end gap-2 border-top pt-2">
       <button class="btn btn-outline-secondary" (click)="closeDocumentModal()">Abbrechen</button>
       <button class="btn btn-primary" (click)="uploadDocument()" [disabled]="!selectedFile">Hochladen</button>

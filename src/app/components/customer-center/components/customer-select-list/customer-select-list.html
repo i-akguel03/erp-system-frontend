@@ -1,103 +1,83 @@
 <!-- Suchfeld -->
-<div class="px-3 pt-3 pb-2 border-bottom bg-white sticky-top" style="z-index:10;">
+<div class="px-2 pt-2 pb-2 bg-white sticky-top border-bottom" style="z-index:10;">
   <div class="input-group input-group-sm">
-    <span class="input-group-text bg-white border-end-0">
-      <i class="bi bi-search text-muted"></i>
-    </span>
-    <input type="text"
-           class="form-control border-start-0 ps-0"
-           placeholder="Name, Nr., E-Mail …"
-           [(ngModel)]="searchTerm"
-           (ngModelChange)="applyFilter()" />
-    <button *ngIf="searchTerm"
-            class="btn btn-outline-secondary btn-sm border-start-0"
-            type="button"
-            (click)="clearSearch()">
+    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+    <input type="text" class="form-control border-start-0 ps-0" placeholder="Name, Nr., E-Mail …"
+           [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" />
+    <button *ngIf="searchTerm" class="btn btn-outline-secondary btn-sm" type="button" (click)="clearSearch()">
       <i class="bi bi-x"></i>
     </button>
   </div>
 </div>
 
-<!-- Ladezustand -->
+<!-- Laden -->
 <div *ngIf="loading" class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
   <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
-  <small>Kunden werden geladen …</small>
+  <small>Kunden laden …</small>
 </div>
 
 <!-- Fehler -->
-<div *ngIf="!loading && error" class="alert alert-danger mx-3 mt-3 py-2 small">
-  <i class="bi bi-exclamation-triangle me-1"></i>
-  {{ error }}
+<div *ngIf="!loading && error" class="alert alert-danger mx-2 mt-2 py-2 small">
+  <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
   <button class="btn btn-sm btn-outline-danger ms-2" (click)="retry.emit()">Neu laden</button>
 </div>
 
 <!-- Leer -->
-<div *ngIf="!loading && !error && filtered.length === 0 && !searchTerm"
-     class="text-center text-muted py-5">
-  <i class="bi bi-people" style="font-size:2rem; opacity:.3;"></i>
-  <p class="mt-2 mb-0 small">Keine Kunden vorhanden</p>
+<div *ngIf="!loading && !error && filtered.length === 0" class="text-center text-muted py-5">
+  <i class="bi bi-people" style="font-size:2rem;opacity:.25;"></i>
+  <p class="mt-2 mb-0 small">{{ searchTerm ? 'Keine Treffer' : 'Keine Kunden vorhanden' }}</p>
 </div>
 
-<!-- Keine Treffer -->
-<div *ngIf="!loading && !error && filtered.length === 0 && searchTerm"
-     class="text-center text-muted py-4">
-  <i class="bi bi-search" style="font-size:1.5rem; opacity:.3;"></i>
-  <p class="mt-2 mb-0 small">Keine Treffer für „{{ searchTerm }}"</p>
+<!-- Liste -->
+<div *ngIf="!loading && !error && filtered.length > 0" class="py-1">
+  @for (customer of filtered; track customer.id) {
+    <div class="cc-item d-flex align-items-center px-2 py-2 gap-2"
+         [class.cc-item--selected]="isSelected(customer)"
+         (click)="select(customer)">
+      <div class="cc-avatar flex-shrink-0" [class.cc-avatar--sel]="isSelected(customer)">
+        {{ getInitials(customer) }}
+      </div>
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-semibold text-truncate" style="font-size:.88rem;">
+          {{ customer.firstName }} {{ customer.lastName }}
+        </div>
+        <div class="text-muted text-truncate" style="font-size:.73rem;">
+          {{ customer.customerNumber }}<span *ngIf="customer.email"> · {{ customer.email }}</span>
+        </div>
+      </div>
+      <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size:.75rem;"></i>
+    </div>
+  }
 </div>
 
-<!-- Kundenliste -->
-<div *ngIf="!loading && !error" class="py-2">
-  <div *ngFor="let customer of filtered; trackBy: trackByFn"
-       class="cc-list-item d-flex align-items-center px-3 py-2 gap-3"
-       [class.cc-list-item--selected]="isSelected(customer)"
-       (click)="select(customer)">
+<!-- Pagination -->
+<div *ngIf="totalPages > 1" class="border-top px-2 py-2 bg-white sticky-bottom d-flex align-items-center justify-content-between gap-1" style="font-size:.78rem;">
+  <button class="btn btn-sm btn-outline-secondary px-2 py-0" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
+    <i class="bi bi-chevron-left"></i>
+  </button>
 
-    <!-- Avatar -->
-    <div class="cc-avatar flex-shrink-0"
-         [class.cc-avatar--selected]="isSelected(customer)">
-      {{ getInitials(customer) }}
-    </div>
-
-    <!-- Info -->
-    <div class="flex-grow-1 overflow-hidden">
-      <div class="fw-semibold text-truncate" style="font-size:.9rem;">
-        {{ customer.firstName }} {{ customer.lastName }}
-      </div>
-      <div class="text-muted text-truncate" style="font-size:.75rem;">
-        {{ customer.customerNumber }}
-        <span *ngIf="customer.email"> · {{ customer.email }}</span>
-      </div>
-    </div>
-
-    <!-- Chevron -->
-    <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size:.8rem;"></i>
+  <div class="d-flex gap-1">
+    <button *ngIf="pageNumbers[0] > 0" class="btn btn-sm btn-outline-secondary px-2 py-0" (click)="goToPage(0)">1</button>
+    <span *ngIf="pageNumbers[0] > 1" class="px-1 text-muted align-self-center">…</span>
+    @for (p of pageNumbers; track p) {
+      <button class="btn btn-sm px-2 py-0"
+              [class.btn-primary]="p === currentPage"
+              [class.btn-outline-secondary]="p !== currentPage"
+              (click)="goToPage(p)">{{ p + 1 }}</button>
+    }
+    <span *ngIf="pageNumbers[pageNumbers.length - 1] < totalPages - 2" class="px-1 text-muted align-self-center">…</span>
+    <button *ngIf="pageNumbers[pageNumbers.length - 1] < totalPages - 1" class="btn btn-sm btn-outline-secondary px-2 py-0" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
   </div>
-</div>
 
-<ng-template #trackByFn let-i="index" let-item>{{ item.id }}</ng-template>
+  <button class="btn btn-sm btn-outline-secondary px-2 py-0" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
+    <i class="bi bi-chevron-right"></i>
+  </button>
+</div>
 
 <style>
-.cc-list-item {
-  cursor: pointer;
-  transition: background 0.1s;
-  border-radius: 6px;
-  margin: 0 8px;
-}
-.cc-list-item:hover { background: #f0f4ff; }
-.cc-list-item--selected { background: #e8f0fe; }
-
-.cc-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #dee2e6;
-  color: #495057;
-  font-size: .8rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.cc-avatar--selected { background: #0d6efd; color: #fff; }
+.cc-item { cursor:pointer; border-radius:6px; margin:0 4px; transition:background .1s; }
+.cc-item:hover { background:#f0f4ff; }
+.cc-item--selected { background:#e8f0fe; }
+.cc-avatar { width:34px; height:34px; border-radius:50%; background:#dee2e6; color:#495057; font-size:.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.cc-avatar--sel { background:#0d6efd; color:#fff; }
 </style>

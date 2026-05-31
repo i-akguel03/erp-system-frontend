@@ -15,46 +15,47 @@ export class CustomerSelectListComponent implements OnChanges {
   @Input() loading = false;
   @Input() error: string | null = null;
   @Input() selectedCustomer: Customer | null = null;
+  @Input() currentPage = 0;
+  @Input() totalPages = 0;
+  @Input() totalElements = 0;
 
   @Output() customerSelected = new EventEmitter<Customer>();
+  @Output() pageChange = new EventEmitter<number>();
   @Output() retry = new EventEmitter<void>();
 
   searchTerm = '';
   filtered: Customer[] = [];
 
-  ngOnChanges(): void {
-    this.applyFilter();
-  }
+  ngOnChanges(): void { this.applyFilter(); }
 
   applyFilter(): void {
     const q = this.searchTerm.toLowerCase().trim();
-    if (!q) {
-      this.filtered = [...this.customers];
-      return;
-    }
-    this.filtered = this.customers.filter(c =>
+    this.filtered = !q ? [...this.customers] : this.customers.filter(c =>
       c.firstName?.toLowerCase().includes(q) ||
       c.lastName?.toLowerCase().includes(q) ||
       c.customerNumber?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q) ||
-      c.tel?.toLowerCase().includes(q)
+      c.email?.toLowerCase().includes(q)
     );
   }
 
-  select(customer: Customer): void {
-    this.customerSelected.emit(customer);
+  select(c: Customer): void { this.customerSelected.emit(c); }
+  isSelected(c: Customer): boolean { return this.selectedCustomer?.id === c.id; }
+  clearSearch(): void { this.searchTerm = ''; this.applyFilter(); }
+
+  getInitials(c: Customer): string {
+    return ((c.firstName?.[0] ?? '') + (c.lastName?.[0] ?? '')).toUpperCase();
   }
 
-  isSelected(customer: Customer): boolean {
-    return this.selectedCustomer?.id === customer.id;
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages || page === this.currentPage) return;
+    this.pageChange.emit(page);
   }
 
-  getInitials(customer: Customer): string {
-    return ((customer.firstName?.[0] ?? '') + (customer.lastName?.[0] ?? '')).toUpperCase();
-  }
-
-  clearSearch(): void {
-    this.searchTerm = '';
-    this.applyFilter();
+  get pageNumbers(): number[] {
+    const pages = [];
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
   }
 }

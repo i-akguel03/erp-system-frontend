@@ -7,6 +7,7 @@ import { Customer } from '../../models/Customer';
 import { Contract } from '../../models/Contract';
 import { Invoice } from '../../models/Invoice';
 import { OpenItem } from '../../models/OpenItem';
+import { Subscription } from '../../models/Subscription';
 import { CrmNote } from '../../models/CrmNote';
 import { CrmActivity } from '../../models/CrmActivity';
 import { CrmContact } from '../../models/CrmContact';
@@ -16,6 +17,7 @@ import { CustomerService } from '../../services/customer-service';
 import { ContractService } from '../../services/contract-service';
 import { InvoiceService } from '../../services/invoice-service';
 import { OpenItemService } from '../../services/open-item-service';
+import { SubscriptionService } from '../../services/subscription-service';
 import { CrmService } from '../../services/crm.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmationService } from 'primeng/api';
@@ -26,22 +28,24 @@ import { CustomerDetailTabsComponent } from './components/customer-detail-tabs/c
 @Component({
   selector: 'app-customer-center',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    CustomerSelectListComponent,
-    CustomerDetailTabsComponent
-  ],
+  imports: [CommonModule, FormsModule, CustomerSelectListComponent, CustomerDetailTabsComponent],
   templateUrl: './customer-center.html',
   styleUrls: ['./customer-center.scss']
 })
 export class CustomerCenterComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // ─── Daten ────────────────────────────────────────────────────────────────
+  // ─── Kundenliste (paginiert) ──────────────────────────────────────────────
   customers: Customer[] = [];
-  selectedCustomer: Customer | null = null;
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+  loadingCustomers = false;
+  listError: string | null = null;
 
+  // ─── Ausgewählter Kunde + Detaildaten ─────────────────────────────────────
+  selectedCustomer: Customer | null = null;
   contracts: Contract[] = [];
   invoices: Invoice[] = [];
   openItems: OpenItem[] = [];
@@ -50,11 +54,12 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
   contacts: CrmContact[] = [];
   documents: CrmDocument[] = [];
 
-  // ─── UI-Status ────────────────────────────────────────────────────────────
-  loadingCustomers = false;
-  loadingDetail = false;
-  error: string | null = null;
+  // Abonnements pro Vertrag – lazy geladen bei Vertrags-Klick
+  contractSubscriptions: { [contractId: string]: Subscription[] } = {};
 
+  loadingDetail = false;
+
+  // ─── Mobile ───────────────────────────────────────────────────────────────
   isMobile = false;
   mobileView: 'list' | 'detail' = 'list';
 
@@ -63,6 +68,7 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
     private contractService: ContractService,
     private invoiceService: InvoiceService,
     private openItemService: OpenItemService,
+    private subscriptionService: SubscriptionService,
     private crmService: CrmService,
     private notificationService: NotificationService,
     private confirmationService: ConfirmationService
@@ -70,7 +76,7 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.checkMobile();
-    this.loadCustomers();
+    this.loadPage(0);
   }
 
   ngOnDestroy(): void {
@@ -80,98 +86,69 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('window:resize')
-  onResize(): void {
-    this.checkMobile();
-  }
+  onResize(): void { this.checkMobile(); }
 
   @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.isMobile && this.mobileView === 'detail') {
-      this.navigateBack();
-    }
-  }
+  onEscape(): void { if (this.isMobile && this.mobileView === 'detail') this.navigateBack(); }
 
   // ─── Mobile ───────────────────────────────────────────────────────────────
-
   private checkMobile(): void {
-    const wasMobile = this.isMobile;
+    const was = this.isMobile;
     this.isMobile = window.innerWidth <= 768;
-    if (wasMobile !== this.isMobile) {
-      if (!this.isMobile) {
-        this.mobileView = 'list';
-        this.unlockBodyScroll();
-      } else {
-        this.lockBodyScroll();
-      }
+    if (was !== this.isMobile) {
+      if (this.isMobile) this.lockBodyScroll(); else this.unlockBodyScroll();
     }
   }
-
-  navigateBack(): void {
-    this.mobileView = 'list';
-  }
-
+  navigateBack(): void { this.mobileView = 'list'; }
   private lockBodyScroll(): void {
-    if (typeof document === 'undefined') return;
-    document.body.style.overflow = 'hidden';
+    document.body.style.cssText = 'overflow:hidden;position:fixed;width:100%;height:100%';
     document.documentElement.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
   }
-
   private unlockBodyScroll(): void {
-    if (typeof document === 'undefined') return;
-    document.body.style.overflow = '';
+    document.body.style.cssText = '';
     document.documentElement.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.height = '';
   }
 
-  // ─── Kundenliste laden ────────────────────────────────────────────────────
-
-  loadCustomers(): void {
+  // ─── Paginierte Kundenliste ───────────────────────────────────────────────
+  loadPage(page: number): void {
     this.loadingCustomers = true;
-    this.error = null;
-    this.customerService.getCustomers()
+    this.listError = null;
+    this.customerService.getCustomersPaginated(page, this.pageSize)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: customers => {
-          this.customers = customers;
+        next: result => {
+          this.customers = result.content;
+          this.currentPage = result.currentPage;
+          this.totalPages = result.totalPages;
+          this.totalElements = result.totalElements;
           this.loadingCustomers = false;
         },
         error: err => {
-          this.error = err.error?.message || 'Fehler beim Laden der Kunden';
+          this.listError = err.error?.message || 'Fehler beim Laden der Kunden';
           this.loadingCustomers = false;
         }
       });
   }
 
-  // ─── Kundenauswahl ────────────────────────────────────────────────────────
+  onPageChange(page: number): void { this.loadPage(page); }
 
+  // ─── Kundenauswahl → Detaildaten lazy laden ───────────────────────────────
   onCustomerSelected(customer: Customer): void {
     if (this.selectedCustomer?.id === customer.id && !this.isMobile) return;
     this.selectedCustomer = customer;
     this.clearDetail();
-    this.loadAllDetailData(customer.id!);
-    if (this.isMobile) {
-      this.mobileView = 'detail';
-    }
+    this.loadDetailData(customer.id!);
+    if (this.isMobile) this.mobileView = 'detail';
   }
 
   private clearDetail(): void {
-    this.contracts = [];
-    this.invoices = [];
-    this.openItems = [];
-    this.notes = [];
-    this.activities = [];
-    this.contacts = [];
-    this.documents = [];
+    this.contracts = []; this.invoices = []; this.openItems = [];
+    this.notes = []; this.activities = []; this.contacts = [];
+    this.documents = []; this.contractSubscriptions = {};
   }
 
-  private loadAllDetailData(customerId: string): void {
+  private loadDetailData(customerId: string): void {
     this.loadingDetail = true;
-
     let pending = 7;
     const done = () => { if (--pending === 0) this.loadingDetail = false; };
 
@@ -204,39 +181,36 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
       .subscribe({ next: d => { this.documents = d; done(); }, error: () => done() });
   }
 
-  // ─── CRM-Aktionen (werden von CustomerDetailTabs emitted) ─────────────────
+  // ─── Vertrag angeklickt → Abonnements lazy laden ─────────────────────────
+  onContractExpanded(contractId: string): void {
+    if (this.contractSubscriptions[contractId]) return; // schon geladen
+    this.subscriptionService.getSubscriptionsByContract(contractId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: subs => { this.contractSubscriptions = { ...this.contractSubscriptions, [contractId]: subs }; },
+        error: () => { this.contractSubscriptions = { ...this.contractSubscriptions, [contractId]: [] }; }
+      });
+  }
 
+  // ─── CRM-Aktionen ─────────────────────────────────────────────────────────
   onNoteCreated(note: Partial<CrmNote>): void {
     if (!this.selectedCustomer?.id) return;
     this.crmService.createNote(note, this.selectedCustomer.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: created => {
-          this.notes = [created, ...this.notes];
-          this.notificationService.success('Notiz erstellt');
-        },
+        next: c => { this.notes = [c, ...this.notes]; this.notificationService.success('Notiz erstellt'); },
         error: () => this.notificationService.error('Fehler beim Erstellen der Notiz')
       });
   }
 
   onNoteDeleted(id: string): void {
     this.confirmationService.confirm({
-      message: 'Notiz wirklich löschen?',
-      header: 'Notiz löschen',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Löschen',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        this.crmService.deleteNote(id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.notes = this.notes.filter(n => n.id !== id);
-              this.notificationService.success('Notiz gelöscht');
-            },
-            error: () => this.notificationService.error('Fehler beim Löschen der Notiz')
-          });
-      }
+      message: 'Notiz wirklich löschen?', header: 'Notiz löschen',
+      icon: 'pi pi-exclamation-triangle', acceptLabel: 'Löschen', rejectLabel: 'Abbrechen',
+      accept: () => this.crmService.deleteNote(id).pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => { this.notes = this.notes.filter(n => n.id !== id); this.notificationService.success('Notiz gelöscht'); },
+        error: () => this.notificationService.error('Fehler beim Löschen')
+      })
     });
   }
 
@@ -245,46 +219,30 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
     this.crmService.createActivity(activity, this.selectedCustomer.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: created => {
-          this.activities = [created, ...this.activities];
-          this.notificationService.success('Aktivität erstellt');
-        },
+        next: c => { this.activities = [c, ...this.activities]; this.notificationService.success('Aktivität erstellt'); },
         error: () => this.notificationService.error('Fehler beim Erstellen der Aktivität')
       });
   }
 
   onActivityCompleted(id: string): void {
-    this.crmService.completeActivity(id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: updated => {
-          const idx = this.activities.findIndex(a => a.id === id);
-          if (idx >= 0) this.activities[idx] = updated;
-          this.activities = [...this.activities];
-          this.notificationService.success('Aktivität abgeschlossen');
-        },
-        error: () => this.notificationService.error('Fehler beim Abschließen der Aktivität')
-      });
+    this.crmService.completeActivity(id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: u => {
+        const i = this.activities.findIndex(a => a.id === id);
+        if (i >= 0) { this.activities = [...this.activities]; this.activities[i] = u; }
+        this.notificationService.success('Aktivität abgeschlossen');
+      },
+      error: () => this.notificationService.error('Fehler')
+    });
   }
 
   onActivityDeleted(id: string): void {
     this.confirmationService.confirm({
-      message: 'Aktivität wirklich löschen?',
-      header: 'Aktivität löschen',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Löschen',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        this.crmService.deleteActivity(id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.activities = this.activities.filter(a => a.id !== id);
-              this.notificationService.success('Aktivität gelöscht');
-            },
-            error: () => this.notificationService.error('Fehler beim Löschen der Aktivität')
-          });
-      }
+      message: 'Aktivität löschen?', header: 'Aktivität löschen',
+      icon: 'pi pi-exclamation-triangle', acceptLabel: 'Löschen', rejectLabel: 'Abbrechen',
+      accept: () => this.crmService.deleteActivity(id).pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => { this.activities = this.activities.filter(a => a.id !== id); this.notificationService.success('Aktivität gelöscht'); },
+        error: () => this.notificationService.error('Fehler')
+      })
     });
   }
 
@@ -293,32 +251,19 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
     this.crmService.createContact(contact, this.selectedCustomer.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: created => {
-          this.contacts = [...this.contacts, created];
-          this.notificationService.success('Ansprechpartner erstellt');
-        },
-        error: () => this.notificationService.error('Fehler beim Erstellen des Ansprechpartners')
+        next: c => { this.contacts = [...this.contacts, c]; this.notificationService.success('Ansprechpartner erstellt'); },
+        error: () => this.notificationService.error('Fehler')
       });
   }
 
   onContactDeleted(id: string): void {
     this.confirmationService.confirm({
-      message: 'Ansprechpartner wirklich löschen?',
-      header: 'Ansprechpartner löschen',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Löschen',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        this.crmService.deleteContact(id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.contacts = this.contacts.filter(c => c.id !== id);
-              this.notificationService.success('Ansprechpartner gelöscht');
-            },
-            error: () => this.notificationService.error('Fehler beim Löschen des Ansprechpartners')
-          });
-      }
+      message: 'Ansprechpartner löschen?', header: 'Ansprechpartner löschen',
+      icon: 'pi pi-exclamation-triangle', acceptLabel: 'Löschen', rejectLabel: 'Abbrechen',
+      accept: () => this.crmService.deleteContact(id).pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => { this.contacts = this.contacts.filter(c => c.id !== id); this.notificationService.success('Gelöscht'); },
+        error: () => this.notificationService.error('Fehler')
+      })
     });
   }
 
@@ -327,36 +272,19 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
     this.crmService.uploadDocument(payload.file, this.selectedCustomer.id, undefined, payload.documentType, payload.description)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: doc => {
-          this.documents = [doc, ...this.documents];
-          this.notificationService.success('Dokument hochgeladen');
-        },
-        error: () => this.notificationService.error('Fehler beim Hochladen des Dokuments')
+        next: d => { this.documents = [d, ...this.documents]; this.notificationService.success('Dokument hochgeladen'); },
+        error: () => this.notificationService.error('Fehler beim Hochladen')
       });
   }
 
   onDocumentDeleted(id: string): void {
     this.confirmationService.confirm({
-      message: 'Dokument wirklich löschen?',
-      header: 'Dokument löschen',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Löschen',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        this.crmService.deleteDocument(id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.documents = this.documents.filter(d => d.id !== id);
-              this.notificationService.success('Dokument gelöscht');
-            },
-            error: () => this.notificationService.error('Fehler beim Löschen des Dokuments')
-          });
-      }
+      message: 'Dokument löschen?', header: 'Dokument löschen',
+      icon: 'pi pi-exclamation-triangle', acceptLabel: 'Löschen', rejectLabel: 'Abbrechen',
+      accept: () => this.crmService.deleteDocument(id).pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => { this.documents = this.documents.filter(d => d.id !== id); this.notificationService.success('Dokument gelöscht'); },
+        error: () => this.notificationService.error('Fehler')
+      })
     });
-  }
-
-  getDownloadUrl(documentId: string): string {
-    return this.crmService.downloadDocumentUrl(documentId);
   }
 }
