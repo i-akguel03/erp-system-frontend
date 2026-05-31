@@ -29,56 +29,40 @@ interface ContractActionEvent {
   action: 'neu' | 'edit' | 'duplicate' | 'kündigen' | 'stornieren' | 'verlängern' | 'email';
   contract: Contract;
 }
+interface InvoiceActionEvent { action: 'edit' | 'send' | 'details'; invoice: Invoice; }
+interface OpenItemActionEvent { action: 'payment' | 'reminder' | 'details' | 'edit' | 'cancel'; openItem: OpenItem; }
 
-interface InvoiceActionEvent {
-  action: 'edit' | 'send' | 'details';
-  invoice: Invoice;
-}
-
-interface OpenItemActionEvent {
-  action: 'payment' | 'reminder' | 'details' | 'edit' | 'cancel';
-  openItem: OpenItem;
-}
+type DetailTab = 'uebersicht' | 'abonnements' | 'finanzen';
 
 @Component({
   selector: 'app-contract-center',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    Dialog,
-    ContractListComponent,
-    SubscriptionPanelComponent,
-    FinancialTabsComponent
-  ],
+  imports: [CommonModule, FormsModule, Dialog, ContractListComponent, SubscriptionPanelComponent, FinancialTabsComponent],
   templateUrl: './contract-center.html',
   styleUrls: ['./contract-center.scss']
 })
 export class ContractCenterComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // Data properties
+  // ─── Daten ────────────────────────────────────────────────────────────────
   contracts: Contract[] = [];
   selectedContract: Contract | null = null;
   subscriptions: Subscription[] = [];
   selectedSubscription: Subscription | null = null;
   customers: { [id: string]: Customer } = {};
+  products: Product[] = [];
 
-  // UI state
-  loading: boolean = false;
+  // ─── UI-Status ────────────────────────────────────────────────────────────
+  loading = false;
   error: string | null = null;
   renewalBatchLoading = false;
+  activeDetailTab: DetailTab = 'abonnements';
 
-  // Resize state
-  topPanelPercent = 60;
-  isResizing = false;
-  private resizeStartY = 0;
-  private resizeStartPercent = 0;
-  private resizeContainerHeight = 0;
-  private readonly RESIZE_MIN = 20;
-  private readonly RESIZE_MAX = 80;
+  // Mobile
+  isMobile = false;
+  mobileView: 'contracts' | 'detail' = 'contracts';
 
-  // Contract modal state
+  // Contract-Modal
   showContractModal = false;
   contractModalTitle = '';
   contractModalMode: 'create' | 'edit' | 'duplicate' = 'create';
@@ -87,9 +71,23 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   contractEndDateString = '';
   contractModalLoading = false;
 
-  get customersArray(): Customer[] {
-    return Object.values(this.customers);
-  }
+  // Subscription-Modal
+  showSubscriptionModal = false;
+  subscriptionForm: Partial<Subscription> = {};
+  subscriptionStartDateString = '';
+  subscriptionEndDateString = '';
+  subscriptionModalLoading = false;
+
+  readonly billingCycleOptions: { label: string; value: BillingCycle }[] = [
+    { label: 'Monatlich', value: BillingCycle.MONTHLY },
+    { label: 'Vierteljährlich', value: BillingCycle.QUARTERLY },
+    { label: 'Halbjährlich', value: BillingCycle.SEMI_ANNUALLY },
+    { label: 'Jährlich', value: BillingCycle.ANNUALLY },
+  ];
+
+  emailSendingId: string | null = null;
+
+  get customersArray(): Customer[] { return Object.values(this.customers); }
 
   get expiringContractCount(): number {
     const threshold = 30 * 86_400_000;
@@ -100,26 +98,15 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     }).length;
   }
 
-  // Mobile state management - FIXED: Added navigation stack
-  isMobile = false;
-  mobileCurrentView: 'contracts' | 'subscriptions' | 'financial' = 'contracts';
-  mobileNavigationStack: Array<'contracts' | 'subscriptions' | 'financial'> = ['contracts']; // NEW: Navigation history
+  get activeSubscriptionCount(): number {
+    return this.subscriptions.filter(s => s.subscriptionStatus === 'ACTIVE' || !(s.subscriptionStatus)).length;
+  }
 
-  // Subscription modal state
-  showSubscriptionModal = false;
-  subscriptionForm: Partial<Subscription> = {};
-  subscriptionStartDateString = '';
-  subscriptionEndDateString = '';
-  subscriptionModalLoading = false;
-  products: Product[] = [];
-  readonly billingCycleOptions: { label: string; value: BillingCycle }[] = [
-    { label: 'Monatlich',        value: BillingCycle.MONTHLY },
-    { label: 'Vierteljährlich',  value: BillingCycle.QUARTERLY },
-    { label: 'Halbjährlich',     value: BillingCycle.SEMI_ANNUALLY },
-    { label: 'Jährlich',         value: BillingCycle.ANNUALLY },
-  ];
-
-  emailSendingId: string | null = null;
+  get selectedCustomerName(): string {
+    if (!this.selectedContract?.customerId) return '';
+    const c = this.customers[this.selectedContract.customerId];
+    return c ? `${c.firstName} ${c.lastName}` : '';
+  }
 
   constructor(
     private el: ElementRef,
@@ -131,11 +118,10 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     private confirmationService: ConfirmationService,
     private notificationService: NotificationService,
     private emailService: EmailService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
-    this.checkMobileView();
-    this.updateBodyScrollLock();
+    this.checkMobile();
     this.loadCustomers();
     this.loadContracts();
     this.loadProducts();
@@ -144,335 +130,99 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-
-    // Restore body scroll on destroy
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    }
+    this.unlockBodyScroll();
   }
 
-  @HostListener('window:resize')
-  onResize(): void {
-    this.checkMobileView();
-  }
+  @HostListener('window:resize') onResize(): void { this.checkMobile(); }
 
   @HostListener('document:keydown.escape')
-  onEscapePress(): void {
-    if (this.isMobile) {
-      this.navigateBack();
-    }
-  }
+  onEscape(): void { if (this.isMobile && this.mobileView === 'detail') this.navigateBack(); }
 
-  @HostListener('document:mousemove', ['$event'])
-  onMouseMove(event: MouseEvent): void {
-    if (!this.isResizing) return;
-    const delta = event.clientY - this.resizeStartY;
-    const deltaPercent = (delta / this.resizeContainerHeight) * 100;
-    this.topPanelPercent = Math.min(
-      this.RESIZE_MAX,
-      Math.max(this.RESIZE_MIN, this.resizeStartPercent + deltaPercent)
-    );
-  }
-
-  @HostListener('document:mouseup')
-  onMouseUp(): void {
-    this.isResizing = false;
-  }
-
-  startResize(event: MouseEvent): void {
-    event.preventDefault();
-    const container = this.el.nativeElement.querySelector('.desktop-split-container') as HTMLElement;
-    this.resizeContainerHeight = container?.clientHeight ?? 600;
-    this.isResizing = true;
-    this.resizeStartY = event.clientY;
-    this.resizeStartPercent = this.topPanelPercent;
-  }
-
-  // Mobile detection and management
-  private checkMobileView() {
-    const wasMobile = this.isMobile;
+  // ─── Mobile ───────────────────────────────────────────────────────────────
+  private checkMobile(): void {
+    const was = this.isMobile;
     this.isMobile = window.innerWidth <= 768;
-
-    if (wasMobile !== this.isMobile) {
-      this.updateBodyScrollLock();
-
-      if (!this.isMobile) {
-        // Reset mobile view when switching to desktop
-        this.mobileCurrentView = 'contracts';
-        this.mobileNavigationStack = ['contracts']; // FIXED: Reset navigation stack
-      }
+    if (was !== this.isMobile) {
+      if (this.isMobile) this.lockBodyScroll(); else this.unlockBodyScroll();
+      if (!this.isMobile) this.mobileView = 'contracts';
     }
   }
+  navigateBack(): void { this.mobileView = 'contracts'; this.selectedContract = null; this.subscriptions = []; this.selectedSubscription = null; }
+  private lockBodyScroll(): void { document.body.style.cssText = 'overflow:hidden;position:fixed;width:100%;height:100%'; document.documentElement.style.overflow = 'hidden'; }
+  private unlockBodyScroll(): void { document.body.style.cssText = ''; document.documentElement.style.overflow = ''; }
 
-  private updateBodyScrollLock() {
-    if (typeof document === 'undefined') return;
+  setDetailTab(tab: DetailTab): void { this.activeDetailTab = tab; }
 
-    if (this.isMobile) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
-    } else {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-    }
-  }
-
-  private navigateToMobileView(view: 'contracts' | 'subscriptions' | 'financial'): void {
-    if (!this.isMobile) return;
-    this.mobileCurrentView = view;
-    if (this.mobileNavigationStack[this.mobileNavigationStack.length - 1] !== view) {
-      this.mobileNavigationStack.push(view);
-    }
-  }
-
-  mobileNavigateTo(view: 'subscriptions' | 'financial'): void {
-    if (!this.selectedContract) return;
-    this.mobileCurrentView = view;
-    this.mobileNavigationStack = view === 'subscriptions'
-      ? ['contracts', 'subscriptions']
-      : ['contracts', 'subscriptions', 'financial'];
-  }
-
-  // Mobile navigation methods
-  getMobileNavTitle(): string {
-    switch (this.mobileCurrentView) {
-      case 'contracts':
-        return 'Verträge';
-      case 'subscriptions':
-        return 'Abonnements';
-      case 'financial':
-        return 'Finanzdetails';
-      default:
-        return 'Navigation';
-    }
-  }
-
-  navigateBack(): void {
-    if (!this.isMobile || this.mobileNavigationStack.length <= 1) return;
-
-    this.mobileNavigationStack.pop();
-    const previousView = this.mobileNavigationStack[this.mobileNavigationStack.length - 1];
-    this.mobileCurrentView = previousView;
-
-    if (previousView === 'contracts') {
-      this.selectedContract = null;
-      this.selectedSubscription = null;
-      this.subscriptions = [];
-    } else if (previousView === 'subscriptions') {
-      this.selectedSubscription = null;
-    }
-  }
-
-  resetToContracts(): void {
-    if (!this.isMobile) return;
-
-    this.mobileCurrentView = 'contracts';
-    this.mobileNavigationStack = ['contracts']; // Reset stack
-    this.selectedContract = null;
-    this.selectedSubscription = null;
-    this.subscriptions = [];
-  }
-
-  // NEW: Method to check if back navigation is possible
-  canNavigateBack(): boolean {
-    return this.isMobile && this.mobileNavigationStack.length > 1;
-  }
-
-  // FIXED: Improved breadcrumb with better logic
-  getMobileBreadcrumb(): string[] {
-    const breadcrumb: string[] = [];
-
-    if (this.mobileCurrentView === 'contracts') {
-      return breadcrumb; // No breadcrumb on root view
-    }
-
-    // Always start with Verträge when not on contracts view
-    breadcrumb.push('Verträge');
-
-    // Add contract title if selected and not on subscriptions view
-    if (this.selectedContract && this.mobileCurrentView !== 'subscriptions') {
-      breadcrumb.push(this.selectedContract.contractNumber || this.selectedContract.contractTitle || 'Vertrag');
-    }
-
-    // Add current view
-    if (this.mobileCurrentView === 'subscriptions') {
-      breadcrumb.push('Abonnements');
-    } else if (this.mobileCurrentView === 'financial') {
-      if (this.selectedSubscription) {
-        breadcrumb.push(this.selectedSubscription.productName || 'Abonnement');
-      }
-      breadcrumb.push('Finanzdetails');
-    }
-
-    return breadcrumb;
-  }
-
-  // Data loading methods
+  // ─── Datenladen ───────────────────────────────────────────────────────────
   private loadCustomers(): void {
-    this.customerService.getCustomers()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: customers => {
-          this.customers = {};
-          customers.forEach(c => {
-            if (c.id) this.customers[c.id] = c;
-          });
-        },
-        error: () => {
-          this.error = 'Fehler beim Laden der Kunden.';
-        }
-      });
+    this.customerService.getCustomers().pipe(takeUntil(this.destroy$)).subscribe({
+      next: customers => { this.customers = {}; customers.forEach(c => { if (c.id) this.customers[c.id] = c; }); },
+      error: () => {}
+    });
   }
 
   loadContracts(): void {
     this.loading = true;
     this.error = null;
-
-    this.contractService.getContracts(false)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: contracts => {
-          this.contracts = contracts;
-          this.loading = false;
-        },
-        error: err => {
-          this.error = err.error?.message || `Fehler beim Laden der Verträge (HTTP ${err.status}).`;
-          this.loading = false;
-        }
-      });
+    this.contractService.getContracts(false).pipe(takeUntil(this.destroy$)).subscribe({
+      next: contracts => { this.contracts = contracts; this.loading = false; },
+      error: err => { this.error = err.error?.message || `Fehler beim Laden (HTTP ${err.status})`; this.loading = false; }
+    });
   }
 
   private loadProducts(): void {
-    this.productService.getProducts()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: products => { this.products = products; },
-        error: () => this.notificationService.warn('Produkte konnten nicht geladen werden.')
-      });
+    this.productService.getProducts().pipe(takeUntil(this.destroy$)).subscribe({
+      next: p => { this.products = p; },
+      error: () => this.notificationService.warn('Produkte konnten nicht geladen werden.')
+    });
   }
 
   private loadSubscriptions(contractId: string): void {
-    this.subscriptionService.getSubscriptionsByContract(contractId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: subs => {
-          this.subscriptions = subs;
-        },
-        error: () => {
-          this.subscriptions = [];
-          this.notificationService.warn('Abonnements konnten nicht geladen werden.');
-        }
-      });
+    this.subscriptionService.getSubscriptionsByContract(contractId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: subs => { this.subscriptions = subs; },
+      error: () => { this.subscriptions = []; this.notificationService.warn('Abonnements konnten nicht geladen werden.'); }
+    });
   }
 
-  // Event handlers - FIXED: Using new navigation method
+  // ─── Event-Handler ────────────────────────────────────────────────────────
   onContractSelected(contract: Contract): void {
     if (this.selectedContract?.id === contract.id && !this.isMobile) return;
-
     this.selectedContract = contract;
     this.subscriptions = [];
     this.selectedSubscription = null;
-
-    // FIXED: Use proper navigation method for mobile
-    if (this.isMobile) {
-      this.navigateToMobileView('subscriptions');
-    }
-
+    this.activeDetailTab = 'abonnements';
+    if (this.isMobile) this.mobileView = 'detail';
     this.loadSubscriptions(contract.id!);
-  }
-
-  onCreateSubscription(): void {
-    this.openSubscriptionModal();
   }
 
   onSubscriptionSelected(subscription: Subscription): void {
     if (this.selectedSubscription?.id === subscription.id && !this.isMobile) return;
-
     this.selectedSubscription = subscription;
-
-    if (this.isMobile) {
-      this.navigateToMobileView('financial');
-    }
+    if (this.isMobile) this.activeDetailTab = 'finanzen';
   }
+
+  onCreateSubscription(): void { this.openSubscriptionModal(); }
 
   onContractAction(event: ContractActionEvent): void {
     const { action, contract } = event;
-
     switch (action) {
-      case 'neu':
-        this.createNewContract();
-        break;
-      case 'edit':
-        this.editContract(contract);
-        break;
-      case 'duplicate':
-        this.duplicateContract(contract);
-        break;
-      case 'kündigen':
-        this.terminateContract(contract);
-        break;
-      case 'stornieren':
-        this.cancelContract(contract);
-        break;
-      case 'verlängern':
-        this.renewContract(contract);
-        break;
-      case 'email':
-        this.sendContractExpiryNotice(contract);
-        break;
+      case 'neu':        this.createNewContract(); break;
+      case 'edit':       this.editContract(contract); break;
+      case 'duplicate':  this.duplicateContract(contract); break;
+      case 'kündigen':   this.terminateContract(contract); break;
+      case 'stornieren': this.cancelContract(contract); break;
+      case 'verlängern': this.renewContract(contract); break;
+      case 'email':      this.sendContractExpiryNotice(contract); break;
     }
   }
 
-  onInvoiceAction(event: InvoiceActionEvent): void {
-    const { action, invoice } = event;
+  onInvoiceAction(event: InvoiceActionEvent): void { /* handled by FinancialTabsComponent */ }
+  onOpenItemAction(event: OpenItemActionEvent): void { /* handled by FinancialTabsComponent */ }
 
-    switch (action) {
-      case 'edit':
-        this.editInvoice(invoice);
-        break;
-      case 'send':
-        this.sendInvoice(invoice);
-        break;
-      case 'details':
-        this.openInvoiceDetails(invoice);
-        break;
-    }
-  }
-
-  onOpenItemAction(event: OpenItemActionEvent): void {
-    const { action, openItem } = event;
-
-    switch (action) {
-      case 'payment':
-        this.processPayment(openItem);
-        break;
-      case 'reminder':
-        this.sendReminder(openItem);
-        break;
-      case 'details':
-        this.openOpenItemDetails(openItem);
-        break;
-      case 'edit':
-        this.editOpenItem(openItem);
-        break;
-      case 'cancel':
-        this.cancelOpenItem(openItem);
-        break;
-    }
-  }
-
-  // --- Contract Modal ---
-
+  // ─── Contract-Aktionen ────────────────────────────────────────────────────
   openContractModal(mode: 'create' | 'edit' | 'duplicate', contract?: Contract): void {
     this.contractModalMode = mode;
     this.contractModalLoading = false;
-
     if (mode === 'create') {
       this.contractModalTitle = 'Neuen Vertrag erstellen';
       this.contractForm = { contractStatus: 'DRAFT' };
@@ -485,199 +235,110 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       this.contractEndDateString = this.formatDateForInput(contract.endDate);
     } else if (mode === 'duplicate' && contract) {
       this.contractModalTitle = 'Vertrag duplizieren';
-      this.contractForm = {
-        contractTitle: `${contract.contractTitle} (Kopie)`,
-        customerId: contract.customerId,
-        contractStatus: 'DRAFT',
-      };
+      this.contractForm = { contractTitle: `${contract.contractTitle} (Kopie)`, customerId: contract.customerId, contractStatus: 'DRAFT' };
       this.contractStartDateString = new Date().toISOString().split('T')[0];
       this.contractEndDateString = '';
     }
-
     this.showContractModal = true;
   }
 
-  closeContractModal(): void {
-    this.showContractModal = false;
-    this.contractForm = {};
-    this.contractModalLoading = false;
-  }
+  closeContractModal(): void { this.showContractModal = false; this.contractForm = {}; this.contractModalLoading = false; }
 
   saveContract(): void {
     if (!this.contractForm.contractTitle?.trim() || !this.contractForm.customerId) {
       this.notificationService.warn('Bitte füllen Sie alle Pflichtfelder aus.');
       return;
     }
-
-    const contract: Contract = {
-      ...this.contractForm,
-      startDate: this.contractStartDateString || undefined,
-      endDate: this.contractEndDateString || undefined,
-    };
-
+    const contract: Contract = { ...this.contractForm, startDate: this.contractStartDateString || undefined, endDate: this.contractEndDateString || undefined };
     this.contractModalLoading = true;
-
     if (this.contractModalMode === 'edit' && contract.id) {
-      this.contractService.updateContract(contract.id, contract)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: updated => {
-            const idx = this.contracts.findIndex(c => c.id === updated.id);
-            if (idx >= 0) this.contracts[idx] = updated;
-            if (this.selectedContract?.id === updated.id) this.selectedContract = updated;
-            this.closeContractModal();
-            this.notificationService.success('Vertrag wurde aktualisiert');
-          },
-          error: () => {
-            this.contractModalLoading = false;
-            this.notificationService.error('Fehler beim Aktualisieren des Vertrags');
-          }
-        });
+      this.contractService.updateContract(contract.id, contract).pipe(takeUntil(this.destroy$)).subscribe({
+        next: updated => { this.updateLocalContract(updated); this.closeContractModal(); this.notificationService.success('Vertrag aktualisiert'); },
+        error: () => { this.contractModalLoading = false; this.notificationService.error('Fehler beim Aktualisieren'); }
+      });
     } else {
-      this.contractService.createContract(contract)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: created => {
-            this.contracts = [created, ...this.contracts];
-            this.closeContractModal();
-            const verb = this.contractModalMode === 'duplicate' ? 'dupliziert' : 'erstellt';
-            this.notificationService.success(`Vertrag wurde ${verb}`);
-          },
-          error: () => {
-            this.contractModalLoading = false;
-            this.notificationService.error('Fehler beim Speichern des Vertrags');
-          }
-        });
+      this.contractService.createContract(contract).pipe(takeUntil(this.destroy$)).subscribe({
+        next: created => {
+          this.contracts = [created, ...this.contracts];
+          this.closeContractModal();
+          this.notificationService.success(this.contractModalMode === 'duplicate' ? 'Vertrag dupliziert' : 'Vertrag erstellt');
+        },
+        error: () => { this.contractModalLoading = false; this.notificationService.error('Fehler beim Speichern'); }
+      });
     }
   }
 
   private formatDateForInput(date?: string | Date): string {
     if (!date) return '';
-    try {
-      const d = typeof date === 'string' ? new Date(date) : date;
-      return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
-    } catch {
-      return '';
-    }
+    try { const d = typeof date === 'string' ? new Date(date) : date; return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0]; } catch { return ''; }
   }
 
-  // --- Contract Actions ---
-
-  private createNewContract(): void {
-    this.openContractModal('create');
-  }
-
-  private editContract(contract: Contract): void {
-    this.openContractModal('edit', contract);
-  }
-
-  private duplicateContract(contract: Contract): void {
-    this.openContractModal('duplicate', contract);
-  }
+  private createNewContract(): void { this.openContractModal('create'); }
+  private editContract(c: Contract): void { this.openContractModal('edit', c); }
+  private duplicateContract(c: Contract): void { this.openContractModal('duplicate', c); }
 
   private terminateContract(contract: Contract): void {
     if (!contract.id) return;
     this.confirmationService.confirm({
-      message: `Möchten Sie den Vertrag "${contract.contractTitle}" wirklich kündigen?`,
-      header: 'Vertrag kündigen',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Kündigen',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        this.contractService.terminateContract(contract.id!)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: updated => {
-              this.updateLocalContract(updated);
-              this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde gekündigt`);
-            },
-            error: () => {
-              this.notificationService.error('Fehler beim Kündigen des Vertrags');
-            }
-          });
-      }
+      message: `Vertrag "${contract.contractTitle}" wirklich kündigen?`,
+      header: 'Vertrag kündigen', icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Kündigen', rejectLabel: 'Abbrechen',
+      accept: () => this.contractService.terminateContract(contract.id!).pipe(takeUntil(this.destroy$)).subscribe({
+        next: u => { this.updateLocalContract(u); this.notificationService.success('Vertrag gekündigt'); },
+        error: () => this.notificationService.error('Fehler beim Kündigen')
+      })
     });
   }
 
   private cancelContract(contract: Contract): void {
     if (!contract.id) return;
     this.confirmationService.confirm({
-      message: `Möchten Sie den Vertrag "${contract.contractTitle}" wirklich stornieren? Diese Aktion kann nicht rückgängig gemacht werden.`,
-      header: 'Vertrag stornieren',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Stornieren',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        this.contractService.terminateContract(contract.id!)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: updated => {
-              this.updateLocalContract(updated);
-              this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde storniert`);
-            },
-            error: () => {
-              this.notificationService.error('Fehler beim Stornieren des Vertrags');
-            }
-          });
-      }
+      message: `Vertrag "${contract.contractTitle}" wirklich stornieren?`,
+      header: 'Vertrag stornieren', icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Stornieren', rejectLabel: 'Abbrechen',
+      accept: () => this.contractService.terminateContract(contract.id!).pipe(takeUntil(this.destroy$)).subscribe({
+        next: u => { this.updateLocalContract(u); this.notificationService.success('Vertrag storniert'); },
+        error: () => this.notificationService.error('Fehler beim Stornieren')
+      })
     });
   }
 
   private renewContract(contract: Contract): void {
     if (!contract.id) return;
     this.confirmationService.confirm({
-      message: `Möchten Sie den Vertrag "${contract.contractTitle}" verlängern?`,
-      header: 'Vertrag verlängern',
-      icon: 'pi pi-refresh',
-      acceptLabel: 'Verlängern',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        this.contractService.renewContract(contract.id!)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: result => {
-              if (result?.renewedContract) {
-                this.updateLocalContract(result.renewedContract);
-              } else {
-                this.loadContracts();
-              }
-              this.notificationService.success(`Vertrag "${contract.contractTitle}" wurde verlängert`);
-            },
-            error: () => {
-              this.notificationService.error('Fehler beim Verlängern des Vertrags');
-            }
-          });
-      }
+      message: `Vertrag "${contract.contractTitle}" verlängern?`,
+      header: 'Vertrag verlängern', icon: 'pi pi-refresh',
+      acceptLabel: 'Verlängern', rejectLabel: 'Abbrechen',
+      accept: () => this.contractService.renewContract(contract.id!).pipe(takeUntil(this.destroy$)).subscribe({
+        next: result => {
+          if (result?.renewedContract) this.updateLocalContract(result.renewedContract); else this.loadContracts();
+          this.notificationService.success('Vertrag verlängert');
+        },
+        error: () => this.notificationService.error('Fehler beim Verlängern')
+      })
     });
   }
 
   runRenewalBatch(): void {
     this.renewalBatchLoading = true;
-    this.contractService.runRenewalBatch()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: result => {
-          this.renewalBatchLoading = false;
-          const count = result?.renewedCount ?? result?.processed ?? '?';
-          this.notificationService.success(`Verlängerungslauf abgeschlossen — ${count} Vertrag/Verträge verlängert`);
-          this.loadContracts();
-        },
-        error: () => {
-          this.renewalBatchLoading = false;
-          this.notificationService.error('Fehler beim Verlängerungslauf');
-        }
-      });
+    this.contractService.runRenewalBatch().pipe(takeUntil(this.destroy$)).subscribe({
+      next: result => {
+        this.renewalBatchLoading = false;
+        const count = result?.renewedCount ?? result?.processed ?? '?';
+        this.notificationService.success(`Verlängerungslauf: ${count} Vertrag/Verträge verlängert`);
+        this.loadContracts();
+      },
+      error: () => { this.renewalBatchLoading = false; this.notificationService.error('Fehler beim Verlängerungslauf'); }
+    });
   }
 
   private sendContractExpiryNotice(contract: Contract): void {
     if (!contract.id || this.emailSendingId === contract.id) return;
     this.emailSendingId = contract.id;
-    this.emailService.sendContractExpiryNotice(contract.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => { this.notificationService.success('Ablaufhinweis-E-Mail gesendet.'); this.emailSendingId = null; },
-        error: () => { this.notificationService.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
-      });
+    this.emailService.sendContractExpiryNotice(contract.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.notificationService.success('Ablaufhinweis-E-Mail gesendet.'); this.emailSendingId = null; },
+      error: () => { this.notificationService.error('E-Mail konnte nicht gesendet werden.'); this.emailSendingId = null; }
+    });
   }
 
   private updateLocalContract(updated: Contract): void {
@@ -686,36 +347,22 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     if (this.selectedContract?.id === updated.id) this.selectedContract = updated;
   }
 
-  // --- Subscription Modal ---
-
+  // ─── Subscription-Modal ───────────────────────────────────────────────────
   openSubscriptionModal(): void {
-    if (!this.selectedContract?.id) {
-      this.notificationService.warn('Bitte wählen Sie zuerst einen Vertrag aus.');
-      return;
-    }
-    this.subscriptionForm = {
-      contractId: this.selectedContract.id,
-      billingCycle: BillingCycle.MONTHLY,
-      autoRenewal: false,
-    };
+    if (!this.selectedContract?.id) { this.notificationService.warn('Bitte wählen Sie zuerst einen Vertrag aus.'); return; }
+    this.subscriptionForm = { contractId: this.selectedContract.id, billingCycle: BillingCycle.MONTHLY, autoRenewal: false };
     this.subscriptionStartDateString = new Date().toISOString().split('T')[0];
     this.subscriptionEndDateString = '';
     this.subscriptionModalLoading = false;
     this.showSubscriptionModal = true;
   }
 
-  closeSubscriptionModal(): void {
-    this.showSubscriptionModal = false;
-    this.subscriptionForm = {};
-    this.subscriptionModalLoading = false;
-  }
+  closeSubscriptionModal(): void { this.showSubscriptionModal = false; this.subscriptionForm = {}; this.subscriptionModalLoading = false; }
 
   saveSubscription(): void {
     if (!this.subscriptionForm.productId || !this.subscriptionForm.billingCycle || !this.subscriptionStartDateString) {
-      this.notificationService.warn('Bitte füllen Sie alle Pflichtfelder aus.');
-      return;
+      this.notificationService.warn('Bitte füllen Sie alle Pflichtfelder aus.'); return;
     }
-
     const selectedProduct = this.products.find(p => p.id === this.subscriptionForm.productId);
     const subscription: Subscription = {
       contractId: this.selectedContract!.id!,
@@ -726,62 +373,24 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       endDate: this.subscriptionEndDateString ? new Date(this.subscriptionEndDateString) : undefined,
       autoRenewal: this.subscriptionForm.autoRenewal ?? false,
     };
-
     this.subscriptionModalLoading = true;
-    this.subscriptionService.createSubscription(subscription)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: created => {
-          this.subscriptions = [...this.subscriptions, created];
-          this.closeSubscriptionModal();
-          this.notificationService.success('Abonnement wurde erstellt');
-        },
-        error: () => {
-          this.subscriptionModalLoading = false;
-          this.notificationService.error('Fehler beim Erstellen des Abonnements');
-        }
-      });
-  }
-
-  // Invoice action methods
-  private editInvoice(_invoice: Invoice): void {}
-
-  private sendInvoice(invoice: Invoice): void {
-    if (!invoice.id) return;
-
-    this.invoiceService.sendInvoice(invoice.id).subscribe({
-      next: () => this.notificationService.success('Rechnung wurde versendet'),
-      error: err => {
-        this.error = 'Fehler beim Senden der Rechnung.';
-        this.notificationService.error('Fehler beim Senden der Rechnung');
-        console.error(err);
-      }
+    this.subscriptionService.createSubscription(subscription).pipe(takeUntil(this.destroy$)).subscribe({
+      next: created => { this.subscriptions = [...this.subscriptions, created]; this.closeSubscriptionModal(); this.notificationService.success('Abonnement erstellt'); },
+      error: () => { this.subscriptionModalLoading = false; this.notificationService.error('Fehler beim Erstellen'); }
     });
   }
 
-  private openInvoiceDetails(_invoice: Invoice): void {}
-
-  // OpenItem action methods
-  private processPayment(_openItem: OpenItem): void {}
-
-  private sendReminder(_openItem: OpenItem): void {}
-
-  private openOpenItemDetails(_openItem: OpenItem): void {}
-
-  private editOpenItem(_openItem: OpenItem): void {}
-
-  private cancelOpenItem(openItem: OpenItem): void {
-    if (!openItem.id) return;
-
-    this.confirmationService.confirm({
-      message: 'Möchten Sie diesen offenen Posten wirklich stornieren?',
-      header: 'Posten stornieren',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Stornieren',
-      rejectLabel: 'Abbrechen',
-      accept: () => {
-        // TODO: openItemService.cancelOpenItem(openItem.id)
-      }
-    });
+  // Status-Hilfsmethoden für Übersicht-Tab
+  contractStatusBadge(s?: string): string {
+    const m: any = { ACTIVE:'badge bg-success', DRAFT:'badge bg-warning text-dark', SUSPENDED:'badge bg-secondary', TERMINATED:'badge bg-dark text-white', EXPIRED:'badge bg-danger' };
+    return m[s ?? ''] ?? 'badge bg-light text-dark';
+  }
+  contractStatusLabel(s?: string): string {
+    const m: any = { ACTIVE:'Aktiv', DRAFT:'Entwurf', SUSPENDED:'Ausgesetzt', TERMINATED:'Gekündigt', EXPIRED:'Abgelaufen' };
+    return m[s ?? ''] ?? s ?? '–';
+  }
+  formatDate(d: any): string {
+    if (!d) return '–';
+    try { return new Date(d).toLocaleDateString('de-DE'); } catch { return '–'; }
   }
 }

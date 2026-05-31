@@ -1,237 +1,227 @@
-<!-- Contract Center -->
-<div class="container-fluid p-0 d-flex flex-column"
-     style="height: 100%; overflow: hidden;">
+<div class="cc-root">
 
-  <!-- Mobile Top Header -->
-  <div class="d-md-none d-flex align-items-center bg-white border-bottom flex-shrink-0 px-2"
-       *ngIf="isMobile"
-       style="height: 56px; z-index: 1000;">
-
-    <!-- Back chevron or spacer -->
-    <button *ngIf="canNavigateBack()"
-            class="btn btn-sm border-0 bg-transparent text-primary d-flex align-items-center justify-content-center"
-            style="width: 44px; height: 44px;"
-            (click)="navigateBack()">
-      <i class="fas fa-chevron-left" style="font-size: 1.2rem;"></i>
+  <!-- Mobile Header -->
+  <div class="cc-mobile-header d-md-none" *ngIf="isMobile">
+    <button *ngIf="mobileView === 'detail'" class="cc-back-btn btn btn-sm border-0 bg-transparent text-primary" (click)="navigateBack()">
+      <i class="bi bi-chevron-left" style="font-size:1.2rem;"></i>
     </button>
-    <div *ngIf="!canNavigateBack()" style="width: 44px;"></div>
-
-    <!-- Title + subtitle -->
-    <div class="flex-grow-1 text-center overflow-hidden px-2">
-      <div class="fw-semibold text-dark text-truncate" style="font-size: 1rem; line-height: 1.3;">
-        {{ getMobileNavTitle() }}
-      </div>
-      <div *ngIf="selectedContract && mobileCurrentView !== 'contracts'"
-           class="text-muted text-truncate" style="font-size: 0.75rem; line-height: 1.2;">
-        {{ selectedContract.contractTitle }}
-      </div>
+    <div *ngIf="mobileView === 'contracts'" style="width:44px;"></div>
+    <div class="cc-mobile-title">
+      <span class="fw-semibold">
+        {{ mobileView === 'contracts' ? 'Vertragscenter' : (selectedContract?.contractTitle ?? 'Vertrag') }}
+      </span>
+      <span *ngIf="mobileView === 'detail' && selectedContract?.contractNumber" class="text-muted" style="font-size:.75rem;">
+        {{ selectedContract!.contractNumber }}
+      </span>
     </div>
-
+    <div style="width:44px;"></div>
   </div>
-  
-  <!-- Desktop: Normal Layout - Fixed Height Layout -->
-  <div class="d-none d-md-flex flex-column flex-fill p-3 overflow-hidden desktop-split-container" *ngIf="!isMobile">
 
-    <!-- Oben: Vertragsliste (dynamisch) -->
-    <div class="d-flex flex-column overflow-hidden" [style.flex]="topPanelPercent + ' 1 0'" style="min-height: 0;">
-      <div class="card h-100 d-flex flex-column overflow-hidden">
-        <div class="card-header bg-light flex-shrink-0 py-3" style="position: relative; z-index: 20;">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-file-contract me-2 text-primary fs-5"></i>
-              <span class="fw-semibold fs-6">Verträge</span>
-              <span class="badge bg-primary ms-2" *ngIf="contracts?.length">{{ contracts.length }}</span>
-              <span class="badge bg-warning text-dark ms-2 d-flex align-items-center gap-1"
-                    *ngIf="expiringContractCount > 0"
-                    title="{{ expiringContractCount }} Vertrag/Verträge laufen in 30 Tagen ab">
-                <i class="fas fa-clock" style="font-size:.65rem;"></i>
-                {{ expiringContractCount }} läuft ab
-              </span>
-            </div>
-            <div class="d-flex gap-2">
-              <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
-                      (click)="runRenewalBatch()"
-                      [disabled]="renewalBatchLoading"
-                      title="Alle fälligen Verträge automatisch verlängern">
-                <span *ngIf="renewalBatchLoading" class="spinner-border spinner-border-sm" role="status"></span>
-                <i *ngIf="!renewalBatchLoading" class="fas fa-redo"></i>
-                <span class="d-none d-lg-inline">Verlängerungslauf</span>
-              </button>
-              <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                      (click)="openContractModal('create')">
-                <i class="fas fa-plus"></i>
-                <span>Neu</span>
-              </button>
-            </div>
-          </div>
+  <!-- ═══ DESKTOP ════════════════════════════════════════════════════════════ -->
+  <div class="cc-desktop d-none d-md-flex">
+
+    <!-- Sidebar: Vertragsliste -->
+    <div class="cc-sidebar">
+      <div class="cc-sidebar-header">
+        <i class="bi bi-file-earmark-check text-primary me-2"></i>
+        <span class="fw-semibold">Verträge</span>
+        <span class="badge bg-secondary ms-2" *ngIf="contracts.length">{{ contracts.length }}</span>
+        <span class="badge bg-warning text-dark ms-1 d-flex align-items-center gap-1"
+              *ngIf="expiringContractCount > 0" title="{{ expiringContractCount }} läuft bald ab">
+          <i class="bi bi-clock" style="font-size:.65rem;"></i>{{ expiringContractCount }}
+        </span>
+        <div class="ms-auto d-flex gap-1">
+          <button class="btn btn-sm btn-outline-secondary px-2" (click)="runRenewalBatch()" [disabled]="renewalBatchLoading" title="Verlängerungslauf">
+            <span *ngIf="renewalBatchLoading" class="spinner-border spinner-border-sm" role="status"></span>
+            <i *ngIf="!renewalBatchLoading" class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button class="btn btn-sm btn-primary px-2" (click)="openContractModal('create')" title="Neuer Vertrag">
+            <i class="bi bi-plus"></i>
+          </button>
         </div>
-        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
-          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; min-height: 0;">
-            <app-contract-list
-              [contracts]="contracts"
-              [customers]="customers"
-              [loading]="loading"
-              [error]="error"
-              [selectedContract]="selectedContract"
-              (contractSelected)="onContractSelected($event)"
-              (contractAction)="onContractAction($event)"
-              (retry)="loadContracts()">
-            </app-contract-list>
-          </div>
-        </div>
+      </div>
+      <div class="cc-sidebar-body">
+        <app-contract-list
+          [contracts]="contracts"
+          [customers]="customers"
+          [loading]="loading"
+          [error]="error"
+          [selectedContract]="selectedContract"
+          (contractSelected)="onContractSelected($event)"
+          (contractAction)="onContractAction($event)"
+          (retry)="loadContracts()">
+        </app-contract-list>
       </div>
     </div>
 
-    <!-- Resize Handle -->
-    <div class="resize-handle flex-shrink-0 d-flex align-items-center justify-content-center"
-         [class.is-resizing]="isResizing"
-         (mousedown)="startResize($event)">
-      <div class="resize-handle-grip"></div>
-    </div>
+    <!-- Detailbereich -->
+    <div class="cc-detail">
 
-    <!-- Unten: Abos & Finanzdetails (dynamisch) -->
-    <div class="d-flex gap-3 overflow-hidden" [style.flex]="(100 - topPanelPercent) + ' 1 0'" style="min-height: 0;">
+      <!-- Kein Vertrag gewählt -->
+      <div *ngIf="!selectedContract" class="cc-empty-state">
+        <i class="bi bi-file-earmark-check"></i>
+        <p>Bitte einen Vertrag aus der Liste auswählen</p>
+      </div>
 
-      <!-- Abonnements Panel (50%) -->
-      <div class="d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
-        <div class="card h-100 d-flex flex-column overflow-hidden">
-          <div class="card-header bg-light flex-shrink-0 py-3">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="d-flex align-items-center">
-                <i class="fas fa-sync-alt me-2 text-primary fs-5"></i>
-                <span class="fw-semibold fs-6">
-                  Abonnements <span class="text-muted fw-normal fs-6" *ngIf="selectedContract">— {{ selectedContract.contractTitle }}</span>
-                </span>
-                <span class="badge bg-primary ms-2" *ngIf="subscriptions?.length">{{ subscriptions.length }}</span>
+      <!-- Vertrag gewählt -->
+      <ng-container *ngIf="selectedContract">
+
+        <!-- Vertrag-Header (blauer Gradient) -->
+        <div class="cc-contract-header">
+          <div class="d-flex align-items-start gap-3">
+            <div class="cc-header-icon flex-shrink-0">
+              <i class="bi bi-file-earmark-check" style="font-size:1.1rem;"></i>
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-bold text-truncate" style="font-size:1.05rem;line-height:1.2;">
+                {{ selectedContract.contractTitle }}
               </div>
-              <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                      *ngIf="selectedContract"
-                      (click)="openSubscriptionModal()">
-                <i class="fas fa-plus"></i>
-                <span>Neu</span>
+              <div class="d-flex flex-wrap gap-2 mt-1" style="font-size:.78rem;">
+                <span class="text-white-50"><i class="bi bi-hash me-1"></i>{{ selectedContract.contractNumber ?? '–' }}</span>
+                <span class="text-white-50" *ngIf="selectedCustomerName"><i class="bi bi-person me-1"></i>{{ selectedCustomerName }}</span>
+                <span class="text-white-50">
+                  <i class="bi bi-calendar me-1"></i>{{ formatDate(selectedContract.startDate) }}
+                  <span *ngIf="selectedContract.endDate"> – {{ formatDate(selectedContract.endDate) }}</span>
+                  <span *ngIf="!selectedContract.endDate"> – unbefristet</span>
+                </span>
+              </div>
+            </div>
+            <!-- KPI-Chips + Aktionsbuttons -->
+            <div class="d-flex flex-wrap gap-2 align-items-center flex-shrink-0">
+              <span class="cc-kpi-chip">
+                <i class="bi bi-arrow-repeat"></i> {{ activeSubscriptionCount }} Abo{{ activeSubscriptionCount !== 1 ? 's' : '' }}
+              </span>
+              <span class="cc-kpi-chip" [class.cc-kpi-chip--green]="selectedContract.contractStatus === 'ACTIVE'" [class.cc-kpi-chip--red]="selectedContract.contractStatus === 'TERMINATED' || selectedContract.contractStatus === 'EXPIRED'">
+                {{ contractStatusLabel(selectedContract.contractStatus) }}
+              </span>
+              <div class="d-flex gap-1 ms-1">
+                <button class="btn btn-sm btn-light btn-light-alpha px-2" title="Bearbeiten" (click)="openContractModal('edit', selectedContract)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-light btn-light-alpha px-2" title="Neues Abonnement" (click)="openSubscriptionModal()">
+                  <i class="bi bi-plus-circle"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Leiste -->
+        <div class="cc-tab-bar">
+          <button class="cc-tab" [class.cc-tab--active]="activeDetailTab==='uebersicht'" (click)="setDetailTab('uebersicht')">
+            <i class="bi bi-grid-1x2"></i><span>Übersicht</span>
+          </button>
+          <button class="cc-tab" [class.cc-tab--active]="activeDetailTab==='abonnements'" (click)="setDetailTab('abonnements')">
+            <i class="bi bi-arrow-repeat"></i><span>Abonnements</span>
+            <span class="cc-badge" *ngIf="subscriptions.length">{{ subscriptions.length }}</span>
+          </button>
+          <button class="cc-tab" [class.cc-tab--active]="activeDetailTab==='finanzen'" (click)="setDetailTab('finanzen')">
+            <i class="bi bi-euro-sign"></i><span>Finanzen</span>
+          </button>
+        </div>
+
+        <!-- Tab-Inhalt -->
+        <div class="cc-content">
+
+          <!-- ÜBERSICHT -->
+          <div *ngIf="activeDetailTab==='uebersicht'">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-text text-primary"></i>
+                    <span class="fw-semibold small">Vertragsinformationen</span>
+                  </div>
+                  <div class="card-body" style="font-size:.85rem;">
+                    <dl class="row mb-0">
+                      <dt class="col-5 text-muted fw-normal">Vertragsnr.</dt>
+                      <dd class="col-7 fw-semibold">{{ selectedContract.contractNumber ?? '–' }}</dd>
+                      <dt class="col-5 text-muted fw-normal">Bezeichnung</dt>
+                      <dd class="col-7">{{ selectedContract.contractTitle }}</dd>
+                      <dt class="col-5 text-muted fw-normal">Kunde</dt>
+                      <dd class="col-7">{{ selectedCustomerName || '–' }}</dd>
+                      <dt class="col-5 text-muted fw-normal">Status</dt>
+                      <dd class="col-7"><span [class]="contractStatusBadge(selectedContract.contractStatus)">{{ contractStatusLabel(selectedContract.contractStatus) }}</span></dd>
+                      <dt class="col-5 text-muted fw-normal">Startdatum</dt>
+                      <dd class="col-7">{{ formatDate(selectedContract.startDate) }}</dd>
+                      <dt class="col-5 text-muted fw-normal">Enddatum</dt>
+                      <dd class="col-7">{{ selectedContract.endDate ? formatDate(selectedContract.endDate) : 'Unbefristet' }}</dd>
+                      <dt class="col-5 text-muted fw-normal">Verlängerbar</dt>
+                      <dd class="col-7">
+                        <i class="bi" [class.bi-check-circle-fill]="selectedContract.renewable" [class.text-success]="selectedContract.renewable"
+                           [class.bi-x-circle]="!selectedContract.renewable" [class.text-muted]="!selectedContract.renewable"></i>
+                        {{ selectedContract.renewable ? 'Ja' : 'Nein' }}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-speedometer text-primary"></i>
+                    <span class="fw-semibold small">Kennzahlen</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="row g-3 text-center">
+                      <div class="col-6">
+                        <div class="fs-2 fw-bold text-primary">{{ subscriptions.length }}</div>
+                        <div class="text-muted small">Abonnements</div>
+                      </div>
+                      <div class="col-6">
+                        <div class="fs-2 fw-bold text-success">{{ activeSubscriptionCount }}</div>
+                        <div class="text-muted small">Aktive Abos</div>
+                      </div>
+                    </div>
+                    <div class="mt-3" *ngIf="selectedContract.notes">
+                      <div class="text-muted small fw-semibold mb-1">Notizen</div>
+                      <div class="alert alert-light py-2 mb-0 small">{{ selectedContract.notes }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Schnellaktionen -->
+              <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                  <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning text-primary"></i>
+                    <span class="fw-semibold small">Schnellaktionen</span>
+                  </div>
+                  <div class="card-body d-flex flex-wrap gap-2">
+                    <button class="btn btn-sm btn-outline-primary" (click)="openContractModal('edit', selectedContract)">
+                      <i class="bi bi-pencil me-1"></i>Bearbeiten
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" (click)="openContractModal('duplicate', selectedContract)">
+                      <i class="bi bi-copy me-1"></i>Duplizieren
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" (click)="onContractAction({action:'verlängern', contract: selectedContract})"
+                            *ngIf="selectedContract.contractStatus === 'ACTIVE'">
+                      <i class="bi bi-arrow-clockwise me-1"></i>Verlängern
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" (click)="sendContractExpiryNotice(selectedContract)"
+                            [disabled]="emailSendingId === selectedContract.id">
+                      <i class="bi bi-envelope me-1"></i>Ablaufmail
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" (click)="onContractAction({action:'kündigen', contract: selectedContract})"
+                            *ngIf="selectedContract.contractStatus === 'ACTIVE'">
+                      <i class="bi bi-x-circle me-1"></i>Kündigen
+                    </button>
+                    <button class="btn btn-sm btn-primary" (click)="openSubscriptionModal()">
+                      <i class="bi bi-plus me-1"></i>Neues Abonnement
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABONNEMENTS -->
+          <div *ngIf="activeDetailTab==='abonnements'" class="h-100">
+            <div class="d-flex justify-content-end mb-2">
+              <button class="btn btn-sm btn-primary" (click)="openSubscriptionModal()">
+                <i class="bi bi-plus me-1"></i>Neues Abonnement
               </button>
             </div>
-          </div>
-          <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
-            <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; min-height: 0;">
-              <app-subscription-panel
-                [subscriptions]="subscriptions"
-                [selectedContract]="selectedContract"
-                [selectedSubscription]="selectedSubscription"
-                (subscriptionSelected)="onSubscriptionSelected($event)">
-              </app-subscription-panel>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Finanz-Tabs Panel (50%) -->
-      <div class="d-flex flex-column overflow-hidden" style="flex: 1; min-height: 0;">
-        <div class="card h-100 d-flex flex-column overflow-hidden">
-          <div class="card-header bg-light flex-shrink-0 py-3">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-euro-sign me-2 text-primary fs-5"></i>
-              <span class="fw-semibold fs-6">
-                Finanzdetails <span class="text-muted fw-normal fs-6" *ngIf="selectedContract">— {{ selectedContract.contractTitle }}</span>
-              </span>
-            </div>
-          </div>
-          <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
-            <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; min-height: 0;">
-              <app-financial-tabs
-                [selectedContract]="selectedContract"
-                [selectedSubscription]="selectedSubscription"
-                [customers]="customers"
-                (invoiceAction)="onInvoiceAction($event)"
-                (openItemAction)="onOpenItemAction($event)">
-              </app-financial-tabs>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Mobile: Stack Layout - Fixed Height -->
-  <div class="d-md-none position-relative overflow-hidden flex-fill" *ngIf="isMobile">
-    
-    <!-- Contracts View - Immer sichtbar als Base -->
-    <div class="position-absolute w-100 h-100 bg-white"
-         [style.transform]="mobileCurrentView === 'contracts' ? 'translateX(0)' : 'translateX(-100%)'"
-         style="transition: transform 0.3s ease; z-index: 100;">
-      <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
-        <div class="card-header bg-light flex-shrink-0">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-file-contract me-2 text-primary"></i>
-              <span class="fw-semibold">Verträge</span>
-              <span class="badge bg-primary ms-2" *ngIf="contracts?.length">{{ contracts.length }}</span>
-              <span class="badge bg-warning text-dark ms-2"
-                    *ngIf="expiringContractCount > 0"
-                    title="{{ expiringContractCount }} laufen bald ab">
-                <i class="fas fa-clock me-1" style="font-size:.65rem;"></i>{{ expiringContractCount }}
-              </span>
-            </div>
-            <div class="d-flex gap-2">
-              <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
-                      (click)="runRenewalBatch()"
-                      [disabled]="renewalBatchLoading"
-                      title="Verlängerungslauf">
-                <span *ngIf="renewalBatchLoading" class="spinner-border spinner-border-sm" role="status"></span>
-                <i *ngIf="!renewalBatchLoading" class="fas fa-redo"></i>
-              </button>
-              <button class="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                      (click)="openContractModal('create')">
-                <i class="fas fa-plus"></i>
-                <span>Neu</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
-          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch; min-height: 0;">
-            <app-contract-list
-              [contracts]="contracts"
-              [customers]="customers"
-              [loading]="loading"
-              [error]="error"
-              [selectedContract]="selectedContract"
-              (contractSelected)="onContractSelected($event)"
-              (contractAction)="onContractAction($event)"
-              (retry)="loadContracts()">
-            </app-contract-list>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Subscriptions View - Slides over from right -->
-    <div class="position-absolute w-100 h-100 bg-white"
-         [style.transform]="mobileCurrentView === 'subscriptions' ? 'translateX(0)' : 'translateX(100%)'"
-         style="transition: transform 0.3s ease; z-index: 200;">
-      <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
-        <div class="card-header bg-light flex-shrink-0">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-sync-alt me-2 text-info"></i>
-              <span class="fw-semibold">Abonnements</span>
-              <span class="badge bg-info ms-2" *ngIf="subscriptions?.length">
-                {{ subscriptions.length }}
-              </span>
-              <small class="text-muted ms-2" *ngIf="selectedContract">
-                ({{ selectedContract.contractNumber }})
-              </small>
-            </div>
-            <button class="btn btn-info btn-sm d-flex align-items-center gap-1"
-                    *ngIf="selectedContract"
-                    (click)="openSubscriptionModal()">
-              <i class="fas fa-plus"></i>
-              <span>Neu</span>
-            </button>
-          </div>
-        </div>
-        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
-          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch; min-height: 0;">
             <app-subscription-panel
               [subscriptions]="subscriptions"
               [selectedContract]="selectedContract"
@@ -240,29 +230,9 @@
               (createSubscription)="onCreateSubscription()">
             </app-subscription-panel>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Financial View - Slides over from right -->
-    <div class="position-absolute w-100 h-100 bg-white"
-         [style.transform]="mobileCurrentView === 'financial' ? 'translateX(0)' : 'translateX(100%)'"
-         style="transition: transform 0.3s ease; z-index: 300;">
-      <div class="card border-0 rounded-0 h-100 d-flex flex-column overflow-hidden">
-        <div class="card-header bg-light flex-shrink-0">
-          <div class="d-flex align-items-center">
-            <i class="fas fa-chart-line me-2 text-success"></i>
-            <span class="fw-semibold">Finanzdetails</span>
-            <small class="text-muted ms-2" *ngIf="selectedSubscription">
-              ({{ selectedSubscription.productName }})
-            </small>
-            <small class="text-muted ms-2" *ngIf="!selectedSubscription && selectedContract">
-              ({{ selectedContract.contractNumber }})
-            </small>
-          </div>
-        </div>
-        <div class="card-body p-0 flex-grow-1 overflow-hidden d-flex flex-column">
-          <div class="flex-grow-1 overflow-auto p-3" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch; min-height: 0;">
+          <!-- FINANZEN -->
+          <div *ngIf="activeDetailTab==='finanzen'" class="h-100">
             <app-financial-tabs
               [selectedContract]="selectedContract"
               [selectedSubscription]="selectedSubscription"
@@ -271,86 +241,139 @@
               (openItemAction)="onOpenItemAction($event)">
             </app-financial-tabs>
           </div>
+
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- ═══ MOBILE ════════════════════════════════════════════════════════════ -->
+  <div class="cc-mobile-content d-md-none">
+
+    <!-- Vertragsliste -->
+    <div class="cc-mobile-panel" [class.cc-mobile-panel--active]="mobileView==='contracts'" [class.cc-mobile-panel--left]="mobileView==='detail'">
+      <!-- Mobile Aktionsleiste -->
+      <div class="d-flex gap-2 p-2 border-bottom bg-light">
+        <button class="btn btn-sm btn-outline-secondary flex-shrink-0" (click)="runRenewalBatch()" [disabled]="renewalBatchLoading">
+          <span *ngIf="renewalBatchLoading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!renewalBatchLoading" class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn btn-sm btn-primary flex-grow-1" (click)="openContractModal('create')">
+          <i class="bi bi-plus me-1"></i>Neuer Vertrag
+        </button>
+      </div>
+      <div style="overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch;">
+        <app-contract-list
+          [contracts]="contracts" [customers]="customers" [loading]="loading"
+          [error]="error" [selectedContract]="selectedContract"
+          (contractSelected)="onContractSelected($event)"
+          (contractAction)="onContractAction($event)"
+          (retry)="loadContracts()">
+        </app-contract-list>
+      </div>
+    </div>
+
+    <!-- Vertrag-Detail -->
+    <div class="cc-mobile-panel cc-mobile-panel--detail d-flex flex-column"
+         [class.cc-mobile-panel--active]="mobileView==='detail'"
+         [class.cc-mobile-panel--right]="mobileView==='contracts'">
+
+      <!-- Detail Tab-Leiste Mobile -->
+      <div class="cc-tab-bar flex-shrink-0" *ngIf="selectedContract">
+        <button class="cc-tab" [class.cc-tab--active]="activeDetailTab==='uebersicht'" (click)="setDetailTab('uebersicht')">
+          <i class="bi bi-grid-1x2"></i><span>Übersicht</span>
+        </button>
+        <button class="cc-tab" [class.cc-tab--active]="activeDetailTab==='abonnements'" (click)="setDetailTab('abonnements')">
+          <i class="bi bi-arrow-repeat"></i><span>Abonnements</span>
+          <span class="cc-badge" *ngIf="subscriptions.length">{{ subscriptions.length }}</span>
+        </button>
+        <button class="cc-tab" [class.cc-tab--active]="activeDetailTab==='finanzen'" (click)="setDetailTab('finanzen')">
+          <i class="bi bi-euro-sign"></i><span>Finanzen</span>
+        </button>
+      </div>
+
+      <div class="cc-content flex-grow-1">
+        <!-- ÜBERSICHT MOBILE -->
+        <div *ngIf="activeDetailTab==='uebersicht' && selectedContract">
+          <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body" style="font-size:.85rem;">
+              <dl class="row mb-0">
+                <dt class="col-5 text-muted fw-normal">Kundennr.</dt><dd class="col-7 fw-semibold">{{ selectedContract.contractNumber ?? '–' }}</dd>
+                <dt class="col-5 text-muted fw-normal">Kunde</dt><dd class="col-7">{{ selectedCustomerName || '–' }}</dd>
+                <dt class="col-5 text-muted fw-normal">Status</dt>
+                <dd class="col-7"><span [class]="contractStatusBadge(selectedContract.contractStatus)">{{ contractStatusLabel(selectedContract.contractStatus) }}</span></dd>
+                <dt class="col-5 text-muted fw-normal">Start</dt><dd class="col-7">{{ formatDate(selectedContract.startDate) }}</dd>
+                <dt class="col-5 text-muted fw-normal">Ende</dt><dd class="col-7">{{ selectedContract.endDate ? formatDate(selectedContract.endDate) : 'Unbefristet' }}</dd>
+              </dl>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-primary" (click)="openContractModal('edit', selectedContract)"><i class="bi bi-pencil me-1"></i>Bearbeiten</button>
+            <button class="btn btn-sm btn-outline-success" (click)="onContractAction({action:'verlängern', contract: selectedContract})" *ngIf="selectedContract.contractStatus==='ACTIVE'"><i class="bi bi-arrow-clockwise me-1"></i>Verlängern</button>
+            <button class="btn btn-sm btn-outline-danger" (click)="onContractAction({action:'kündigen', contract: selectedContract})" *ngIf="selectedContract.contractStatus==='ACTIVE'"><i class="bi bi-x-circle me-1"></i>Kündigen</button>
+          </div>
+        </div>
+        <!-- ABONNEMENTS MOBILE -->
+        <div *ngIf="activeDetailTab==='abonnements'" class="h-100">
+          <div class="d-flex justify-content-end mb-2">
+            <button class="btn btn-sm btn-primary" (click)="openSubscriptionModal()"><i class="bi bi-plus me-1"></i>Neues Abonnement</button>
+          </div>
+          <app-subscription-panel
+            [subscriptions]="subscriptions" [selectedContract]="selectedContract"
+            [selectedSubscription]="selectedSubscription"
+            (subscriptionSelected)="onSubscriptionSelected($event)"
+            (createSubscription)="onCreateSubscription()">
+          </app-subscription-panel>
+        </div>
+        <!-- FINANZEN MOBILE -->
+        <div *ngIf="activeDetailTab==='finanzen'" class="h-100">
+          <app-financial-tabs
+            [selectedContract]="selectedContract" [selectedSubscription]="selectedSubscription"
+            [customers]="customers"
+            (invoiceAction)="onInvoiceAction($event)"
+            (openItemAction)="onOpenItemAction($event)">
+          </app-financial-tabs>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== Vertrag-Formular-Dialog ===== -->
-  <p-dialog
-    [(visible)]="showContractModal"
-    [header]="contractModalTitle"
-    [modal]="true"
-    [closable]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '520px', maxWidth: '95vw' }"
-    (onHide)="closeContractModal()">
+  <!-- ═══ MODALS ════════════════════════════════════════════════════════════ -->
 
+  <!-- Vertrag-Dialog -->
+  <p-dialog [(visible)]="showContractModal" [header]="contractModalTitle" [modal]="true" [closable]="true"
+            [draggable]="false" [resizable]="false" [style]="{ width: '520px', maxWidth: '95vw' }" (onHide)="closeContractModal()">
     <div class="d-flex flex-column gap-3 py-2">
-
-      <!-- Vertragsbezeichnung -->
       <div class="form-floating">
-        <input type="text"
-               class="form-control"
-               id="ccTitle"
-               placeholder=" "
-               [(ngModel)]="contractForm.contractTitle"
-               [disabled]="contractModalLoading" />
+        <input type="text" class="form-control" id="ccTitle" placeholder=" " [(ngModel)]="contractForm.contractTitle" [disabled]="contractModalLoading" />
         <label for="ccTitle">Vertragsbezeichnung *</label>
       </div>
-
-      <!-- Kunde -->
       <div class="form-floating">
-        <select class="form-select"
-                id="ccCustomer"
-                [(ngModel)]="contractForm.customerId"
-                [disabled]="contractModalLoading">
+        <select class="form-select" id="ccCustomer" [(ngModel)]="contractForm.customerId" [disabled]="contractModalLoading">
           <option value="" disabled selected>Kunde auswählen …</option>
           @for (c of customersArray; track c.id) {
-            <option [value]="c.id">
-              {{ c.firstName }} {{ c.lastName }}
-              @if (c.customerNumber) { ({{ c.customerNumber }}) }
-            </option>
+            <option [value]="c.id">{{ c.firstName }} {{ c.lastName }} @if (c.customerNumber) { ({{ c.customerNumber }}) }</option>
           }
         </select>
         <label for="ccCustomer">Kunde *</label>
       </div>
-
-      <!-- Laufzeit -->
       <div class="row g-3">
         <div class="col-6">
           <div class="form-floating">
-            <input type="date"
-                   class="form-control"
-                   id="ccStart"
-                   placeholder=" "
-                   [(ngModel)]="contractStartDateString"
-                   [disabled]="contractModalLoading" />
+            <input type="date" class="form-control" id="ccStart" placeholder=" " [(ngModel)]="contractStartDateString" [disabled]="contractModalLoading" />
             <label for="ccStart">Startdatum *</label>
           </div>
         </div>
         <div class="col-6">
           <div class="form-floating">
-            <input type="date"
-                   class="form-control"
-                   id="ccEnd"
-                   placeholder=" "
-                   [(ngModel)]="contractEndDateString"
-                   [min]="contractStartDateString"
-                   [disabled]="contractModalLoading" />
+            <input type="date" class="form-control" id="ccEnd" placeholder=" " [(ngModel)]="contractEndDateString" [min]="contractStartDateString" [disabled]="contractModalLoading" />
             <label for="ccEnd">Enddatum (optional)</label>
           </div>
         </div>
       </div>
-
-      <!-- Status (nur bei Bearbeitung) -->
       @if (contractModalMode === 'edit') {
         <div class="form-floating">
-          <select class="form-select"
-                  id="ccStatus"
-                  [(ngModel)]="contractForm.contractStatus"
-                  [disabled]="contractModalLoading">
+          <select class="form-select" id="ccStatus" [(ngModel)]="contractForm.contractStatus" [disabled]="contractModalLoading">
             <option value="DRAFT">Entwurf</option>
             <option value="ACTIVE">Aktiv</option>
             <option value="SUSPENDED">Ausgesetzt</option>
@@ -359,58 +382,30 @@
           </select>
           <label for="ccStatus">Status</label>
         </div>
-
-        <!-- Vertragsnummer (nur lesen) -->
         @if (contractForm.contractNumber) {
           <div class="form-floating">
-            <input type="text"
-                   class="form-control bg-light"
-                   id="ccNumber"
-                   placeholder=" "
-                   [value]="contractForm.contractNumber"
-                   readonly />
+            <input type="text" class="form-control bg-light" id="ccNumber" placeholder=" " [value]="contractForm.contractNumber" readonly />
             <label for="ccNumber">Vertragsnummer</label>
           </div>
         }
       }
-      <!-- Buttons -->
-      <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-1">
-        <button class="btn btn-outline-secondary"
-                (click)="closeContractModal()"
-                [disabled]="contractModalLoading">
-          Abbrechen
-        </button>
-        <button class="btn btn-primary d-flex align-items-center gap-2"
-                (click)="saveContract()"
+      <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+        <button class="btn btn-outline-secondary" (click)="closeContractModal()" [disabled]="contractModalLoading">Abbrechen</button>
+        <button class="btn btn-primary d-flex align-items-center gap-2" (click)="saveContract()"
                 [disabled]="contractModalLoading || !contractForm.contractTitle?.trim() || !contractForm.customerId">
-          @if (contractModalLoading) {
-            <span class="spinner-border spinner-border-sm" role="status"></span>
-          }
+          @if (contractModalLoading) { <span class="spinner-border spinner-border-sm"></span> }
           {{ contractModalMode === 'edit' ? 'Speichern' : 'Erstellen' }}
         </button>
       </div>
     </div>
   </p-dialog>
 
-  <!-- ===== Abonnement-Formular-Dialog ===== -->
-  <p-dialog
-    [(visible)]="showSubscriptionModal"
-    header="Neues Abonnement"
-    [modal]="true"
-    [closable]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '480px', maxWidth: '95vw' }"
-    (onHide)="closeSubscriptionModal()">
-
+  <!-- Abonnement-Dialog -->
+  <p-dialog [(visible)]="showSubscriptionModal" header="Neues Abonnement" [modal]="true" [closable]="true"
+            [draggable]="false" [resizable]="false" [style]="{ width: '480px', maxWidth: '95vw' }" (onHide)="closeSubscriptionModal()">
     <div class="d-flex flex-column gap-3 py-2">
-
-      <!-- Produkt -->
       <div class="form-floating">
-        <select class="form-select"
-                id="ccSubProduct"
-                [(ngModel)]="subscriptionForm.productId"
-                [disabled]="subscriptionModalLoading">
+        <select class="form-select" id="ccSubProduct" [(ngModel)]="subscriptionForm.productId" [disabled]="subscriptionModalLoading">
           <option value="" disabled selected>Produkt auswählen …</option>
           @for (p of products; track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
@@ -418,154 +413,51 @@
         </select>
         <label for="ccSubProduct">Produkt *</label>
       </div>
-      @if (products.length === 0) {
-        <small class="text-muted">Keine Produkte verfügbar</small>
-      }
-
-      <!-- Abrechnungszyklus -->
+      @if (products.length === 0) { <small class="text-muted">Keine Produkte verfügbar</small> }
       <div class="form-floating">
-        <select class="form-select"
-                id="ccSubCycle"
-                [(ngModel)]="subscriptionForm.billingCycle"
-                [disabled]="subscriptionModalLoading">
+        <select class="form-select" id="ccSubCycle" [(ngModel)]="subscriptionForm.billingCycle" [disabled]="subscriptionModalLoading">
           @for (opt of billingCycleOptions; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
           }
         </select>
         <label for="ccSubCycle">Abrechnungszyklus *</label>
       </div>
-
-      <!-- Laufzeit -->
       <div class="row g-3">
         <div class="col-6">
           <div class="form-floating">
-            <input type="date"
-                   class="form-control"
-                   id="ccSubStart"
-                   placeholder=" "
-                   [(ngModel)]="subscriptionStartDateString"
-                   [disabled]="subscriptionModalLoading" />
+            <input type="date" class="form-control" id="ccSubStart" placeholder=" " [(ngModel)]="subscriptionStartDateString" [disabled]="subscriptionModalLoading" />
             <label for="ccSubStart">Startdatum *</label>
           </div>
         </div>
         <div class="col-6">
           <div class="form-floating">
-            <input type="date"
-                   class="form-control"
-                   id="ccSubEnd"
-                   placeholder=" "
-                   [(ngModel)]="subscriptionEndDateString"
-                   [min]="subscriptionStartDateString"
-                   [disabled]="subscriptionModalLoading" />
+            <input type="date" class="form-control" id="ccSubEnd" placeholder=" " [(ngModel)]="subscriptionEndDateString" [min]="subscriptionStartDateString" [disabled]="subscriptionModalLoading" />
             <label for="ccSubEnd">Enddatum (optional)</label>
           </div>
         </div>
       </div>
-
-      <!-- Auto-Verlängerung -->
       <div class="form-check">
-        <input class="form-check-input"
-               type="checkbox"
-               id="autoRenewal"
-               [(ngModel)]="subscriptionForm.autoRenewal"
-               [disabled]="subscriptionModalLoading" />
-        <label class="form-check-label" for="autoRenewal">
-          Automatisch verlängern
-        </label>
+        <input class="form-check-input" type="checkbox" id="autoRenewal" [(ngModel)]="subscriptionForm.autoRenewal" [disabled]="subscriptionModalLoading" />
+        <label class="form-check-label" for="autoRenewal">Automatisch verlängern</label>
       </div>
-
-      <!-- Vertrag (read-only Info) -->
       @if (selectedContract) {
         <div class="alert alert-info py-2 mb-0 small">
-          <i class="fas fa-info-circle me-1"></i>
-          Wird dem Vertrag <strong>{{ selectedContract.contractTitle }}</strong>
-          ({{ selectedContract.contractNumber }}) zugeordnet.
+          <i class="bi bi-info-circle me-1"></i>Wird dem Vertrag <strong>{{ selectedContract.contractTitle }}</strong> zugeordnet.
         </div>
       }
-
-      <!-- Buttons -->
-      <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-1">
-        <button class="btn btn-outline-secondary"
-                (click)="closeSubscriptionModal()"
-                [disabled]="subscriptionModalLoading">
-          Abbrechen
-        </button>
-        <button class="btn btn-primary d-flex align-items-center gap-2"
-                (click)="saveSubscription()"
+      <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+        <button class="btn btn-outline-secondary" (click)="closeSubscriptionModal()" [disabled]="subscriptionModalLoading">Abbrechen</button>
+        <button class="btn btn-primary d-flex align-items-center gap-2" (click)="saveSubscription()"
                 [disabled]="subscriptionModalLoading || !subscriptionForm.productId || !subscriptionStartDateString">
-          @if (subscriptionModalLoading) {
-            <span class="spinner-border spinner-border-sm" role="status"></span>
-          }
+          @if (subscriptionModalLoading) { <span class="spinner-border spinner-border-sm"></span> }
           Erstellen
         </button>
       </div>
     </div>
   </p-dialog>
 
-  <!-- Mobile Bottom Tab Bar -->
-  <div class="d-md-none bg-white border-top d-flex align-items-stretch flex-shrink-0"
-       *ngIf="isMobile"
-       style="height: 62px; z-index: 1000;">
-
-    <!-- Verträge -->
-    <button class="flex-fill d-flex flex-column align-items-center justify-content-center border-0 bg-transparent py-2 position-relative"
-            [class.text-primary]="mobileCurrentView === 'contracts'"
-            [class.text-secondary]="mobileCurrentView !== 'contracts'"
-            (click)="resetToContracts()">
-      <i class="fas fa-file-contract" style="font-size: 1.3rem;"></i>
-      <span class="fw-medium mt-1" style="font-size: 0.7rem;">Verträge</span>
-      <div *ngIf="mobileCurrentView === 'contracts'"
-           class="position-absolute bottom-0 start-50 translate-middle-x bg-primary"
-           style="width: 28px; height: 3px; border-radius: 3px 3px 0 0;"></div>
-    </button>
-
-    <!-- Abonnements -->
-    <button class="flex-fill d-flex flex-column align-items-center justify-content-center border-0 bg-transparent py-2 position-relative"
-            [class.text-primary]="mobileCurrentView === 'subscriptions'"
-            [class.text-secondary]="mobileCurrentView !== 'subscriptions' && !!selectedContract"
-            [class.opacity-50]="!selectedContract"
-            [disabled]="!selectedContract"
-            (click)="mobileNavigateTo('subscriptions')">
-      <i class="fas fa-sync-alt" style="font-size: 1.3rem;"></i>
-      <span class="fw-medium mt-1" style="font-size: 0.7rem;">Abonnements</span>
-      <div *ngIf="mobileCurrentView === 'subscriptions'"
-           class="position-absolute bottom-0 start-50 translate-middle-x bg-primary"
-           style="width: 28px; height: 3px; border-radius: 3px 3px 0 0;"></div>
-    </button>
-
-    <!-- Finanzen -->
-    <button class="flex-fill d-flex flex-column align-items-center justify-content-center border-0 bg-transparent py-2 position-relative"
-            [class.text-primary]="mobileCurrentView === 'financial'"
-            [class.text-secondary]="mobileCurrentView !== 'financial' && !!selectedContract"
-            [class.opacity-50]="!selectedContract"
-            [disabled]="!selectedContract"
-            (click)="mobileNavigateTo('financial')">
-      <i class="fas fa-euro-sign" style="font-size: 1.3rem;"></i>
-      <span class="fw-medium mt-1" style="font-size: 0.7rem;">Finanzen</span>
-      <div *ngIf="mobileCurrentView === 'financial'"
-           class="position-absolute bottom-0 start-50 translate-middle-x bg-primary"
-           style="width: 28px; height: 3px; border-radius: 3px 3px 0 0;"></div>
-    </button>
-  </div>
 </div>
 
 <style>
-:host {
-  display: block;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-  z-index: 0;
-}
-
-.overflow-auto::-webkit-scrollbar { width: 6px; height: 6px; }
-.overflow-auto::-webkit-scrollbar-track { background: #f8f9fa; }
-.overflow-auto::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 3px; }
-.overflow-auto::-webkit-scrollbar-thumb:hover { background: #495057; }
-
-button:disabled { cursor: not-allowed; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .position-absolute { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-}
+:host { display:block; height:100%; overflow:hidden; }
 </style>
