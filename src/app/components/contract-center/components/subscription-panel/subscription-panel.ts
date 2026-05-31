@@ -1,20 +1,16 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SortPipe } from '../../../../shared/pipes/sort.pipe';
-import { SortState } from '../../../../shared/utils/sort-state';
-
 import { Subscription } from '../../../../models/Subscription';
 import { Contract } from '../../../../models/Contract';
 
 @Component({
   selector: 'app-subscription-panel',
   standalone: true,
-  imports: [CommonModule, SortPipe],
+  imports: [CommonModule],
   templateUrl: './subscription-panel.html',
   styleUrls: ['./subscription-panel.scss']
 })
 export class SubscriptionPanelComponent {
-  sort = new SortState();
   @Input() subscriptions: Subscription[] = [];
   @Input() selectedContract: Contract | null = null;
   @Input() selectedSubscription: Subscription | null = null;
@@ -22,52 +18,54 @@ export class SubscriptionPanelComponent {
   @Output() subscriptionSelected = new EventEmitter<Subscription>();
   @Output() createSubscription = new EventEmitter<void>();
 
-  selectSubscription(subscription: Subscription): void {
-    this.subscriptionSelected.emit(subscription);
+  selectSubscription(sub: Subscription): void { this.subscriptionSelected.emit(sub); }
+  isSelectedSubscription(sub: Subscription): boolean { return this.selectedSubscription?.id === sub.id; }
+
+  getStatusIcon(sub: Subscription): string {
+    const s = sub.subscriptionStatus?.toUpperCase();
+    const m: any = { ACTIVE:'bi-check-circle-fill text-success', PAUSED:'bi-pause-circle-fill text-warning', CANCELLED:'bi-x-circle-fill text-danger', EXPIRED:'bi-clock-history text-danger', SUSPENDED:'bi-dash-circle-fill text-secondary' };
+    return m[s ?? ''] ?? 'bi-circle text-muted';
   }
 
-  isSelectedSubscription(subscription: Subscription): boolean {
-    return this.selectedSubscription?.id === subscription.id;
+  getStatusBadgeClass(sub: Subscription): string {
+    const s = sub.subscriptionStatus?.toUpperCase();
+    const m: any = { ACTIVE:'bg-success', PAUSED:'bg-warning text-dark', CANCELLED:'bg-danger', EXPIRED:'bg-danger', SUSPENDED:'bg-secondary' };
+    return m[s ?? ''] ?? 'bg-light text-dark';
   }
 
-  getStatusBadgeClass(subscription: Subscription): string {
-    switch (subscription.subscriptionStatus?.toUpperCase()) {
-      case 'ACTIVE':    return 'bg-success';
-      case 'PAUSED':    return 'bg-warning text-dark';
-      case 'CANCELLED': return 'bg-danger';
-      case 'SUSPENDED': return 'bg-secondary';
-      default:          return 'bg-light text-dark';
-    }
+  getSubscriptionStatusText(sub: Subscription): string {
+    const s = sub.subscriptionStatus?.toUpperCase();
+    const m: any = { ACTIVE:'Aktiv', PAUSED:'Pausiert', CANCELLED:'Gekündigt', EXPIRED:'Abgelaufen', SUSPENDED:'Ausgesetzt' };
+    return m[s ?? ''] ?? sub.subscriptionStatus ?? 'Unbekannt';
   }
 
-  getSubscriptionStatusText(subscription: Subscription): string {
-    switch (subscription.subscriptionStatus?.toUpperCase()) {
-      case 'ACTIVE':    return 'Aktiv';
-      case 'PAUSED':    return 'Pausiert';
-      case 'CANCELLED': return 'Gekündigt';
-      case 'SUSPENDED': return 'Ausgesetzt';
-      default:          return subscription.subscriptionStatus || 'Unbekannt';
-    }
+  billingCycleLabel(cycle?: string): string {
+    const m: any = { MONTHLY:'Monatlich', QUARTERLY:'Vierteljährlich', SEMI_ANNUALLY:'Halbjährlich', ANNUALLY:'Jährlich' };
+    return m[cycle ?? ''] ?? cycle ?? '–';
   }
 
-  getDaysUntilExpiry(subscription: Subscription): number | null {
-    if (!subscription.endDate) return null;
-    const diff = new Date(subscription.endDate).getTime() - Date.now();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  formatDate(d: any): string {
+    if (!d) return '–';
+    try { return new Date(d).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }); } catch { return '–'; }
+  }
+
+  getDaysUntilExpiry(sub: Subscription): number | null {
+    if (!sub.endDate) return null;
+    return Math.ceil((new Date(sub.endDate).getTime() - Date.now()) / 86_400_000);
   }
 
   getExpiryText(days: number | null): string {
-    if (days === null)  return '∞ Unbegrenzt';
-    if (days > 0)       return `${days} Tage`;
-    if (days === 0)     return 'Läuft heute ab';
-    return `Abgelaufen`;
+    if (days === null) return '∞ Unbegrenzt';
+    if (days > 0) return `${days} Tage`;
+    if (days === 0) return 'Läuft heute ab';
+    return 'Abgelaufen';
   }
 
   getExpiryClass(days: number | null): string {
-    if (days === null)    return 'text-muted';
-    if (days <= 0)        return 'text-danger fw-semibold';
-    if (days <= 30)       return 'text-warning fw-semibold';
-    if (days <= 90)       return 'text-body';
+    if (days === null) return 'text-muted';
+    if (days <= 0) return 'text-danger fw-semibold';
+    if (days <= 30) return 'text-warning fw-semibold';
+    if (days <= 90) return 'text-body';
     return 'text-muted';
   }
 }

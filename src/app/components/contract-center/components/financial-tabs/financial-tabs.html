@@ -1,527 +1,194 @@
-<!-- financial-tabs.component.html -->
-<div class="h-100 w-100 d-flex flex-column">
+<div class="ft-root">
 
-  <!-- Header (optional - auskommentiert aber verfügbar) -->
-  <!-- <div class="card-header d-flex justify-content-between align-items-center">
-    <div>
-      <i class="fas fa-euro-sign me-2"></i>
-      Finanzdetails {{ selectedContract ? 'von ' + selectedContract.contractTitle : '' }}
-    </div>
-    <div *ngIf="selectedSubscription">
-      <small class="text-muted">Subscription: {{ selectedSubscription.subscriptionNumber }}</small>
-      <button class="btn btn-sm btn-outline-secondary ms-2" (click)="refreshData()" [disabled]="isLoading">
-        <i class="fas fa-refresh" [class.fa-spin]="isLoading"></i>
+  <!-- Kein Abo gewählt -->
+  <div *ngIf="!selectedSubscription" class="ft-empty">
+    <i class="bi bi-euro-sign"></i>
+    <p>{{ selectedContract ? 'Wählen Sie ein Abonnement aus der Liste' : 'Wählen Sie einen Vertrag und ein Abonnement aus' }}</p>
+  </div>
+
+  <ng-container *ngIf="selectedSubscription">
+
+    <!-- Tab-Leiste -->
+    <div class="ft-tab-bar">
+      <button class="ft-tab" [class.ft-tab--active]="activeTab==='schedule'" (click)="setActiveTab('schedule')">
+        <i class="bi bi-calendar-event"></i><span>Fälligkeitsplan</span>
+        <span class="ft-badge" *ngIf="dueSchedules.length">{{ dueSchedules.length }}</span>
+      </button>
+      <button class="ft-tab" [class.ft-tab--active]="activeTab==='invoices'" (click)="setActiveTab('invoices')">
+        <i class="bi bi-receipt-cutoff"></i><span>Rechnungen</span>
+        <span class="ft-badge" *ngIf="invoices.length">{{ invoices.length }}</span>
+      </button>
+      <button class="ft-tab" [class.ft-tab--active]="activeTab==='openitems'" (click)="setActiveTab('openitems')">
+        <i class="bi bi-cash-stack"></i><span>Offene Posten</span>
+        <span class="ft-badge ft-badge--red" *ngIf="hasOverdueItems">!</span>
+        <span class="ft-badge" *ngIf="openItems.length && !hasOverdueItems">{{ openItems.length }}</span>
       </button>
     </div>
-  </div> -->
 
-  <!-- Tab Navigation -->
-  <ul class="nav nav-tabs nav-fill border-0 bg-light compact-tabs-v1" role="tablist">
-    <li class="nav-item">
-      <button class="nav-link border-0 py-2 px-2 d-flex align-items-center justify-content-center gap-1"
-              [ngClass]="activeTab==='schedule' ? 'active bg-primary text-white' : 'text-dark'"
-              (click)="setActiveTab('schedule')"
-              type="button">
-        <i class="fas fa-calendar-alt"></i>
-        <span class="fw-medium small">Fälligkeitsplan</span>
-        <span *ngIf="dueSchedules.length" class="tab-count"
-              [ngClass]="activeTab==='schedule' ? 'tab-count--light' : 'tab-count--muted'">
-          {{ dueSchedules.length }}
-        </span>
+    <!-- Laden -->
+    <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center py-4 gap-2 text-muted">
+      <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+      <small>Lade Finanzdaten …</small>
+    </div>
+
+    <!-- Fehler -->
+    <div *ngIf="hasErrors && !isLoading" class="alert alert-warning mx-3 mt-3 py-2 small d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle"></i>
+      <span>{{ allErrors.join(' · ') }}</span>
+      <button class="btn btn-sm btn-outline-warning ms-auto" (click)="refreshData()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Erneut
       </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link border-0 py-2 px-2 d-flex align-items-center justify-content-center gap-1"
-              [ngClass]="activeTab==='invoices' ? 'active bg-primary text-white' : 'text-dark'"
-              (click)="setActiveTab('invoices')"
-              type="button">
-        <i class="fas fa-file-invoice"></i>
-        <span class="fw-medium small">Rechnungen</span>
-        <span *ngIf="invoices.length" class="tab-count"
-              [ngClass]="activeTab==='invoices' ? 'tab-count--light' : 'tab-count--muted'">
-          {{ invoices.length }}
-        </span>
+    </div>
+
+    <!-- Tab-Inhalte -->
+    <div class="ft-content" *ngIf="!isLoading">
+      <div *ngIf="activeTab==='schedule'">
+        <app-due-schedule-tab [dueSchedules]="dueSchedules"></app-due-schedule-tab>
+      </div>
+      <div *ngIf="activeTab==='invoices'">
+        <app-invoice-tab [invoices]="invoices" [customers]="customers" (invoiceAction)="onInvoiceAction($event)"></app-invoice-tab>
+      </div>
+      <div *ngIf="activeTab==='openitems'">
+        <app-open-items-tab [openItems]="openItems" [customers]="customers" [selectedSubscriptionId]="selectedSubscription?.id || null" (openItemAction)="onOpenItemAction($event)"></app-open-items-tab>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ═══ DIALOG: Zahlung buchen ════════════════════════════════════════ -->
+<p-dialog [(visible)]="showPaymentModal" header="Zahlung buchen" [modal]="true" [closable]="true"
+          [draggable]="false" [resizable]="false" [style]="{ width: '580px', maxWidth: '95vw' }"
+          (onHide)="closePaymentModal()">
+  <div *ngIf="selectedOpenItemForPayment" class="d-flex flex-column gap-3 py-2">
+    <div class="alert alert-light border py-2 mb-0" style="font-size:.85rem;">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <span><span class="text-muted">Rechnungsnr.:</span> <strong>{{ selectedOpenItemForPayment.invoiceNumber }}</strong></span>
+        <span><span class="text-muted">Kunde:</span> {{ selectedOpenItemForPayment.customerName }}</span>
+        <span><span class="text-muted">Fällig:</span> {{ selectedOpenItemForPayment.dueDate | date:'dd.MM.yyyy' }}</span>
+      </div>
+    </div>
+    <div class="row g-3 text-center" style="font-size:.88rem;">
+      <div class="col-4"><div class="text-muted small">Ursprungsbetrag</div><div class="fw-bold">{{ selectedOpenItemForPayment.amount | currency:'EUR' }}</div></div>
+      <div class="col-4"><div class="text-muted small">Bereits bezahlt</div><div class="fw-bold text-success">{{ selectedOpenItemForPayment.paidAmount | currency:'EUR' }}</div></div>
+      <div class="col-4"><div class="text-muted small">Ausstehend</div><div class="fw-bold text-danger fs-5">{{ selectedOpenItemForPayment.outstandingAmount | currency:'EUR' }}</div></div>
+    </div>
+    <hr class="my-0">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="form-floating">
+          <input type="number" class="form-control" id="payAmt" placeholder=" " [(ngModel)]="paymentAmount" [max]="selectedOpenItemForPayment.outstandingAmount" min="0.01" step="0.01" />
+          <label for="payAmt">Betrag (€) *</label>
+        </div>
+        <div class="d-flex gap-1 mt-1">
+          <button class="btn btn-outline-success btn-sm flex-fill" (click)="setFullPayment()" style="font-size:.75rem;">Vollzahlung</button>
+          <button class="btn btn-outline-secondary btn-sm flex-fill" (click)="setHalfPayment()" style="font-size:.75rem;">½</button>
+          <button class="btn btn-outline-secondary btn-sm px-2" (click)="resetPayment()"><i class="bi bi-x"></i></button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="form-floating">
+          <select class="form-select" id="payMethod" [(ngModel)]="paymentMethod">
+            <option value="">Bitte wählen</option>
+            <option value="BANK_TRANSFER">Überweisung</option>
+            <option value="CASH">Bar</option>
+            <option value="CREDIT_CARD">Kreditkarte</option>
+            <option value="DEBIT_CARD">EC-Karte</option>
+            <option value="PAYPAL">PayPal</option>
+            <option value="SEPA">SEPA Lastschrift</option>
+            <option value="OTHER">Sonstige</option>
+          </select>
+          <label for="payMethod">Zahlungsart</label>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="payRef" placeholder=" " [(ngModel)]="paymentReference" />
+          <label for="payRef">Referenz</label>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex justify-content-end gap-2 border-top pt-2">
+      <button class="btn btn-outline-secondary" (click)="closePaymentModal()">Abbrechen</button>
+      <button class="btn btn-success d-flex align-items-center gap-2" (click)="recordPayment()"
+              [disabled]="!paymentAmount || paymentAmount <= 0 || paymentAmount > (selectedOpenItemForPayment?.outstandingAmount || 0)">
+        <i class="bi bi-check2-circle"></i>Zahlung buchen
       </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link border-0 py-2 px-2 d-flex align-items-center justify-content-center gap-1"
-              [ngClass]="activeTab==='openitems' ? 'active bg-primary text-white' : 'text-dark'"
-              (click)="setActiveTab('openitems')"
-              type="button">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span class="fw-medium small">Offene Posten</span>
-        <span *ngIf="openItems.length" class="tab-count"
-              [ngClass]="activeTab==='openitems' ? 'tab-count--light' : 'tab-count--muted'">
-          {{ openItems.length }}
-        </span>
-      </button>
-    </li>
-  </ul>
-
-
-
-  <!-- Tab Content -->
-  <div class="flex-fill d-flex flex-column overflow-hidden p-0">
-    <div class="tab-content h-100 d-flex flex-column">
-
-      <!-- Fälligkeitsplan Tab -->
-      <div class="tab-pane flex-fill d-flex flex-column overflow-hidden" 
-           [class.d-none]="activeTab!=='schedule'"
-           [class.d-flex]="activeTab==='schedule'">
-        <div class="flex-fill overflow-auto p-3" style="min-height: 0;">
-          <app-due-schedule-tab [dueSchedules]="dueSchedules"></app-due-schedule-tab>
-        </div>
-      </div>
-
-      <!-- Rechnungen Tab -->
-      <div class="tab-pane flex-fill d-flex flex-column overflow-hidden" 
-           [class.d-none]="activeTab!=='invoices'"
-           [class.d-flex]="activeTab==='invoices'">
-        <div class="flex-fill overflow-auto p-3" style="min-height: 0;">
-          <app-invoice-tab
-            [invoices]="invoices"
-            [customers]="customers"
-            (invoiceAction)="onInvoiceAction($event)">
-          </app-invoice-tab>
-        </div>
-      </div>
-
-      <!-- Offene Posten Tab -->
-      <div class="tab-pane flex-fill d-flex flex-column overflow-hidden" 
-           [class.d-none]="activeTab!=='openitems'"
-           [class.d-flex]="activeTab==='openitems'">
-        <div class="flex-fill overflow-auto p-3" style="min-height: 0;">
-          <app-open-items-tab
-            [openItems]="openItems"
-            [customers]="customers"
-            [selectedSubscriptionId]="selectedSubscription?.id || null"
-            (openItemAction)="onOpenItemAction($event)">
-          </app-open-items-tab>
-        </div>
-      </div>
-
     </div>
   </div>
+</p-dialog>
 
-  <!-- Loading Overlay -->
-  <div *ngIf="isLoading" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-       style="background-color: rgba(255,255,255,0.8); z-index: 1000;">
-    <div class="text-center">
-      <div class="spinner-border text-primary mb-3" role="status">
-        <span class="visually-hidden">Lädt...</span>
-      </div>
-      <div class="text-muted">Lade Finanzdaten...</div>
+<!-- ═══ DIALOG: Rechnung bearbeiten ══════════════════════════════════ -->
+<p-dialog [(visible)]="showEditInvoiceModal" header="Rechnung bearbeiten" [modal]="true" [closable]="true"
+          [draggable]="false" [resizable]="false" [style]="{ width: '540px', maxWidth: '95vw' }"
+          (onHide)="closeEditInvoiceModal()">
+  <div *ngIf="selectedInvoiceForEdit" class="d-flex flex-column gap-3 py-2">
+    <div class="form-floating">
+      <input type="text" class="form-control" id="eInvNr" placeholder=" " [(ngModel)]="editInvoice.invoiceNumber" />
+      <label for="eInvNr">Rechnungsnummer</label>
+    </div>
+    <div class="row g-3">
+      <div class="col-6"><div class="form-floating"><input type="date" class="form-control" id="eInvDate" placeholder=" " [(ngModel)]="editInvoiceDateString" /><label for="eInvDate">Rechnungsdatum</label></div></div>
+      <div class="col-6"><div class="form-floating"><input type="date" class="form-control" id="eInvDue" placeholder=" " [(ngModel)]="editDueDateString" /><label for="eInvDue">Fälligkeitsdatum</label></div></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-4"><div class="form-floating"><input type="number" class="form-control" id="eSubtotal" placeholder=" " [(ngModel)]="editInvoice.subtotal" step="0.01" min="0" /><label for="eSubtotal">Netto (€)</label></div></div>
+      <div class="col-4"><div class="form-floating"><input type="number" class="form-control" id="eTax" placeholder=" " [(ngModel)]="editInvoice.taxAmount" step="0.01" min="0" /><label for="eTax">Steuer (€)</label></div></div>
+      <div class="col-4"><div class="form-floating"><input type="number" class="form-control" id="eTotal" placeholder=" " [(ngModel)]="editInvoice.totalAmount" step="0.01" min="0" /><label for="eTotal">Gesamt (€)</label></div></div>
+    </div>
+    <div class="form-floating">
+      <textarea class="form-control" id="eNotes" placeholder=" " style="height:70px;" [(ngModel)]="editInvoice.notes"></textarea>
+      <label for="eNotes">Notizen</label>
+    </div>
+    <div class="d-flex justify-content-end gap-2 border-top pt-2">
+      <button class="btn btn-outline-secondary" (click)="closeEditInvoiceModal()">Abbrechen</button>
+      <button class="btn btn-primary d-flex align-items-center gap-2" (click)="updateInvoice()"><i class="bi bi-floppy"></i>Speichern</button>
     </div>
   </div>
+</p-dialog>
 
-  <!-- Error Messages -->
-  <div *ngIf="hasErrors && !isLoading" class="alert alert-warning mx-3 mt-3" role="alert">
-    <h6 class="alert-heading">
-      <i class="fas fa-exclamation-triangle me-2"></i>Fehler beim Laden der Daten
-    </h6>
-    <ul class="mb-0">
-      <li *ngFor="let error of allErrors">{{ error }}</li>
-    </ul>
-    <hr>
-    <button class="btn btn-outline-warning btn-sm" (click)="refreshData()">
-      <i class="fas fa-refresh me-1"></i>Erneut versuchen
-    </button>
-  </div>
-
-</div>
-
-<!-- Zahlung buchen Modal -->
-<div *ngIf="showPaymentModal" 
-     class="modal show d-block position-fixed top-0 start-0 w-100 h-100" 
-     style="z-index: 1055; background-color: rgba(0,0,0,0.5);" 
-     tabindex="-1"
-     (click)="closePaymentModal()">
-  <div class="modal-dialog modal-lg modal-dialog-centered" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title">
-          <i class="fas fa-euro-sign me-2"></i>
-          Zahlung buchen
-        </h5>
-        <button type="button" class="btn-close btn-close-white" (click)="closePaymentModal()"></button>
-      </div>
-      <div class="modal-body">
-        <div *ngIf="selectedOpenItemForPayment" class="row">
-          
-          <!-- OpenItem Informationen -->
-          <div class="col-md-6 mb-4">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-file-invoice me-2"></i>Rechnungsdetails
-            </h6>
-            <div class="row g-3">
-              <div class="col-12">
-                <small class="text-muted d-block">Rechnungsnummer:</small>
-                <div class="fw-bold">{{ selectedOpenItemForPayment.invoiceNumber }}</div>
-              </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Kunde:</small>
-                <div>{{ selectedOpenItemForPayment.customerName }}</div>
-              </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Fälligkeitsdatum:</small>
-                <div [class.text-danger]="selectedOpenItemForPayment.overdue">
-                  {{ selectedOpenItemForPayment.dueDate | date:'dd.MM.yyyy' }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Betragsinformationen -->
-          <div class="col-md-6 mb-4">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-calculator me-2"></i>Beträge
-            </h6>
-            <div class="row g-3">
-              <div class="col-6">
-                <small class="text-muted d-block">Ursprungsbetrag:</small>
-                <div class="fw-bold">{{ selectedOpenItemForPayment.amount | currency:'EUR' }}</div>
-              </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Bereits bezahlt:</small>
-                <div class="text-success">{{ selectedOpenItemForPayment.paidAmount | currency:'EUR' }}</div>
-              </div>
-              <div class="col-12">
-                <small class="text-muted d-block">Ausstehend:</small>
-                <div class="h5 text-danger mb-0">{{ selectedOpenItemForPayment.outstandingAmount | currency:'EUR' }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Zahlungsformular -->
-          <div class="col-12">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-credit-card me-2"></i>Zahlungsdetails
-            </h6>
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label for="paymentAmount" class="form-label">Zahlungsbetrag *</label>
-                <div class="input-group">
-                  <input type="number" 
-                         id="paymentAmount"
-                         class="form-control" 
-                         [(ngModel)]="paymentAmount"
-                         [max]="selectedOpenItemForPayment.outstandingAmount"
-                         min="0.01"
-                         step="0.01"
-                         placeholder="0,00">
-                  <span class="input-group-text">€</span>
-                </div>
-                <div class="form-text">
-                  Max: {{ selectedOpenItemForPayment.outstandingAmount | currency:'EUR' }}
-                </div>
-              </div>
-              <div class="col-md-4">
-                <label for="paymentMethod" class="form-label">Zahlungsart</label>
-                <select id="paymentMethod" class="form-select" [(ngModel)]="paymentMethod">
-                  <option value="">-- Bitte wählen --</option>
-                  <option value="BANK_TRANSFER">Überweisung</option>
-                  <option value="CASH">Bar</option>
-                  <option value="CREDIT_CARD">Kreditkarte</option>
-                  <option value="DEBIT_CARD">EC-Karte</option>
-                  <option value="PAYPAL">PayPal</option>
-                  <option value="SEPA">SEPA Lastschrift</option>
-                  <option value="CHECK">Scheck</option>
-                  <option value="OTHER">Sonstige</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label for="paymentReference" class="form-label">Verwendungszweck/Referenz</label>
-                <input type="text" 
-                       id="paymentReference"
-                       class="form-control" 
-                       [(ngModel)]="paymentReference"
-                       placeholder="z.B. Transaktions-ID">
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Actions -->
-          <div class="col-12 mt-3">
-            <div class="d-flex gap-2 flex-wrap">
-              <button type="button" class="btn btn-outline-success btn-sm" 
-                      (click)="setFullPayment()">
-                <i class="fas fa-check me-1"></i>Vollzahlung
-              </button>
-              <button type="button" class="btn btn-outline-primary btn-sm" 
-                      (click)="setHalfPayment()">
-                <i class="fas fa-divide me-1"></i>Hälfte
-              </button>
-              <button type="button" class="btn btn-outline-secondary btn-sm" 
-                      (click)="resetPayment()">
-                <i class="fas fa-times me-1"></i>Zurücksetzen
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="closePaymentModal()">
-          <i class="fas fa-times me-1"></i>Abbrechen
-        </button>
-        <button type="button" class="btn btn-success" 
-                (click)="recordPayment()"
-                [disabled]="!paymentAmount || paymentAmount <= 0 || paymentAmount > (selectedOpenItemForPayment?.outstandingAmount || 0)">
-          <i class="fas fa-save me-1"></i>Zahlung buchen
-        </button>
-      </div>
+<!-- ═══ DIALOG: Offenen Posten bearbeiten ════════════════════════════ -->
+<p-dialog [(visible)]="showEditOpenItemModal" header="Offenen Posten bearbeiten" [modal]="true" [closable]="true"
+          [draggable]="false" [resizable]="false" [style]="{ width: '480px', maxWidth: '95vw' }"
+          (onHide)="closeEditOpenItemModal()">
+  <div *ngIf="selectedOpenItemForEdit" class="d-flex flex-column gap-3 py-2">
+    <div class="alert alert-light border py-2 mb-0 small">
+      <span class="text-muted">Rechnungsnr.:</span> <strong>{{ editOpenItem.invoiceNumber }}</strong>
+      <span class="mx-2">·</span>
+      <span class="text-muted">Kunde:</span> {{ editOpenItem.customerName }}
+    </div>
+    <div class="row g-3">
+      <div class="col-6"><div class="form-floating"><input type="date" class="form-control" id="eOIDue" placeholder=" " [(ngModel)]="editOpenItemDueDateString" /><label for="eOIDue">Fälligkeitsdatum</label></div></div>
+      <div class="col-6"><div class="form-floating"><input type="number" class="form-control" id="eOIAmt" placeholder=" " [(ngModel)]="editOpenItem.amount" step="0.01" min="0" /><label for="eOIAmt">Betrag (€)</label></div></div>
+    </div>
+    <div class="row g-3 text-center" style="font-size:.85rem;">
+      <div class="col-6"><div class="text-muted small">Bereits bezahlt</div><div class="fw-bold text-success">{{ editOpenItem.paidAmount | currency:'EUR' }}</div></div>
+      <div class="col-6"><div class="text-muted small">Ausstehend</div><div class="fw-bold text-danger">{{ editOpenItem.outstandingAmount | currency:'EUR' }}</div></div>
+    </div>
+    <div class="form-floating">
+      <textarea class="form-control" id="eOINotes" placeholder=" " style="height:65px;" [(ngModel)]="editOpenItem.notes"></textarea>
+      <label for="eOINotes">Notizen</label>
+    </div>
+    <div class="d-flex justify-content-end gap-2 border-top pt-2">
+      <button class="btn btn-outline-secondary" (click)="closeEditOpenItemModal()">Abbrechen</button>
+      <button class="btn btn-primary d-flex align-items-center gap-2" (click)="updateOpenItem()"><i class="bi bi-floppy"></i>Speichern</button>
     </div>
   </div>
-</div>
+</p-dialog>
 
-<!-- Edit Invoice Modal -->
-<div *ngIf="showEditInvoiceModal" 
-     class="modal show d-block position-fixed top-0 start-0 w-100 h-100" 
-     style="z-index: 1055; background-color: rgba(0,0,0,0.5);" 
-     tabindex="-1"
-     (click)="closeEditInvoiceModal()">
-  <div class="modal-dialog modal-lg modal-dialog-centered" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">
-          <i class="fas fa-edit me-2"></i>
-          Rechnung bearbeiten
-        </h5>
-        <button type="button" class="btn-close btn-close-white" (click)="closeEditInvoiceModal()"></button>
-      </div>
-      <div class="modal-body">
-        <div *ngIf="selectedInvoiceForEdit" class="row">
-          
-          <!-- Grunddaten -->
-          <div class="col-md-6 mb-4">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-info-circle me-2"></i>Grunddaten
-            </h6>
-            <div class="row g-3">
-              <div class="col-12">
-                <label for="editInvoiceNumber" class="form-label">Rechnungsnummer</label>
-                <input type="text" 
-                       id="editInvoiceNumber"
-                       class="form-control" 
-                       [(ngModel)]="editInvoice.invoiceNumber"
-                       placeholder="RG-2024-001">
-              </div>
-              <div class="col-6">
-                <label for="editInvoiceDate" class="form-label">Rechnungsdatum</label>
-                <input type="date" 
-                       id="editInvoiceDate"
-                       class="form-control" 
-                       [(ngModel)]="editInvoiceDateString">
-              </div>
-              <div class="col-6">
-                <label for="editDueDate" class="form-label">Fälligkeitsdatum</label>
-                <input type="date" 
-                       id="editDueDate"
-                       class="form-control" 
-                       [(ngModel)]="editDueDateString">
-              </div>
-            </div>
-          </div>
-
-          <!-- Beträge -->
-          <div class="col-md-6 mb-4">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-euro-sign me-2"></i>Beträge
-            </h6>
-            <div class="row g-3">
-              <div class="col-6">
-                <label for="editSubtotal" class="form-label">Zwischensumme</label>
-                <div class="input-group">
-                  <input type="number" 
-                         id="editSubtotal"
-                         class="form-control" 
-                         [(ngModel)]="editInvoice.subtotal"
-                         step="0.01"
-                         min="0">
-                  <span class="input-group-text">€</span>
-                </div>
-              </div>
-              <div class="col-6">
-                <label for="editTaxAmount" class="form-label">Steuern</label>
-                <div class="input-group">
-                  <input type="number" 
-                         id="editTaxAmount"
-                         class="form-control" 
-                         [(ngModel)]="editInvoice.taxAmount"
-                         step="0.01"
-                         min="0">
-                  <span class="input-group-text">€</span>
-                </div>
-              </div>
-              <div class="col-12">
-                <label for="editTotalAmount" class="form-label">Gesamtbetrag</label>
-                <div class="input-group">
-                  <input type="number" 
-                         id="editTotalAmount"
-                         class="form-control" 
-                         [(ngModel)]="editInvoice.totalAmount"
-                         step="0.01"
-                         min="0">
-                  <span class="input-group-text">€</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Beschreibung/Notizen -->
-          <div class="col-12">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-sticky-note me-2"></i>Beschreibung & Notizen
-            </h6>
-            <div class="row g-3">
-              <div class="col-12">
-                <label for="editInvoiceDescription" class="form-label">Beschreibung</label>
-                <textarea id="editInvoiceDescription"
-                          class="form-control" 
-                          [(ngModel)]="editInvoice.description"
-                          rows="3"
-                          placeholder="Rechnungsbeschreibung..."></textarea>
-              </div>
-              <div class="col-12">
-                <label for="editInvoiceNotes" class="form-label">Interne Notizen</label>
-                <textarea id="editInvoiceNotes"
-                          class="form-control" 
-                          [(ngModel)]="editInvoice.notes"
-                          rows="2"
-                          placeholder="Interne Notizen..."></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="closeEditInvoiceModal()">
-          <i class="fas fa-times me-1"></i>Abbrechen
-        </button>
-        <button type="button" class="btn btn-primary" (click)="updateInvoice()">
-          <i class="fas fa-save me-1"></i>Speichern
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Edit OpenItem Modal -->
-<div *ngIf="showEditOpenItemModal" 
-     class="modal show d-block position-fixed top-0 start-0 w-100 h-100" 
-     style="z-index: 1055; background-color: rgba(0,0,0,0.5);" 
-     tabindex="-1"
-     (click)="closeEditOpenItemModal()">
-  <div class="modal-dialog modal-lg modal-dialog-centered" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">
-          <i class="fas fa-edit me-2"></i>
-          Offenen Posten bearbeiten
-        </h5>
-        <button type="button" class="btn-close btn-close-white" (click)="closeEditOpenItemModal()"></button>
-      </div>
-      <div class="modal-body">
-        <div *ngIf="selectedOpenItemForEdit" class="row">
-          
-          <!-- Grunddaten -->
-          <div class="col-md-6 mb-4">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-info-circle me-2"></i>Grunddaten
-            </h6>
-            <div class="row g-3">
-              <div class="col-12">
-                <label for="editOpenItemInvoiceNumber" class="form-label">Rechnungsnummer</label>
-                <input type="text" 
-                       id="editOpenItemInvoiceNumber"
-                       class="form-control" 
-                       [(ngModel)]="editOpenItem.invoiceNumber"
-                       readonly>
-              </div>
-              <div class="col-6">
-                <label for="editOpenItemCustomerName" class="form-label">Kunde</label>
-                <input type="text" 
-                       id="editOpenItemCustomerName"
-                       class="form-control" 
-                       [(ngModel)]="editOpenItem.customerName"
-                       readonly>
-              </div>
-              <div class="col-6">
-                <label for="editOpenItemDueDate" class="form-label">Fälligkeitsdatum</label>
-                <input type="date" 
-                       id="editOpenItemDueDate"
-                       class="form-control" 
-                       [(ngModel)]="editOpenItemDueDateString">
-              </div>
-            </div>
-          </div>
-
-          <!-- Beträge -->
-          <div class="col-md-6 mb-4">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-euro-sign me-2"></i>Beträge
-            </h6>
-            <div class="row g-3">
-              <div class="col-12">
-                <label for="editOpenItemAmount" class="form-label">Ursprungsbetrag</label>
-                <div class="input-group">
-                  <input type="number" 
-                         id="editOpenItemAmount"
-                         class="form-control" 
-                         [(ngModel)]="editOpenItem.amount"
-                         step="0.01"
-                         min="0">
-                  <span class="input-group-text">€</span>
-                </div>
-              </div>
-              <div class="col-6">
-                <label class="form-label">Bereits bezahlt</label>
-                <div class="form-control-plaintext text-success fw-bold">
-                  {{ editOpenItem.paidAmount | currency:'EUR' }}
-                </div>
-              </div>
-              <div class="col-6">
-                <label class="form-label">Ausstehend</label>
-                <div class="form-control-plaintext text-danger fw-bold">
-                  {{ editOpenItem.outstandingAmount | currency:'EUR' }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Beschreibung/Notizen -->
-          <div class="col-12">
-            <h6 class="border-bottom pb-2 mb-3">
-              <i class="fas fa-sticky-note me-2"></i>Beschreibung & Notizen
-            </h6>
-            <div class="row g-3">
-              <div class="col-12">
-                <label for="editOpenItemDescription" class="form-label">Beschreibung</label>
-                <textarea id="editOpenItemDescription"
-                          class="form-control" 
-                          [(ngModel)]="editOpenItem.description"
-                          rows="3"
-                          placeholder="Beschreibung des offenen Postens..."></textarea>
-              </div>
-              <div class="col-12">
-                <label for="editOpenItemNotes" class="form-label">Interne Notizen</label>
-                <textarea id="editOpenItemNotes"
-                          class="form-control" 
-                          [(ngModel)]="editOpenItem.notes"
-                          rows="2"
-                          placeholder="Interne Notizen..."></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="closeEditOpenItemModal()">
-          <i class="fas fa-times me-1"></i>Abbrechen
-        </button>
-        <button type="button" class="btn btn-primary" (click)="updateOpenItem()">
-          <i class="fas fa-save me-1"></i>Speichern
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+<style>
+:host { display:flex; flex-direction:column; height:100%; }
+.ft-root { display:flex; flex-direction:column; height:100%; }
+.ft-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#adb5bd; padding:32px 16px; }
+.ft-empty i { font-size:2rem; opacity:.35; }
+.ft-empty p { margin:10px 0 0; font-size:.88rem; text-align:center; }
+.ft-tab-bar { display:flex; overflow-x:auto; background:#f8f9fa; border-bottom:2px solid #e9ecef; padding:0 6px; flex-shrink:0; scrollbar-width:none; }
+.ft-tab-bar::-webkit-scrollbar { display:none; }
+.ft-tab { display:inline-flex; align-items:center; gap:4px; padding:8px 11px; border:none; background:transparent; color:#6c757d; font-size:.8rem; font-weight:500; white-space:nowrap; border-bottom:3px solid transparent; margin-bottom:-2px; cursor:pointer; transition:color .15s, border-color .15s; }
+.ft-tab:hover { color:#1a56db; }
+.ft-tab--active { color:#1a56db; border-bottom-color:#1a56db; font-weight:600; }
+.ft-badge { background:#0d6efd; color:#fff; border-radius:999px; font-size:.6rem; padding:1px 5px; font-weight:700; }
+.ft-badge--red { background:#dc3545; }
+.ft-content { flex:1; overflow-y:auto; padding:12px; scrollbar-width:thin; min-height:0; }
+.ft-content::-webkit-scrollbar { width:4px; }
+.ft-content::-webkit-scrollbar-thumb { background:#adb5bd; border-radius:3px; }
+</style>

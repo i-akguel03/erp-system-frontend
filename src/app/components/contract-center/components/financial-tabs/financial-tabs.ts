@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 
 import { Contract } from '../../../../models/Contract';
 import { Subscription } from '../../../../models/Subscription';
@@ -37,6 +38,7 @@ interface OpenItemActionEvent {
   imports: [
     CommonModule,
     FormsModule,
+    Dialog,
     DueScheduleTabComponent,
     InvoiceTabComponent,
     OpenItemsTabComponent
@@ -524,6 +526,10 @@ export class FinancialTabsComponent implements OnInit, OnChanges, OnDestroy {
 
   get hasErrors(): boolean {
     return !!(this.errors.schedules || this.errors.invoices || this.errors.openItems);
+  }
+
+  get hasOverdueItems(): boolean {
+    return this.openItems.some(o => o.status === 'OVERDUE');
   }
 
   get allErrors(): string[] {

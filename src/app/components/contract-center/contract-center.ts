@@ -206,7 +206,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     this.selectedContract = contract;
     this.subscriptions = [];
     this.selectedSubscription = null;
-    this.activeDetailTab = 'abonnements';
+    this.activeDetailTab = 'uebersicht';
     if (this.isMobile) this.mobileView = 'detail';
     this.loadSubscriptions(contract.id!);
   }

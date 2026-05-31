@@ -1,55 +1,76 @@
-<div class="h-100 d-flex flex-column">
-
-  <!-- Tabelle -->
-  <div class="flex-fill overflow-auto" *ngIf="subscriptions.length > 0">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light position-sticky" style="top: 0; z-index: 2;">
-        <tr>
-          <th class="th-sortable" (click)="sort.toggle('productName')">Produkt <i class="fas ms-1" [ngClass]="sort.icon('productName')"></i></th>
-          <th class="th-sortable" (click)="sort.toggle('subscriptionStatus')">Status <i class="fas ms-1" [ngClass]="sort.icon('subscriptionStatus')"></i></th>
-          <th class="th-sortable" (click)="sort.toggle('startDate')">Laufzeit <i class="fas ms-1" [ngClass]="sort.icon('startDate')"></i></th>
-          <th>Verbleibend</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let subscription of subscriptions | sort:sort.key:sort.dir"
-            (click)="selectSubscription(subscription)"
-            style="cursor: pointer;"
-            [class.table-primary]="isSelectedSubscription(subscription)">
-          <td>
-            <div class="fw-medium">{{ subscription.productName || 'Unbekanntes Produkt' }}</div>
-            <div class="text-muted font-monospace" style="font-size: 0.72rem;">{{ subscription.subscriptionNumber }}</div>
-          </td>
-          <td>
-            <span class="badge rounded-pill" [ngClass]="getStatusBadgeClass(subscription)">
-              {{ getSubscriptionStatusText(subscription) }}
-            </span>
-          </td>
-          <td class="text-muted small text-nowrap">
-            {{ subscription.startDate | date:'dd.MM.yy' }}
-            <span class="mx-1 text-muted">—</span>
-            <span *ngIf="subscription.endDate">{{ subscription.endDate | date:'dd.MM.yy' }}</span>
-            <span *ngIf="!subscription.endDate" class="text-muted">∞</span>
-          </td>
-          <td class="text-nowrap">
-            <span [ngClass]="getExpiryClass(getDaysUntilExpiry(subscription))" style="font-size: 0.8rem;">
-              {{ getExpiryText(getDaysUntilExpiry(subscription)) }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Leerzustand -->
-  <div *ngIf="subscriptions.length === 0"
-       class="flex-fill d-flex flex-column align-items-center justify-content-center py-5 text-muted">
-    <i class="fas fa-sync-alt fa-3x mb-3 opacity-25"></i>
-    <h6 class="mb-1" *ngIf="selectedContract">Keine Abonnements</h6>
-    <h6 class="mb-1" *ngIf="!selectedContract">Kein Vertrag ausgewählt</h6>
-    <small *ngIf="selectedContract">Für „{{ selectedContract.contractTitle }}" sind keine Abonnements hinterlegt.</small>
-    <small *ngIf="!selectedContract">Wählen Sie einen Vertrag aus der Liste oben.</small>
-  </div>
-
+<!-- Leer: kein Vertrag -->
+<div *ngIf="!selectedContract" class="cc-empty">
+  <i class="bi bi-arrow-repeat"></i>
+  <p>Wählen Sie einen Vertrag aus</p>
 </div>
 
+<!-- Leer: keine Abos -->
+<div *ngIf="selectedContract && subscriptions.length === 0" class="cc-empty">
+  <i class="bi bi-arrow-repeat"></i>
+  <p>Keine Abonnements für „{{ selectedContract.contractTitle }}"</p>
+</div>
+
+<!-- Abonnementliste -->
+<div *ngIf="subscriptions.length > 0" class="sub-list">
+  @for (sub of subscriptions; track sub.id) {
+    <div class="sub-item d-flex align-items-start gap-3 p-3"
+         [class.sub-item--selected]="isSelectedSubscription(sub)"
+         (click)="selectSubscription(sub)">
+
+      <!-- Status-Icon -->
+      <div class="flex-shrink-0 mt-1" style="width:20px; text-align:center;">
+        <i class="bi {{ getStatusIcon(sub) }}" style="font-size:1rem;"></i>
+      </div>
+
+      <!-- Info -->
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="fw-semibold text-truncate" style="font-size:.9rem;">
+            {{ sub.productName || 'Unbekanntes Produkt' }}
+          </span>
+          <span class="badge rounded-pill {{ getStatusBadgeClass(sub) }}" style="font-size:.68rem;">
+            {{ getSubscriptionStatusText(sub) }}
+          </span>
+          <span *ngIf="sub.autoRenewal" class="badge bg-light text-primary border border-primary-subtle" style="font-size:.65rem;">
+            <i class="bi bi-arrow-clockwise me-1"></i>Auto
+          </span>
+        </div>
+
+        <div class="text-muted mt-1" style="font-size:.75rem;">
+          <span class="font-monospace">{{ sub.subscriptionNumber }}</span>
+          <span class="mx-1">·</span>
+          <span>{{ billingCycleLabel(sub.billingCycle) }}</span>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3 mt-1" style="font-size:.78rem;">
+          <span class="text-muted">
+            <i class="bi bi-calendar2 me-1"></i>
+            {{ formatDate(sub.startDate) }} – {{ sub.endDate ? formatDate(sub.endDate) : '∞' }}
+          </span>
+          <span [class]="getExpiryClass(getDaysUntilExpiry(sub))">
+            <i class="bi bi-clock me-1"></i>{{ getExpiryText(getDaysUntilExpiry(sub)) }}
+          </span>
+        </div>
+      </div>
+
+      <i class="bi bi-chevron-right text-muted flex-shrink-0 mt-1" style="font-size:.8rem;"></i>
+    </div>
+  }
+</div>
+
+<style>
+:host { display:block; }
+.cc-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:48px 16px; color:#adb5bd;
+  i { font-size:2rem; opacity:.35; }
+  p { margin:10px 0 0; font-size:.88rem; text-align:center; }
+}
+.sub-list { padding:6px 0; }
+.sub-item {
+  cursor:pointer; border-radius:8px; margin:0 6px 2px;
+  transition:background .1s; border:1px solid transparent;
+}
+.sub-item:hover { background:#f0f4ff; }
+.sub-item--selected { background:#e8f0fe !important; border-color:#c2d3fd; }
+</style>
