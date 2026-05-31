@@ -1,317 +1,613 @@
 <div class="bc-root">
 
-  <!-- ═══ BLUE HEADER ════════════════════════════════════════════════════ -->
-  <div class="bc-header flex-shrink-0">
-    <div class="d-flex align-items-center gap-3">
-      <div class="bc-header-icon flex-shrink-0">
-        <i class="bi bi-cash-coin" style="font-size:1.2rem;"></i>
-      </div>
-      <div class="flex-grow-1 overflow-hidden">
-        <div class="fw-bold" style="font-size:1.1rem; line-height:1.2;">Abrechnungscenter</div>
-        <div class="text-white-50" style="font-size:.78rem;">Offene Posten, Mahnwesen und Zahlungsübersicht</div>
-      </div>
-      <!-- KPI-Chips -->
-      <div class="d-none d-lg-flex gap-2 align-items-center flex-shrink-0">
-        <span class="bc-kpi-chip bc-kpi-chip--red" *ngIf="countOf('overdue') > 0">
-          <i class="bi bi-exclamation-circle"></i> {{ countOf('overdue') }} überfällig
-        </span>
-        <span class="bc-kpi-chip bc-kpi-chip--yellow" *ngIf="reminderDueCount > 0">
-          <i class="bi bi-bell"></i> {{ reminderDueCount }} Mahnung fällig
-        </span>
-        <span class="bc-kpi-chip">
-          <i class="bi bi-cash-stack"></i> {{ fmt(totalOutstanding) }} ausstehend
-        </span>
-      </div>
-      <!-- Aktionsbuttons -->
-      <div class="d-flex gap-1 flex-shrink-0">
-        <button class="btn btn-sm bc-btn-header" (click)="load()" [disabled]="loading" title="Aktualisieren">
-          <i class="bi bi-arrow-clockwise" [class.spin]="loading"></i>
-        </button>
-        <a routerLink="/open-item" class="btn btn-sm bc-btn-header">
-          <i class="bi bi-list-ul me-1"></i><span class="d-none d-md-inline">Alle Posten</span>
-        </a>
-      </div>
+  <!-- ═══ MOBILE HEADER ════════════════════════════════════════════════════ -->
+  <div class="bc-mobile-header d-md-none flex-shrink-0">
+    <button *ngIf="mobileView === 'detail'" class="bc-back-btn btn btn-sm border-0 bg-transparent text-primary" (click)="navigateBack()">
+      <i class="bi bi-chevron-left" style="font-size:1.2rem;"></i>
+    </button>
+    <div *ngIf="mobileView === 'list'" style="width:44px;"></div>
+    <div class="bc-mobile-title">
+      <span class="fw-semibold">
+        {{ mobileView === 'list' ? 'Abrechnungscenter' : (selectedItem?.customerName ?? 'Posten') }}
+      </span>
+      <span *ngIf="mobileView === 'detail' && selectedItem?.invoiceNumber" class="text-muted" style="font-size:.75rem;">
+        {{ selectedItem!.invoiceNumber }}
+      </span>
     </div>
+    <div style="width:44px;"></div>
   </div>
 
-  <!-- Fehler -->
-  <div *ngIf="error" class="alert alert-danger d-flex align-items-center gap-2 mx-3 mt-3 py-2 small flex-shrink-0">
-    <i class="bi bi-exclamation-triangle"></i>{{ error }}
-    <button class="btn-close btn-sm ms-auto" (click)="clearError()"></button>
-  </div>
+  <!-- ═══ DESKTOP ══════════════════════════════════════════════════════════ -->
+  <div class="bc-desktop d-none d-md-flex flex-grow-1 overflow-hidden">
 
-  <!-- Laden -->
-  <div *ngIf="loading" class="d-flex flex-column align-items-center justify-content-center py-5 flex-shrink-0">
-    <div class="spinner-border text-primary" role="status"></div>
-    <p class="mt-2 text-muted small">Abrechnungsdaten werden geladen …</p>
-  </div>
+    <!-- ─── Sidebar ─────────────────────────────────────────────────────── -->
+    <div class="bc-sidebar">
 
-  <ng-container *ngIf="!loading">
-
-    <!-- ═══ KPI STRIP ═══════════════════════════════════════════════════════ -->
-    <div class="bc-kpi-strip flex-shrink-0">
-      <div class="row g-3">
-        <div class="col-6 col-lg-3">
-          <div class="bc-kpi-card bc-kpi-red">
-            <div class="bc-kpi-label"><i class="bi bi-exclamation-triangle me-1"></i>Überfällig</div>
-            <div class="bc-kpi-value">{{ fmt(totalOverdueAmount) }}</div>
-            <div class="bc-kpi-sub">{{ countOf('overdue') }} Posten</div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="bc-kpi-card bc-kpi-orange">
-            <div class="bc-kpi-label"><i class="bi bi-bell me-1"></i>Mahnung fällig</div>
-            <div class="bc-kpi-value">{{ reminderDueCount }}</div>
-            <div class="bc-kpi-sub">nicht kontaktiert (30 d)</div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="bc-kpi-card bc-kpi-blue">
-            <div class="bc-kpi-label"><i class="bi bi-cash-stack me-1"></i>Gesamtausstehend</div>
-            <div class="bc-kpi-value">{{ fmt(totalOutstanding) }}</div>
-            <div class="bc-kpi-sub">{{ countOf('all') }} aktive Posten</div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="bc-kpi-card bc-kpi-yellow">
-            <div class="bc-kpi-label"><i class="bi bi-circle-half me-1"></i>Teilbezahlt</div>
-            <div class="bc-kpi-value">{{ countOf('partial') }}</div>
-            <div class="bc-kpi-sub">offene Teilzahlungen</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ AGING ANALYSE ════════════════════════════════════════════════════ -->
-    <div class="bc-aging flex-shrink-0" *ngIf="countOf('overdue') > 0">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
-          <i class="bi bi-bar-chart text-danger"></i>
-          <span class="fw-semibold small">Aging-Analyse — Überfälligkeitsdauer</span>
-        </div>
-        <div class="card-body py-3">
-          <div class="d-flex flex-column gap-2">
-            @for (bucket of agingBuckets; track bucket.label) {
-              <div class="aging-row">
-                <div class="aging-label">{{ bucket.label }}</div>
-                <div class="aging-bar-wrap">
-                  <div class="aging-bar" [style.width.%]="(bucket.amount / agingMaxAmount) * 100" [style.background]="bucket.color"></div>
-                </div>
-                <div class="aging-count text-muted">{{ bucket.count }}</div>
-                <div class="aging-amount fw-semibold" [style.color]="bucket.color">{{ fmt(bucket.amount) }}</div>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ TAB-LEISTE + SUCHE ══════════════════════════════════════════════ -->
-    <div class="bc-tab-section flex-shrink-0">
-      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-        <!-- Tab-Leiste -->
-        <div class="bc-tab-bar">
-          <button class="bc-tab" [class.bc-tab--active]="activeTab==='overdue'" (click)="setTab('overdue')">
-            <i class="bi bi-exclamation-circle"></i><span>Überfällig</span>
-            <span class="bc-badge bc-badge--red" *ngIf="countOf('overdue')>0">{{ countOf('overdue') }}</span>
-          </button>
-          <button class="bc-tab" [class.bc-tab--active]="activeTab==='open'" (click)="setTab('open')">
-            <i class="bi bi-circle"></i><span>Offen</span>
-            <span class="bc-badge" *ngIf="countOf('open')>0">{{ countOf('open') }}</span>
-          </button>
-          <button class="bc-tab" [class.bc-tab--active]="activeTab==='partial'" (click)="setTab('partial')">
-            <i class="bi bi-circle-half"></i><span>Teilbezahlt</span>
-            <span class="bc-badge bc-badge--warn" *ngIf="countOf('partial')>0">{{ countOf('partial') }}</span>
-          </button>
-          <button class="bc-tab" [class.bc-tab--active]="activeTab==='all'" (click)="setTab('all')">
-            <i class="bi bi-list-ul"></i><span>Alle aktiven</span>
+      <!-- Sidebar Header -->
+      <div class="bc-sidebar-head">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-cash-coin text-primary"></i>
+          <span class="fw-semibold" style="font-size:.9rem;">Offene Posten</span>
+          <span class="badge bg-secondary ms-auto" *ngIf="!loading">{{ totalElements }}</span>
+          <button class="btn btn-sm border-0 text-muted p-0 ms-1" (click)="load()" [disabled]="loading" title="Neu laden">
+            <i class="bi bi-arrow-clockwise" [class.spin]="loading"></i>
           </button>
         </div>
-        <!-- Suche -->
-        <div class="input-group input-group-sm bc-search">
+
+        <!-- Suchfeld -->
+        <div class="input-group input-group-sm mb-2">
           <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control border-start-0" placeholder="Kunde, Rechnung, Vertrag …"
+          <input type="text" class="form-control border-start-0 ps-0" placeholder="Kunde, Rechnung …"
                  [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
-          <button *ngIf="searchTerm" class="btn btn-outline-secondary" (click)="searchTerm=''; onSearchChange()">
+          <button *ngIf="searchTerm" class="btn btn-outline-secondary btn-sm" (click)="searchTerm=''; onSearchChange()">
             <i class="bi bi-x"></i>
           </button>
         </div>
+
+        <!-- Status-Filter Pills -->
+        <div class="d-flex flex-wrap gap-1 mb-2">
+          <button class="bc-pill" [class.bc-pill--active]="statusFilter==='all'" (click)="setStatusFilter('all')">
+            Alle <span class="bc-pill-count">{{ countOf('all') }}</span>
+          </button>
+          <button class="bc-pill bc-pill--red" [class.bc-pill--active]="statusFilter==='overdue'" (click)="setStatusFilter('overdue')">
+            <i class="bi bi-exclamation-circle me-1" style="font-size:.65rem;"></i>Überfällig <span class="bc-pill-count">{{ countOf('overdue') }}</span>
+          </button>
+          <button class="bc-pill bc-pill--blue" [class.bc-pill--active]="statusFilter==='open'" (click)="setStatusFilter('open')">
+            Offen <span class="bc-pill-count">{{ countOf('open') }}</span>
+          </button>
+          <button class="bc-pill bc-pill--warn" [class.bc-pill--active]="statusFilter==='partial'" (click)="setStatusFilter('partial')">
+            Teilbezahlt <span class="bc-pill-count">{{ countOf('partial') }}</span>
+          </button>
+        </div>
+
+        <!-- Alters-Filter -->
+        <div class="d-flex align-items-center gap-1 mb-1 flex-wrap">
+          <span class="text-muted" style="font-size:.72rem; white-space:nowrap;">Fälligkeit:</span>
+          @for (opt of ageOptions; track opt.value) {
+            <button class="bc-age-btn" [class.bc-age-btn--active]="ageFilter===opt.value" (click)="setAgeFilter(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+
+        <!-- Erweitert -->
+        <div class="d-flex align-items-center gap-2 mt-1">
+          <label class="d-flex align-items-center gap-1 text-muted cursor-pointer mb-0" style="font-size:.75rem;">
+            <input type="checkbox" class="form-check-input m-0" [(ngModel)]="noReminderOnly" (ngModelChange)="onSearchChange()" />
+            Ohne Mahnung (> 30 d)
+          </label>
+          <button *ngIf="activeFilterCount > 0" class="btn btn-sm btn-link text-danger p-0 ms-auto" (click)="clearFilters()" style="font-size:.72rem;">
+            <i class="bi bi-x-circle me-1"></i>Filter zurücksetzen ({{ activeFilterCount }})
+          </button>
+        </div>
+      </div>
+
+      <!-- Liste -->
+      <div class="bc-sidebar-body">
+
+        <!-- Laden -->
+        <div *ngIf="loading" class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+          <small>Daten laden …</small>
+        </div>
+
+        <!-- Fehler -->
+        <div *ngIf="!loading && error" class="alert alert-danger mx-2 mt-2 py-2 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+          <button class="btn btn-sm btn-outline-danger ms-2" (click)="load()">Neu laden</button>
+        </div>
+
+        <!-- Leer -->
+        <div *ngIf="!loading && !error && pagedItems.length === 0" class="bc-empty-sidebar">
+          <i class="bi bi-check-circle-fill text-success" style="font-size:1.8rem; opacity:.4;"></i>
+          <p class="mt-2 mb-0 small">Keine Posten gefunden</p>
+          <button *ngIf="activeFilterCount > 0" class="btn btn-sm btn-link text-muted p-0 mt-1" (click)="clearFilters()">Filter zurücksetzen</button>
+        </div>
+
+        <!-- Posten-Liste -->
+        <div *ngIf="!loading && !error && pagedItems.length > 0" class="py-1">
+          @for (item of pagedItems; track item.id) {
+            <div class="bc-item d-flex align-items-start gap-2 px-2 py-2"
+                 [class.bc-item--selected]="isSelected(item)"
+                 [class]="bc-item + ' ' + urgencyClass(item)"
+                 (click)="selectItem(item)">
+
+              <!-- Avatar -->
+              <div class="bc-avatar flex-shrink-0" [class.bc-avatar--selected]="isSelected(item)">
+                {{ getInitials(item.customerName) }}
+              </div>
+
+              <!-- Info -->
+              <div class="flex-grow-1 overflow-hidden">
+                <div class="fw-semibold text-truncate" style="font-size:.88rem;">{{ item.customerName || '–' }}</div>
+                <div class="text-muted text-truncate" style="font-size:.73rem;">{{ item.invoiceNumber }}</div>
+                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                  <span [class]="statusClass(item.status)" style="font-size:.65rem;">{{ statusLabel(item.status) }}</span>
+                  <span *ngIf="item.daysOverdue && item.daysOverdue > 0" class="text-danger fw-semibold" style="font-size:.72rem;">
+                    {{ item.daysOverdue }} Tage
+                  </span>
+                </div>
+              </div>
+
+              <!-- Betrag -->
+              <div class="text-end flex-shrink-0">
+                <div class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0" style="font-size:.88rem;">
+                  {{ fmt(item.outstandingAmount) }}
+                </div>
+                <div class="text-muted" style="font-size:.7rem;">{{ formatDate(item.dueDate) }}</div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="totalPages > 1" class="bc-sidebar-pagination">
+          <button class="btn btn-sm btn-outline-secondary px-2 py-0" [disabled]="currentPage === 0" (click)="goToPage(currentPage-1)">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <div class="d-flex gap-1">
+            @for (p of pageNumbers; track p) {
+              <button class="btn btn-sm px-2 py-0"
+                      [class.btn-primary]="p===currentPage"
+                      [class.btn-outline-secondary]="p!==currentPage"
+                      (click)="goToPage(p)">{{ p + 1 }}</button>
+            }
+          </div>
+          <button class="btn btn-sm btn-outline-secondary px-2 py-0" [disabled]="currentPage >= totalPages-1" (click)="goToPage(currentPage+1)">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- ═══ LISTE ════════════════════════════════════════════════════════════ -->
-    <div class="bc-list-area">
+    <!-- ─── Detail-Bereich ────────────────────────────────────────────────── -->
+    <div class="bc-detail">
 
-      <!-- Leer -->
-      <div *ngIf="filtered.length === 0" class="bc-empty">
-        <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem; opacity:.4;"></i>
-        <p class="mt-3 mb-0 fw-semibold">Keine Posten in dieser Ansicht</p>
-        <p class="text-muted small">
-          <ng-container *ngIf="searchTerm">Keine Treffer für „{{ searchTerm }}"</ng-container>
-          <ng-container *ngIf="!searchTerm">Alles erledigt oder keine aktiven Posten</ng-container>
-        </p>
+      <!-- Kein Posten gewählt -->
+      <ng-container *ngIf="!selectedItem">
+        <!-- KPI Übersicht -->
+        <div class="bc-kpi-strip">
+          <div class="row g-3 mb-3">
+            <div class="col-6 col-xl-3">
+              <div class="bc-kpi-card bc-kpi-red">
+                <div class="bc-kpi-label"><i class="bi bi-exclamation-triangle me-1"></i>Überfällig</div>
+                <div class="bc-kpi-value">{{ fmt(totalOverdueAmount) }}</div>
+                <div class="bc-kpi-sub">{{ countOf('overdue') }} Posten</div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="bc-kpi-card bc-kpi-orange">
+                <div class="bc-kpi-label"><i class="bi bi-bell me-1"></i>Mahnung fällig</div>
+                <div class="bc-kpi-value">{{ reminderDueCount }}</div>
+                <div class="bc-kpi-sub">nicht kontaktiert (30 d)</div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="bc-kpi-card bc-kpi-blue">
+                <div class="bc-kpi-label"><i class="bi bi-cash-stack me-1"></i>Ausstehend gesamt</div>
+                <div class="bc-kpi-value">{{ fmt(totalOutstanding) }}</div>
+                <div class="bc-kpi-sub">{{ countOf('all') }} aktive Posten</div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="bc-kpi-card bc-kpi-yellow">
+                <div class="bc-kpi-label"><i class="bi bi-circle-half me-1"></i>Teilbezahlt</div>
+                <div class="bc-kpi-value">{{ countOf('partial') }}</div>
+                <div class="bc-kpi-sub">offene Teilzahlungen</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aging-Analyse -->
+          <div class="card border-0 shadow-sm" *ngIf="countOf('overdue') > 0">
+            <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+              <i class="bi bi-bar-chart text-danger"></i>
+              <span class="fw-semibold small">Aging-Analyse — Überfälligkeitsdauer</span>
+              <small class="text-muted ms-1">(klick zum Filtern)</small>
+            </div>
+            <div class="card-body py-3">
+              <div class="d-flex flex-column gap-2">
+                @for (bucket of agingBuckets; track bucket.label) {
+                  <div class="aging-row" (click)="setStatusFilter('overdue'); setAgeFilter(bucket.days)"
+                       [class.aging-row--active]="statusFilter==='overdue' && ageFilter===bucket.days" style="cursor:pointer;">
+                    <div class="aging-label">{{ bucket.label }}</div>
+                    <div class="aging-bar-wrap">
+                      <div class="aging-bar" [style.width.%]="(bucket.amount / agingMaxAmount) * 100" [style.background]="bucket.color"></div>
+                    </div>
+                    <div class="aging-count text-muted">{{ bucket.count }}</div>
+                    <div class="aging-amount fw-semibold" [style.color]="bucket.color">{{ fmt(bucket.amount) }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="loading" class="d-flex justify-content-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+          </div>
+          <div *ngIf="!loading && countOf('overdue') === 0" class="bc-empty-state">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <p>Keine überfälligen Posten</p>
+            <p class="text-muted small">Wählen Sie einen Posten aus der Sidebar für Details.</p>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Posten gewählt -->
+      <ng-container *ngIf="selectedItem">
+
+        <!-- Blauer Header -->
+        <div class="bc-detail-header flex-shrink-0">
+          <div class="d-flex align-items-start gap-3">
+            <div class="bc-detail-avatar flex-shrink-0">{{ getInitials(selectedItem.customerName) }}</div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-bold text-truncate" style="font-size:1.05rem;">{{ selectedItem.customerName || '–' }}</div>
+              <div class="d-flex flex-wrap gap-2 mt-1" style="font-size:.78rem;">
+                <span class="text-white-50"><i class="bi bi-receipt me-1"></i>{{ selectedItem.invoiceNumber ?? '–' }}</span>
+                <span class="text-white-50" *ngIf="selectedItem.contractNumber">
+                  <i class="bi bi-file-earmark-check me-1"></i>{{ selectedItem.contractNumber }}
+                </span>
+                <span class="text-white-50"><i class="bi bi-calendar me-1"></i>Fällig: {{ formatDate(selectedItem.dueDate) }}</span>
+              </div>
+            </div>
+            <!-- KPI-Chips -->
+            <div class="d-flex flex-wrap gap-2 align-items-center flex-shrink-0">
+              <span class="bc-detail-chip" [class.bc-detail-chip--red]="(selectedItem.outstandingAmount ?? 0) > 0">
+                <i class="bi bi-cash"></i> {{ fmt(selectedItem.outstandingAmount) }}
+              </span>
+              <span class="bc-detail-chip" [class.bc-detail-chip--red]="selectedItem.status === 'OVERDUE'" [class.bc-detail-chip--green]="selectedItem.status === 'PAID'">
+                {{ statusLabel(selectedItem.status) }}
+              </span>
+              <span *ngIf="selectedItem.daysOverdue && selectedItem.daysOverdue > 0" class="bc-detail-chip bc-detail-chip--red">
+                <i class="bi bi-clock"></i> {{ selectedItem.daysOverdue }} Tage überfällig
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab-Leiste -->
+        <div class="bc-tab-bar flex-shrink-0">
+          <button class="bc-tab" [class.bc-tab--active]="activeDetailTab==='uebersicht'" (click)="activeDetailTab='uebersicht'">
+            <i class="bi bi-info-circle"></i><span>Details</span>
+          </button>
+          <button class="bc-tab" [class.bc-tab--active]="activeDetailTab==='verlauf'" (click)="activeDetailTab='verlauf'">
+            <i class="bi bi-clock-history"></i><span>Verlauf & Aktionen</span>
+          </button>
+        </div>
+
+        <!-- Tab-Inhalt -->
+        <div class="bc-detail-content">
+
+          <!-- DETAILS -->
+          <div *ngIf="activeDetailTab==='uebersicht'" class="row g-3">
+
+            <!-- Betragsübersicht -->
+            <div class="col-12">
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                  <i class="bi bi-currency-euro text-primary"></i>
+                  <span class="fw-semibold small">Betragsübersicht</span>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3 text-center">
+                    <div class="col-4">
+                      <div class="text-muted small">Ursprungsbetrag</div>
+                      <div class="fw-bold fs-5">{{ fmt(selectedItem.amount) }}</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="text-muted small">Bereits bezahlt</div>
+                      <div class="fw-bold fs-5 text-success">{{ fmt(selectedItem.paidAmount) }}</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="text-muted small">Ausstehend</div>
+                      <div class="fw-bold fs-5" [class.text-danger]="(selectedItem.outstandingAmount ?? 0) > 0" [class.text-success]="(selectedItem.outstandingAmount ?? 0) === 0">
+                        {{ fmt(selectedItem.outstandingAmount) }}
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Fortschrittsbalken -->
+                  <div class="mt-3" *ngIf="(selectedItem.amount ?? 0) > 0">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                      <span>Zahlungsfortschritt</span>
+                      <span>{{ ((selectedItem.paidAmount ?? 0) / (selectedItem.amount ?? 1) * 100).toFixed(0) }}%</span>
+                    </div>
+                    <div class="progress" style="height:8px;">
+                      <div class="progress-bar bg-success" [style.width.%]="(selectedItem.paidAmount ?? 0) / (selectedItem.amount ?? 1) * 100"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stammdaten -->
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                  <i class="bi bi-person text-primary"></i><span class="fw-semibold small">Posten-Details</span>
+                </div>
+                <div class="card-body" style="font-size:.85rem;">
+                  <dl class="row mb-0">
+                    <dt class="col-5 text-muted fw-normal">Kunde</dt><dd class="col-7 fw-semibold">{{ selectedItem.customerName || '–' }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Rechnungsnr.</dt><dd class="col-7">{{ selectedItem.invoiceNumber || '–' }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Vertragsnr.</dt><dd class="col-7">{{ selectedItem.contractNumber || '–' }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Status</dt>
+                    <dd class="col-7"><span [class]="statusClass(selectedItem.status)">{{ statusLabel(selectedItem.status) }}</span></dd>
+                    <dt class="col-5 text-muted fw-normal">Beschreibung</dt><dd class="col-7">{{ selectedItem.description || '–' }}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+
+            <!-- Termine -->
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                  <i class="bi bi-calendar text-primary"></i><span class="fw-semibold small">Termine</span>
+                </div>
+                <div class="card-body" style="font-size:.85rem;">
+                  <dl class="row mb-0">
+                    <dt class="col-5 text-muted fw-normal">Fälligkeit</dt>
+                    <dd class="col-7 fw-semibold" [class.text-danger]="selectedItem.status === 'OVERDUE'">{{ formatDate(selectedItem.dueDate) }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Überfällig seit</dt>
+                    <dd class="col-7" [class.text-danger]="(selectedItem.daysOverdue ?? 0) > 0">
+                      {{ (selectedItem.daysOverdue ?? 0) > 0 ? selectedItem.daysOverdue + ' Tagen' : '–' }}
+                    </dd>
+                    <dt class="col-5 text-muted fw-normal">Erstellt</dt><dd class="col-7">{{ formatDate(selectedItem.createdDate) }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Bezahlt am</dt><dd class="col-7">{{ formatDate(selectedItem.paidDate) }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Zahlungsart</dt><dd class="col-7">{{ selectedItem.paymentMethod || '–' }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Referenz</dt><dd class="col-7">{{ selectedItem.paymentReference || '–' }}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notizen -->
+            <div class="col-12" *ngIf="selectedItem.notes">
+              <div class="alert alert-light border mb-0 small"><i class="bi bi-sticky me-1 text-muted"></i>{{ selectedItem.notes }}</div>
+            </div>
+          </div>
+
+          <!-- VERLAUF & AKTIONEN -->
+          <div *ngIf="activeDetailTab==='verlauf'">
+
+            <!-- Schnellaktionen -->
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-lightning text-primary"></i><span class="fw-semibold small">Aktionen</span>
+              </div>
+              <div class="card-body d-flex flex-wrap gap-2">
+                <button class="btn btn-success btn-sm" (click)="openPayModal()" [disabled]="!canPay(selectedItem)">
+                  <i class="bi bi-check2-circle me-1"></i>Zahlung erfassen
+                </button>
+                <button class="btn btn-warning btn-sm" (click)="sendReminder()" [disabled]="!!emailSendingId">
+                  <span *ngIf="emailSendingId === selectedItem.id" class="spinner-border spinner-border-sm me-1"></span>
+                  <i *ngIf="emailSendingId !== selectedItem.id" class="bi bi-send me-1"></i>Mahnung senden
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="openCancelModal()" [disabled]="!canCancel(selectedItem)">
+                  <i class="bi bi-x-circle me-1"></i>Stornieren
+                </button>
+              </div>
+            </div>
+
+            <!-- Mahnungs-Verlauf -->
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-bell text-warning"></i><span class="fw-semibold small">Mahnungs-Verlauf</span>
+              </div>
+              <div class="card-body" style="font-size:.85rem;">
+                <div *ngIf="(selectedItem.reminderCount ?? 0) === 0" class="text-muted">Noch keine Mahnung gesendet.</div>
+                <div *ngIf="(selectedItem.reminderCount ?? 0) > 0">
+                  <div class="d-flex align-items-center gap-3 mb-2">
+                    <span class="badge bg-warning text-dark fs-6">{{ selectedItem.reminderCount }}×</span>
+                    <span>Mahnung{{ (selectedItem.reminderCount ?? 0) > 1 ? 'en' : '' }} gesendet</span>
+                  </div>
+                  <div class="text-muted small" *ngIf="selectedItem.lastReminderDate">
+                    <i class="bi bi-clock me-1"></i>Zuletzt: {{ formatDate(selectedItem.lastReminderDate) }}
+                  </div>
+                  <div class="mt-2">
+                    <div class="d-flex gap-1 flex-column">
+                      @for (i of [].constructor(selectedItem.reminderCount ?? 0); track $index) {
+                        <div class="d-flex align-items-center gap-2 py-1 border-bottom">
+                          <i class="bi bi-send-check text-warning"></i>
+                          <span>Mahnung {{ $index + 1 }}</span>
+                          <span class="text-muted small ms-auto" *ngIf="$index === (selectedItem.reminderCount! - 1)">{{ formatDate(selectedItem.lastReminderDate) }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- ═══ MOBILE ════════════════════════════════════════════════════════════ -->
+  <div class="bc-mobile-content d-md-none flex-grow-1 overflow-hidden">
+
+    <!-- Listenansicht -->
+    <div class="bc-mobile-panel" [class.bc-mobile-panel--active]="mobileView==='list'" [class.bc-mobile-panel--left]="mobileView==='detail'">
+
+      <!-- Filter-Bar Mobile -->
+      <div class="bc-mobile-filters p-2 border-bottom bg-white">
+        <div class="input-group input-group-sm mb-2">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control border-start-0 ps-0" placeholder="Suche …"
+                 [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+          <button *ngIf="searchTerm" class="btn btn-outline-secondary btn-sm" (click)="searchTerm=''; onSearchChange()"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="d-flex gap-1 flex-wrap">
+          <button class="bc-pill bc-pill--sm" [class.bc-pill--active]="statusFilter==='all'" (click)="setStatusFilter('all')">Alle <span class="bc-pill-count">{{ countOf('all') }}</span></button>
+          <button class="bc-pill bc-pill--sm bc-pill--red" [class.bc-pill--active]="statusFilter==='overdue'" (click)="setStatusFilter('overdue')">Überfällig <span class="bc-pill-count">{{ countOf('overdue') }}</span></button>
+          <button class="bc-pill bc-pill--sm bc-pill--blue" [class.bc-pill--active]="statusFilter==='open'" (click)="setStatusFilter('open')">Offen <span class="bc-pill-count">{{ countOf('open') }}</span></button>
+          <button class="bc-pill bc-pill--sm bc-pill--warn" [class.bc-pill--active]="statusFilter==='partial'" (click)="setStatusFilter('partial')">Teilbez. <span class="bc-pill-count">{{ countOf('partial') }}</span></button>
+        </div>
+        <div class="d-flex gap-1 flex-wrap mt-1">
+          @for (opt of ageOptions; track opt.value) {
+            <button class="bc-age-btn" [class.bc-age-btn--active]="ageFilter===opt.value" (click)="setAgeFilter(opt.value)">{{ opt.label }}</button>
+          }
+        </div>
+        <div class="d-flex align-items-center justify-content-between mt-1">
+          <label class="d-flex align-items-center gap-1 text-muted mb-0" style="font-size:.72rem;">
+            <input type="checkbox" class="form-check-input m-0" [(ngModel)]="noReminderOnly" (ngModelChange)="onSearchChange()" /> Ohne Mahnung
+          </label>
+          <button *ngIf="activeFilterCount > 0" class="btn btn-sm btn-link text-danger p-0" (click)="clearFilters()" style="font-size:.72rem;">
+            Filter ({{ activeFilterCount }}) zurücksetzen
+          </button>
+        </div>
       </div>
 
-      <!-- Desktop Tabelle -->
-      <div class="d-none d-md-block" *ngIf="filtered.length > 0">
-        <table class="bc-table">
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Kunde</th>
-              <th>Rechnung</th>
-              <th>Vertrag</th>
-              <th class="text-end">Betrag</th>
-              <th class="text-end">Ausstehend</th>
-              <th>Fälligkeit</th>
-              <th>Mahnungen</th>
-              <th style="width:120px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of filtered; track item.id) {
-              <tr [class.bc-row-overdue]="item.status === 'OVERDUE'">
-                <td>
-                  <div class="d-flex align-items-center gap-1">
-                    <i class="bi {{ statusIcon(item.status) }}" style="font-size:.85rem;"></i>
-                    <span [class]="statusClass(item.status)" style="font-size:.68rem;">{{ statusLabel(item.status) }}</span>
-                  </div>
-                </td>
-                <td class="fw-semibold">{{ item.customerName || '–' }}</td>
-                <td class="text-muted small">{{ item.invoiceNumber || '–' }}</td>
-                <td>
-                  <span *ngIf="item.contractNumber" class="badge bg-light text-dark border" style="font-size:.72rem;">{{ item.contractNumber }}</span>
-                  <span *ngIf="!item.contractNumber" class="text-muted">–</span>
-                </td>
-                <td class="text-end fw-medium">{{ fmt(item.amount) }}</td>
-                <td class="text-end">
-                  <span class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0">{{ fmt(item.outstandingAmount) }}</span>
-                  <div *ngIf="item.daysOverdue && item.daysOverdue > 0" class="text-danger" style="font-size:.68rem;">{{ item.daysOverdue }} Tage</div>
-                </td>
-                <td class="small text-muted">{{ formatDate(item.dueDate) }}</td>
-                <td>
-                  <span *ngIf="(item.reminderCount ?? 0) > 0" class="badge bg-warning text-dark">{{ item.reminderCount }}×</span>
-                  <span *ngIf="(item.reminderCount ?? 0) === 0" class="text-muted small">–</span>
-                </td>
-                <td>
-                  <div class="d-flex gap-1 justify-content-end">
-                    <button class="btn btn-sm btn-outline-success px-2" (click)="openPayModal(item)"
-                            title="Zahlung erfassen" [disabled]="item.status === 'CANCELLED'">
-                      <i class="bi bi-check2-circle"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning px-2" (click)="sendReminder(item)"
-                            [disabled]="emailSendingId === item.id" title="Mahnung senden">
-                      <span *ngIf="emailSendingId === item.id" class="spinner-border spinner-border-sm"></span>
-                      <i *ngIf="emailSendingId !== item.id" class="bi bi-send"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger px-2" (click)="openCancelModal(item)"
-                            title="Stornieren" [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
-                      <i class="bi bi-x-circle"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <!-- Laden -->
+      <div *ngIf="loading" class="d-flex justify-content-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+
+      <!-- Leer -->
+      <div *ngIf="!loading && pagedItems.length === 0" class="bc-empty-sidebar">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:2rem; opacity:.4;"></i>
+        <p class="mt-2 mb-0 small">Keine Posten</p>
       </div>
 
       <!-- Mobile Kartenliste -->
-      <div class="d-md-none" *ngIf="filtered.length > 0">
-        @for (item of filtered; track item.id) {
-          <div class="bc-mobile-card" [class.bc-mobile-card--overdue]="item.status === 'OVERDUE'">
-            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-              <div class="flex-grow-1 overflow-hidden">
-                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                  <i class="bi {{ statusIcon(item.status) }}" style="font-size:.9rem;"></i>
-                  <span [class]="statusClass(item.status)" style="font-size:.68rem;">{{ statusLabel(item.status) }}</span>
-                  <span *ngIf="item.contractNumber" class="badge bg-light text-dark border" style="font-size:.68rem;">{{ item.contractNumber }}</span>
-                </div>
-                <div class="fw-semibold text-truncate">{{ item.customerName || '–' }}</div>
-                <div class="text-muted small">{{ item.invoiceNumber }}</div>
-              </div>
-              <div class="text-end flex-shrink-0">
-                <div class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0">{{ fmt(item.outstandingAmount) }}</div>
-                <div *ngIf="item.daysOverdue && item.daysOverdue > 0" class="text-danger" style="font-size:.72rem;">{{ item.daysOverdue }} Tage</div>
-                <div *ngIf="(item.reminderCount ?? 0) > 0" class="badge bg-warning text-dark" style="font-size:.65rem;">{{ item.reminderCount }}× Mahnung</div>
+      <div *ngIf="!loading && pagedItems.length > 0" class="py-1">
+        @for (item of pagedItems; track item.id) {
+          <div class="bc-item d-flex align-items-start gap-2 px-3 py-2"
+               [class.bc-item--selected]="isSelected(item)"
+               [class]="urgencyClass(item)"
+               (click)="selectItem(item)">
+            <div class="bc-avatar flex-shrink-0 mt-1" [class.bc-avatar--selected]="isSelected(item)">{{ getInitials(item.customerName) }}</div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-semibold text-truncate" style="font-size:.88rem;">{{ item.customerName || '–' }}</div>
+              <div class="text-muted text-truncate" style="font-size:.73rem;">{{ item.invoiceNumber }}</div>
+              <div class="d-flex gap-2 mt-1 flex-wrap">
+                <span [class]="statusClass(item.status)" style="font-size:.65rem;">{{ statusLabel(item.status) }}</span>
+                <span *ngIf="item.daysOverdue && item.daysOverdue > 0" class="text-danger" style="font-size:.72rem;">{{ item.daysOverdue }} Tage</span>
               </div>
             </div>
-            <div class="text-muted small mb-2">
-              <i class="bi bi-calendar me-1"></i>Fällig: {{ formatDate(item.dueDate) }}
-            </div>
-            <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-success flex-grow-1" (click)="openPayModal(item)" [disabled]="item.status === 'CANCELLED'">
-                <i class="bi bi-check2-circle me-1"></i>Zahlung
-              </button>
-              <button class="btn btn-sm btn-outline-warning flex-grow-1" (click)="sendReminder(item)" [disabled]="emailSendingId === item.id">
-                <span *ngIf="emailSendingId === item.id" class="spinner-border spinner-border-sm me-1"></span>
-                <i *ngIf="emailSendingId !== item.id" class="bi bi-send me-1"></i>Mahnung
-              </button>
-              <button class="btn btn-sm btn-outline-danger px-2" (click)="openCancelModal(item)" [disabled]="item.status === 'CANCELLED' || item.status === 'PAID'">
-                <i class="bi bi-x-circle"></i>
-              </button>
+            <div class="text-end flex-shrink-0">
+              <div class="fw-bold" [class.text-danger]="(item.outstandingAmount ?? 0) > 0" style="font-size:.88rem;">{{ fmt(item.outstandingAmount) }}</div>
+              <div class="text-muted" style="font-size:.7rem;">{{ formatDate(item.dueDate) }}</div>
+              <i class="bi bi-chevron-right text-muted mt-1" style="font-size:.75rem;"></i>
             </div>
           </div>
         }
       </div>
-    </div>
 
-    <!-- ═══ PAGINATION ════════════════════════════════════════════════════ -->
-    <div *ngIf="totalPages > 1" class="bc-pagination flex-shrink-0">
-      <button class="btn btn-sm btn-outline-secondary px-2" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
-        <i class="bi bi-chevron-left"></i>
-      </button>
-      <div class="d-flex gap-1">
-        <button *ngIf="pageNumbers[0] > 0" class="btn btn-sm btn-outline-secondary px-2" (click)="goToPage(0)">1</button>
-        <span *ngIf="pageNumbers[0] > 1" class="px-1 text-muted align-self-center">…</span>
-        @for (p of pageNumbers; track p) {
-          <button class="btn btn-sm px-2"
-                  [class.btn-primary]="p === currentPage"
-                  [class.btn-outline-secondary]="p !== currentPage"
-                  (click)="goToPage(p)">{{ p + 1 }}</button>
-        }
-        <span *ngIf="pageNumbers[pageNumbers.length - 1] < totalPages - 2" class="px-1 text-muted align-self-center">…</span>
-        <button *ngIf="pageNumbers[pageNumbers.length - 1] < totalPages - 1" class="btn btn-sm btn-outline-secondary px-2" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+      <!-- Mobile Pagination -->
+      <div *ngIf="totalPages > 1" class="bc-sidebar-pagination">
+        <button class="btn btn-sm btn-outline-secondary px-2 py-0" [disabled]="currentPage===0" (click)="goToPage(currentPage-1)"><i class="bi bi-chevron-left"></i></button>
+        <span class="text-muted small">{{ currentPage + 1 }} / {{ totalPages }}</span>
+        <button class="btn btn-sm btn-outline-secondary px-2 py-0" [disabled]="currentPage>=totalPages-1" (click)="goToPage(currentPage+1)"><i class="bi bi-chevron-right"></i></button>
       </div>
-      <button class="btn btn-sm btn-outline-secondary px-2" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
-        <i class="bi bi-chevron-right"></i>
-      </button>
-      <span class="text-muted small ms-2">{{ totalElements }} Einträge</span>
     </div>
 
-  </ng-container>
+    <!-- Detail-Ansicht Mobile -->
+    <div class="bc-mobile-panel d-flex flex-column"
+         [class.bc-mobile-panel--active]="mobileView==='detail'"
+         [class.bc-mobile-panel--right]="mobileView==='list'">
+      <ng-container *ngIf="selectedItem">
+
+        <!-- Mobile Detail Header -->
+        <div class="bc-detail-header flex-shrink-0">
+          <div class="d-flex align-items-center gap-3">
+            <div class="bc-detail-avatar flex-shrink-0">{{ getInitials(selectedItem.customerName) }}</div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-bold text-truncate">{{ selectedItem.customerName }}</div>
+              <div class="text-white-50" style="font-size:.78rem;">{{ selectedItem.invoiceNumber }}</div>
+            </div>
+            <div class="bc-detail-chip" [class.bc-detail-chip--red]="(selectedItem.outstandingAmount ?? 0) > 0">
+              {{ fmt(selectedItem.outstandingAmount) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile Tabs -->
+        <div class="bc-tab-bar flex-shrink-0">
+          <button class="bc-tab" [class.bc-tab--active]="activeDetailTab==='uebersicht'" (click)="activeDetailTab='uebersicht'">
+            <i class="bi bi-info-circle"></i><span>Details</span>
+          </button>
+          <button class="bc-tab" [class.bc-tab--active]="activeDetailTab==='verlauf'" (click)="activeDetailTab='verlauf'">
+            <i class="bi bi-clock-history"></i><span>Verlauf & Aktionen</span>
+          </button>
+        </div>
+
+        <!-- Mobile Tab-Inhalt -->
+        <div class="bc-detail-content">
+          <!-- ÜBERSICHT MOBILE -->
+          <div *ngIf="activeDetailTab==='uebersicht'">
+            <div class="row g-2 mb-3 text-center">
+              <div class="col-4"><div class="text-muted small">Ursprung</div><div class="fw-bold">{{ fmt(selectedItem.amount) }}</div></div>
+              <div class="col-4"><div class="text-muted small">Bezahlt</div><div class="fw-bold text-success">{{ fmt(selectedItem.paidAmount) }}</div></div>
+              <div class="col-4"><div class="text-muted small">Offen</div><div class="fw-bold text-danger">{{ fmt(selectedItem.outstandingAmount) }}</div></div>
+            </div>
+            <div *ngIf="(selectedItem.amount ?? 0) > 0" class="progress mb-3" style="height:8px;">
+              <div class="progress-bar bg-success" [style.width.%]="(selectedItem.paidAmount ?? 0) / (selectedItem.amount ?? 1) * 100"></div>
+            </div>
+            <div class="card border-0 shadow-sm">
+              <div class="card-body" style="font-size:.83rem;">
+                <dl class="row mb-0">
+                  <dt class="col-5 text-muted fw-normal">Status</dt><dd class="col-7"><span [class]="statusClass(selectedItem.status)">{{ statusLabel(selectedItem.status) }}</span></dd>
+                  <dt class="col-5 text-muted fw-normal">Fälligkeit</dt><dd class="col-7" [class.text-danger]="selectedItem.status==='OVERDUE'">{{ formatDate(selectedItem.dueDate) }}</dd>
+                  <dt class="col-5 text-muted fw-normal">Überfällig</dt><dd class="col-7 text-danger">{{ (selectedItem.daysOverdue ?? 0) > 0 ? selectedItem.daysOverdue + ' Tage' : '–' }}</dd>
+                  <dt class="col-5 text-muted fw-normal">Mahnungen</dt><dd class="col-7"><span *ngIf="(selectedItem.reminderCount ?? 0) > 0" class="badge bg-warning text-dark">{{ selectedItem.reminderCount }}×</span><span *ngIf="(selectedItem.reminderCount ?? 0) === 0">–</span></dd>
+                  <dt class="col-5 text-muted fw-normal">Letzte Mahnung</dt><dd class="col-7">{{ formatDate(selectedItem.lastReminderDate) }}</dd>
+                  <dt class="col-5 text-muted fw-normal">Zahlungsart</dt><dd class="col-7">{{ selectedItem.paymentMethod || '–' }}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <!-- VERLAUF MOBILE -->
+          <div *ngIf="activeDetailTab==='verlauf'">
+            <div class="d-flex flex-column gap-2 mb-3">
+              <button class="btn btn-success" (click)="openPayModal()" [disabled]="!canPay(selectedItem)">
+                <i class="bi bi-check2-circle me-1"></i>Zahlung erfassen
+              </button>
+              <button class="btn btn-warning" (click)="sendReminder()" [disabled]="!!emailSendingId">
+                <span *ngIf="emailSendingId===selectedItem.id" class="spinner-border spinner-border-sm me-1"></span>
+                <i *ngIf="emailSendingId!==selectedItem.id" class="bi bi-send me-1"></i>Mahnung senden
+              </button>
+              <button class="btn btn-outline-danger" (click)="openCancelModal()" [disabled]="!canCancel(selectedItem)">
+                <i class="bi bi-x-circle me-1"></i>Stornieren
+              </button>
+            </div>
+            <div class="card border-0 shadow-sm">
+              <div class="card-body small">
+                <div *ngIf="(selectedItem.reminderCount ?? 0) === 0" class="text-muted">Noch keine Mahnung gesendet.</div>
+                <div *ngIf="(selectedItem.reminderCount ?? 0) > 0">
+                  <span class="badge bg-warning text-dark me-2">{{ selectedItem.reminderCount }}×</span> Mahnung{{ (selectedItem.reminderCount ?? 0) > 1 ? 'en' : '' }} gesendet
+                  <div class="text-muted mt-1" *ngIf="selectedItem.lastReminderDate">Zuletzt: {{ formatDate(selectedItem.lastReminderDate) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ DIALOG: Zahlung erfassen ════════════════════════════════════════ -->
 <p-dialog [(visible)]="showPayModal" header="Zahlung erfassen" [modal]="true" [closable]="true"
           [draggable]="false" [resizable]="false" [style]="{ width: '520px', maxWidth: '95vw' }"
           (onHide)="showPayModal = false">
-  <div *ngIf="payItem" class="d-flex flex-column gap-3 py-2">
+  <div *ngIf="selectedItem" class="d-flex flex-column gap-3 py-2">
     <div class="alert alert-light border py-2 mb-0" style="font-size:.85rem;">
-      <div class="fw-semibold">{{ payItem.customerName }}</div>
+      <div class="fw-semibold">{{ selectedItem.customerName }}</div>
       <div class="d-flex flex-wrap gap-3 mt-1 text-muted small">
-        <span><i class="bi bi-receipt me-1"></i>{{ payItem.invoiceNumber }}</span>
-        <span><i class="bi bi-cash me-1"></i>Ausstehend: <strong class="text-danger">{{ fmt(payItem.outstandingAmount) }}</strong></span>
-        <span *ngIf="payItem.contractNumber"><i class="bi bi-file-earmark-check me-1"></i>{{ payItem.contractNumber }}</span>
+        <span><i class="bi bi-receipt me-1"></i>{{ selectedItem.invoiceNumber }}</span>
+        <span class="text-danger fw-semibold"><i class="bi bi-cash me-1"></i>{{ fmt(selectedItem.outstandingAmount) }} ausstehend</span>
       </div>
     </div>
-
+    <div class="form-floating">
+      <input type="number" class="form-control" id="bcPayAmt" placeholder=" "
+             [(ngModel)]="payAmount" min="0.01" step="0.01" [max]="selectedItem.outstandingAmount" />
+      <label for="bcPayAmt">Betrag (€) *</label>
+    </div>
+    <div class="d-flex gap-1">
+      <button class="btn btn-outline-success btn-sm flex-fill" (click)="setFullPayment()"><i class="bi bi-check2 me-1"></i>Vollzahlung ({{ fmt(selectedItem.outstandingAmount) }})</button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="setHalfPayment()">½</button>
+    </div>
     <div class="row g-3">
-      <div class="col-12">
-        <div class="form-floating">
-          <input type="number" class="form-control" id="bcPayAmt" placeholder=" "
-                 [(ngModel)]="payAmount" min="0.01" step="0.01" [max]="payItem.outstandingAmount" />
-          <label for="bcPayAmt">Betrag (€) *</label>
-        </div>
-        <div class="d-flex gap-1 mt-1">
-          <button class="btn btn-outline-success btn-sm flex-fill" (click)="setFullPayment()" style="font-size:.75rem;">
-            <i class="bi bi-check2 me-1"></i>Vollzahlung
-          </button>
-          <button class="btn btn-outline-secondary btn-sm flex-fill" (click)="setHalfPayment()" style="font-size:.75rem;">
-            ½ Hälfte
-          </button>
-        </div>
-      </div>
       <div class="col-6">
         <div class="form-floating">
           <select class="form-select" id="bcPayMeth" [(ngModel)]="payMethod">
@@ -334,14 +630,12 @@
         </div>
       </div>
     </div>
-
     <div class="d-flex justify-content-end gap-2 border-top pt-2">
-      <button class="btn btn-outline-secondary" (click)="showPayModal = false">Abbrechen</button>
+      <button class="btn btn-outline-secondary" (click)="showPayModal=false">Abbrechen</button>
       <button class="btn btn-success d-flex align-items-center gap-2" (click)="confirmPayment()"
               [disabled]="!payAmount || payAmount <= 0 || paying">
         <span *ngIf="paying" class="spinner-border spinner-border-sm"></span>
-        <i *ngIf="!paying" class="bi bi-check2-circle"></i>
-        Zahlung buchen
+        <i *ngIf="!paying" class="bi bi-check2-circle"></i>Zahlung buchen
       </button>
     </div>
   </div>
@@ -349,24 +643,22 @@
 
 <!-- ═══ DIALOG: Stornieren ══════════════════════════════════════════════ -->
 <p-dialog [(visible)]="showCancelModal" header="Posten stornieren" [modal]="true" [closable]="true"
-          [draggable]="false" [resizable]="false" [style]="{ width: '420px', maxWidth: '95vw' }"
+          [draggable]="false" [resizable]="false" [style]="{ width: '400px', maxWidth: '95vw' }"
           (onHide)="showCancelModal = false">
-  <div *ngIf="cancelItem" class="d-flex flex-column gap-3 py-2">
-    <div class="alert alert-warning border py-2 mb-0" style="font-size:.85rem;">
-      <i class="bi bi-exclamation-triangle me-1"></i>
-      Diese Aktion kann nicht rückgängig gemacht werden.
+  <div *ngIf="selectedItem" class="d-flex flex-column gap-3 py-2">
+    <div class="alert alert-warning border py-2 mb-0 small">
+      <i class="bi bi-exclamation-triangle me-1"></i>Diese Aktion kann nicht rückgängig gemacht werden.
     </div>
-    <div style="font-size:.9rem;">
-      Posten <strong>{{ cancelItem.invoiceNumber }}</strong>
-      (<strong class="text-danger">{{ fmt(cancelItem.outstandingAmount) }}</strong>) von
-      <strong>{{ cancelItem.customerName }}</strong> stornieren?
-    </div>
+    <p class="mb-0" style="font-size:.9rem;">
+      Posten <strong>{{ selectedItem.invoiceNumber }}</strong>
+      (<strong class="text-danger">{{ fmt(selectedItem.outstandingAmount) }}</strong>) von
+      <strong>{{ selectedItem.customerName }}</strong> stornieren?
+    </p>
     <div class="d-flex justify-content-end gap-2 border-top pt-2">
-      <button class="btn btn-outline-secondary" (click)="showCancelModal = false">Abbrechen</button>
+      <button class="btn btn-outline-secondary" (click)="showCancelModal=false">Abbrechen</button>
       <button class="btn btn-danger d-flex align-items-center gap-2" (click)="confirmCancel()" [disabled]="cancelling">
         <span *ngIf="cancelling" class="spinner-border spinner-border-sm"></span>
-        <i *ngIf="!cancelling" class="bi bi-x-circle"></i>
-        Stornieren
+        <i *ngIf="!cancelling" class="bi bi-x-circle"></i>Stornieren
       </button>
     </div>
   </div>

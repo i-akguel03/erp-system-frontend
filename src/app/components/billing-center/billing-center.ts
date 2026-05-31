@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -17,7 +17,9 @@ import { Contract } from '../../models/Contract';
 import { Subscription } from '../../models/Subscription';
 import { OpenItemsOverviewDto } from '../../models/Dashboard';
 
-type Tab = 'overdue' | 'open' | 'partial' | 'all';
+type StatusFilter = 'all' | 'overdue' | 'open' | 'partial';
+type AgeFilter    = 'all' | '30' | '60' | '90' | '180' | '365';
+type DetailTab    = 'uebersicht' | 'verlauf';
 
 interface EnrichedItem extends OpenItem {
   contractNumber?: string;
@@ -38,28 +40,49 @@ export class BillingCenterComponent implements OnInit {
 
   allItems: EnrichedItem[] = [];
   overview: OpenItemsOverviewDto | null = null;
-
   contracts     = new Map<string, Contract>();
   subscriptions = new Map<string, Subscription>();
 
-  activeTab: Tab = 'overdue';
-  searchTerm = '';
+  // ─── Selektion & Detail ────────────────────────────────────────────────────
+  selectedItem: EnrichedItem | null = null;
+  activeDetailTab: DetailTab = 'uebersicht';
 
+  // ─── Filter ────────────────────────────────────────────────────────────────
+  statusFilter: StatusFilter = 'all';
+  ageFilter: AgeFilter = 'all';
+  searchTerm = '';
+  noReminderOnly = false;
+  showFilterPanel = false;
+
+  // ─── Pagination ────────────────────────────────────────────────────────────
+  currentPage = 0;
+  pageSize = 25;
+
+  // ─── Mobile ────────────────────────────────────────────────────────────────
+  isMobile = false;
+  mobileView: 'list' | 'detail' = 'list';
+
+  // ─── Payment Modal ─────────────────────────────────────────────────────────
   showPayModal = false;
-  payItem: EnrichedItem | null = null;
   payAmount = 0;
   payMethod = '';
   payRef = '';
   paying = false;
 
+  // ─── Cancel Modal ──────────────────────────────────────────────────────────
   showCancelModal = false;
-  cancelItem: EnrichedItem | null = null;
   cancelling = false;
 
   emailSendingId: string | null = null;
 
-  currentPage = 0;
-  pageSize = 20;
+  readonly ageOptions: { label: string; value: AgeFilter }[] = [
+    { label: 'Alle',        value: 'all' },
+    { label: '> 30 Tage',   value: '30' },
+    { label: '> 60 Tage',   value: '60' },
+    { label: '> 3 Monate',  value: '90' },
+    { label: '> 6 Monate',  value: '180' },
+    { label: '> 1 Jahr',    value: '365' },
+  ];
 
   constructor(
     private openItemService: OpenItemService,
@@ -70,8 +93,25 @@ export class BillingCenterComponent implements OnInit {
     private dashboardService: DashboardService,
   ) {}
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void { this.checkMobile(); this.load(); }
 
+  @HostListener('window:resize') onResize(): void { this.checkMobile(); }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void { if (this.isMobile && this.mobileView === 'detail') this.navigateBack(); }
+
+  private checkMobile(): void {
+    const was = this.isMobile;
+    this.isMobile = window.innerWidth <= 768;
+    if (was !== this.isMobile && !this.isMobile) {
+      this.mobileView = 'list';
+      document.body.style.overflow = '';
+    }
+  }
+
+  navigateBack(): void { this.mobileView = 'list'; }
+
+  // ─── Laden ────────────────────────────────────────────────────────────────
   load(): void {
     this.loading = true;
     this.error = null;
@@ -88,23 +128,18 @@ export class BillingCenterComponent implements OnInit {
         this.allItems      = this.enrich(items);
         this.loading       = false;
       },
-      error: err => {
-        this.error   = err.error?.message || 'Fehler beim Laden der Abrechnungsdaten';
-        this.loading = false;
-      }
+      error: err => { this.error = err.error?.message || 'Fehler beim Laden'; this.loading = false; }
     });
   }
 
   private enrich(items: OpenItem[]): EnrichedItem[] {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     return items.map(item => {
       const sub      = item.subscriptionId ? this.subscriptions.get(item.subscriptionId) : undefined;
       const contract = sub?.contractId     ? this.contracts.get(sub.contractId)           : undefined;
       let daysOverdue: number | undefined;
       if (item.dueDate) {
-        const due = new Date(item.dueDate);
-        due.setHours(0, 0, 0, 0);
+        const due = new Date(item.dueDate); due.setHours(0, 0, 0, 0);
         const diff = Math.floor((today.getTime() - due.getTime()) / 86_400_000);
         daysOverdue = diff > 0 ? diff : 0;
       }
@@ -112,32 +147,57 @@ export class BillingCenterComponent implements OnInit {
     });
   }
 
-  get tabItems(): EnrichedItem[] {
-    switch (this.activeTab) {
-      case 'overdue':  return this.allItems.filter(i => i.status === OpenItemStatus.OVERDUE);
-      case 'open':     return this.allItems.filter(i => i.status === OpenItemStatus.OPEN);
-      case 'partial':  return this.allItems.filter(i => i.status === OpenItemStatus.PARTIALLY_PAID);
-      default: return this.allItems.filter(i => i.status !== OpenItemStatus.PAID && i.status !== OpenItemStatus.CANCELLED);
+  // ─── Filter-Logik ─────────────────────────────────────────────────────────
+  get filteredItems(): EnrichedItem[] {
+    let list = [...this.allItems];
+
+    // Bezahlte/stornierte ausblenden (immer, außer bei Tab "Alle")
+    if (this.statusFilter !== 'all') {
+      const statusMap: Record<StatusFilter, OpenItemStatus> = {
+        overdue: OpenItemStatus.OVERDUE,
+        open:    OpenItemStatus.OPEN,
+        partial: OpenItemStatus.PARTIALLY_PAID,
+        all:     OpenItemStatus.OPEN
+      };
+      list = list.filter(i => i.status === statusMap[this.statusFilter]);
+    } else {
+      list = list.filter(i => i.status !== OpenItemStatus.PAID && i.status !== OpenItemStatus.CANCELLED);
     }
+
+    // Altersfilter
+    if (this.ageFilter !== 'all') {
+      const minDays = parseInt(this.ageFilter, 10);
+      list = list.filter(i => (i.daysOverdue ?? 0) >= minDays);
+    }
+
+    // Nur ohne Mahnung
+    if (this.noReminderOnly) {
+      const limit = new Date(); limit.setDate(limit.getDate() - 30);
+      list = list.filter(i => !i.lastReminderDate || new Date(i.lastReminderDate) < limit);
+    }
+
+    // Suche
+    const q = this.searchTerm.toLowerCase().trim();
+    if (q) {
+      list = list.filter(i =>
+        i.customerName?.toLowerCase().includes(q) ||
+        i.invoiceNumber?.toLowerCase().includes(q) ||
+        i.contractNumber?.toLowerCase().includes(q)
+      );
+    }
+
+    // Sortierung: Überfälligste zuerst
+    list.sort((a, b) => (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0));
+    return list;
   }
 
-  get filteredAll(): EnrichedItem[] {
-    const term = this.searchTerm.toLowerCase();
-    return this.tabItems.filter(i =>
-      !term ||
-      i.customerName?.toLowerCase().includes(term) ||
-      i.invoiceNumber?.toLowerCase().includes(term) ||
-      i.contractNumber?.toLowerCase().includes(term)
-    );
-  }
-
-  get filtered(): EnrichedItem[] {
+  get pagedItems(): EnrichedItem[] {
     const start = this.currentPage * this.pageSize;
-    return this.filteredAll.slice(start, start + this.pageSize);
+    return this.filteredItems.slice(start, start + this.pageSize);
   }
 
-  get totalElements(): number { return this.filteredAll.length; }
-  get totalPages(): number { return Math.ceil(this.totalElements / this.pageSize); }
+  get totalElements(): number { return this.filteredItems.length; }
+  get totalPages(): number    { return Math.ceil(this.totalElements / this.pageSize); }
 
   get pageNumbers(): number[] {
     const pages: number[] = [];
@@ -147,50 +207,65 @@ export class BillingCenterComponent implements OnInit {
     return pages;
   }
 
-  countOf(tab: Tab): number {
-    switch (tab) {
-      case 'overdue': return this.allItems.filter(i => i.status === OpenItemStatus.OVERDUE).length;
-      case 'open':    return this.allItems.filter(i => i.status === OpenItemStatus.OPEN).length;
-      case 'partial': return this.allItems.filter(i => i.status === OpenItemStatus.PARTIALLY_PAID).length;
+  setStatusFilter(f: StatusFilter): void { this.statusFilter = f; this.currentPage = 0; this.selectedItem = null; }
+  setAgeFilter(f: AgeFilter): void { this.ageFilter = f; this.currentPage = 0; }
+  onSearchChange(): void { this.currentPage = 0; }
+  goToPage(p: number): void { if (p >= 0 && p < this.totalPages) this.currentPage = p; }
+  clearFilters(): void { this.statusFilter = 'all'; this.ageFilter = 'all'; this.noReminderOnly = false; this.searchTerm = ''; this.currentPage = 0; }
+
+  get activeFilterCount(): number {
+    return (this.statusFilter !== 'all' ? 1 : 0) +
+           (this.ageFilter !== 'all' ? 1 : 0) +
+           (this.noReminderOnly ? 1 : 0) +
+           (this.searchTerm ? 1 : 0);
+  }
+
+  // ─── Selektion ────────────────────────────────────────────────────────────
+  selectItem(item: EnrichedItem): void {
+    this.selectedItem = item;
+    this.activeDetailTab = 'uebersicht';
+    if (this.isMobile) this.mobileView = 'detail';
+  }
+
+  isSelected(item: EnrichedItem): boolean { return this.selectedItem?.id === item.id; }
+
+  // ─── KPIs ─────────────────────────────────────────────────────────────────
+  countOf(filter: StatusFilter): number {
+    switch (filter) {
+      case 'overdue':  return this.allItems.filter(i => i.status === OpenItemStatus.OVERDUE).length;
+      case 'open':     return this.allItems.filter(i => i.status === OpenItemStatus.OPEN).length;
+      case 'partial':  return this.allItems.filter(i => i.status === OpenItemStatus.PARTIALLY_PAID).length;
       default: return this.allItems.filter(i => i.status !== OpenItemStatus.PAID && i.status !== OpenItemStatus.CANCELLED).length;
     }
   }
 
-  setTab(tab: Tab): void { this.activeTab = tab; this.currentPage = 0; }
-  onSearchChange(): void { this.currentPage = 0; }
-  goToPage(page: number): void { if (page >= 0 && page < this.totalPages) this.currentPage = page; }
-
-  // ─── KPIs ─────────────────────────────────────────────────────────────────
   get totalOverdueAmount(): number {
-    return this.allItems.filter(i => i.status === OpenItemStatus.OVERDUE)
-      .reduce((s, i) => s + (i.outstandingAmount ?? i.amount ?? 0), 0);
+    return this.allItems.filter(i => i.status === OpenItemStatus.OVERDUE).reduce((s, i) => s + (i.outstandingAmount ?? 0), 0);
   }
   get totalOutstanding(): number {
-    return this.allItems.filter(i => i.status !== OpenItemStatus.PAID && i.status !== OpenItemStatus.CANCELLED)
-      .reduce((s, i) => s + (i.outstandingAmount ?? i.amount ?? 0), 0);
+    return this.allItems.filter(i => i.status !== OpenItemStatus.PAID && i.status !== OpenItemStatus.CANCELLED).reduce((s, i) => s + (i.outstandingAmount ?? 0), 0);
   }
   get reminderDueCount(): number {
-    const limit = new Date();
-    limit.setDate(limit.getDate() - 30);
+    const limit = new Date(); limit.setDate(limit.getDate() - 30);
     return this.allItems.filter(i =>
       (i.status === OpenItemStatus.OVERDUE || i.status === OpenItemStatus.OPEN) &&
       (!i.lastReminderDate || new Date(i.lastReminderDate) < limit)
     ).length;
   }
 
-  // ─── Aging ────────────────────────────────────────────────────────────────
-  get agingBuckets(): { label: string; count: number; amount: number; color: string }[] {
-    const overdue = this.allItems.filter(i => i.status === OpenItemStatus.OVERDUE && (i.daysOverdue ?? 0) > 0);
+  // ─── Aging Buckets ────────────────────────────────────────────────────────
+  get agingBuckets(): { label: string; days: AgeFilter; count: number; amount: number; color: string }[] {
+    const overdue = this.allItems.filter(i => i.status === OpenItemStatus.OVERDUE);
     const bucket = (min: number, max: number) => {
       const items = overdue.filter(i => (i.daysOverdue ?? 0) >= min && (i.daysOverdue ?? 0) <= max);
-      return { count: items.length, amount: items.reduce((s, i) => s + (i.outstandingAmount ?? i.amount ?? 0), 0) };
+      return { count: items.length, amount: items.reduce((s, i) => s + (i.outstandingAmount ?? 0), 0) };
     };
     const b90 = overdue.filter(i => (i.daysOverdue ?? 0) > 90);
     return [
-      { label: '1 – 30 Tage',  ...bucket(1, 30),  color: '#ffc107' },
-      { label: '31 – 60 Tage', ...bucket(31, 60), color: '#fd7e14' },
-      { label: '61 – 90 Tage', ...bucket(61, 90), color: '#dc3545' },
-      { label: '> 90 Tage',    count: b90.length, amount: b90.reduce((s, i) => s + (i.outstandingAmount ?? i.amount ?? 0), 0), color: '#7f1d1d' },
+      { label: '1 – 30 Tage',  days: '30',  ...bucket(1, 30),  color: '#ffc107' },
+      { label: '31 – 60 Tage', days: '60',  ...bucket(31, 60), color: '#fd7e14' },
+      { label: '61 – 90 Tage', days: '90',  ...bucket(61, 90), color: '#dc3545' },
+      { label: '> 90 Tage',    days: '180', count: b90.length, amount: b90.reduce((s, i) => s + (i.outstandingAmount ?? 0), 0), color: '#7f1d1d' },
     ];
   }
   get agingMaxAmount(): number { return Math.max(...this.agingBuckets.map(b => b.amount), 1); }
@@ -208,6 +283,13 @@ export class BillingCenterComponent implements OnInit {
     const m: any = { OPEN:'bi-circle text-primary', PARTIALLY_PAID:'bi-circle-half text-warning', PAID:'bi-check-circle-fill text-success', CANCELLED:'bi-dash-circle text-secondary', OVERDUE:'bi-exclamation-circle-fill text-danger' };
     return s ? (m[s] ?? 'bi-circle text-muted') : 'bi-circle text-muted';
   }
+  urgencyClass(item: EnrichedItem): string {
+    if (item.status !== 'OVERDUE') return '';
+    const d = item.daysOverdue ?? 0;
+    if (d > 90) return 'bc-item--critical';
+    if (d > 30) return 'bc-item--urgent';
+    return 'bc-item--overdue';
+  }
   fmt(val?: number): string {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(val ?? 0);
   }
@@ -215,58 +297,73 @@ export class BillingCenterComponent implements OnInit {
     if (!d) return '–';
     try { return new Date(d).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }); } catch { return '–'; }
   }
+  getInitials(name?: string): string {
+    if (!name) return '?';
+    return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  canPay(item: EnrichedItem): boolean { return item.status !== 'CANCELLED' && item.status !== 'PAID'; }
+  canCancel(item: EnrichedItem): boolean { return item.status !== 'CANCELLED' && item.status !== 'PAID'; }
 
   // ─── Aktionen ─────────────────────────────────────────────────────────────
-  openPayModal(item: EnrichedItem): void {
-    this.payItem = item;
-    this.payAmount = item.outstandingAmount ?? item.amount ?? 0;
+  openPayModal(item?: EnrichedItem): void {
+    if (item) this.selectedItem = item;
+    if (!this.selectedItem) return;
+    this.payAmount = this.selectedItem.outstandingAmount ?? this.selectedItem.amount ?? 0;
     this.payMethod = '';
     this.payRef = '';
     this.showPayModal = true;
   }
-  setFullPayment(): void { if (this.payItem) this.payAmount = this.payItem.outstandingAmount ?? this.payItem.amount ?? 0; }
-  setHalfPayment(): void { if (this.payItem) this.payAmount = Math.round(((this.payItem.outstandingAmount ?? this.payItem.amount ?? 0) / 2) * 100) / 100; }
+  setFullPayment(): void { if (this.selectedItem) this.payAmount = this.selectedItem.outstandingAmount ?? this.selectedItem.amount ?? 0; }
+  setHalfPayment(): void { if (this.selectedItem) this.payAmount = Math.round(((this.selectedItem.outstandingAmount ?? this.selectedItem.amount ?? 0) / 2) * 100) / 100; }
 
   confirmPayment(): void {
-    if (!this.payItem?.id || this.paying) return;
+    if (!this.selectedItem?.id || this.paying) return;
     this.paying = true;
-    this.openItemService.recordPayment(this.payItem.id, this.payAmount, this.payMethod, this.payRef).subscribe({
+    this.openItemService.recordPayment(this.selectedItem.id, this.payAmount, this.payMethod, this.payRef).subscribe({
       next: updated => {
-        this.paying = false;
-        this.showPayModal = false;
+        this.paying = false; this.showPayModal = false;
+        const enriched = this.enrich([updated])[0];
         const idx = this.allItems.findIndex(i => i.id === updated.id);
-        if (idx >= 0) { this.allItems[idx] = this.enrich([updated])[0]; this.allItems = [...this.allItems]; }
+        if (idx >= 0) { this.allItems[idx] = enriched; this.allItems = [...this.allItems]; }
+        this.selectedItem = enriched;
         this.notification.success('Zahlung wurde erfasst.');
       },
-      error: err => { this.paying = false; this.notification.error(err.error?.message || 'Fehler beim Erfassen der Zahlung'); }
+      error: err => { this.paying = false; this.notification.error(err.error?.message || 'Fehler beim Erfassen'); }
     });
   }
 
-  sendReminder(item: EnrichedItem): void {
-    if (!item.id || this.emailSendingId) return;
-    this.emailSendingId = item.id;
-    this.emailService.sendPaymentReminder(item.id).subscribe({
+  sendReminder(item?: EnrichedItem): void {
+    const target = item ?? this.selectedItem;
+    if (!target?.id || this.emailSendingId) return;
+    this.emailSendingId = target.id;
+    this.emailService.sendPaymentReminder(target.id).subscribe({
       next: () => {
         this.emailSendingId = null;
-        const i = this.allItems.find(x => x.id === item.id);
+        const i = this.allItems.find(x => x.id === target.id);
         if (i) { i.reminderCount = (i.reminderCount ?? 0) + 1; i.lastReminderDate = new Date(); }
-        this.notification.success(`Mahnung an ${item.customerName} gesendet.`);
+        if (this.selectedItem?.id === target.id) this.selectedItem = { ...this.selectedItem!, reminderCount: (this.selectedItem!.reminderCount ?? 0) + 1, lastReminderDate: new Date() };
+        this.notification.success(`Mahnung an ${target.customerName} gesendet.`);
       },
       error: err => { this.emailSendingId = null; this.notification.error(err.error?.message || 'Fehler beim Senden'); }
     });
   }
 
-  openCancelModal(item: EnrichedItem): void { this.cancelItem = item; this.showCancelModal = true; }
+  openCancelModal(item?: EnrichedItem): void {
+    if (item) this.selectedItem = item;
+    this.showCancelModal = true;
+  }
 
   confirmCancel(): void {
-    if (!this.cancelItem?.id || this.cancelling) return;
+    if (!this.selectedItem?.id || this.cancelling) return;
     this.cancelling = true;
-    this.openItemService.cancelOpenItem(this.cancelItem.id).subscribe({
+    this.openItemService.cancelOpenItem(this.selectedItem.id).subscribe({
       next: updated => {
-        this.cancelling = false;
-        this.showCancelModal = false;
+        this.cancelling = false; this.showCancelModal = false;
+        const enriched = this.enrich([updated])[0];
         const idx = this.allItems.findIndex(i => i.id === updated.id);
-        if (idx >= 0) { this.allItems[idx] = this.enrich([updated])[0]; this.allItems = [...this.allItems]; }
+        if (idx >= 0) { this.allItems[idx] = enriched; this.allItems = [...this.allItems]; }
+        this.selectedItem = enriched;
         this.notification.success('Posten wurde storniert.');
       },
       error: err => { this.cancelling = false; this.notification.error(err.error?.message || 'Fehler beim Stornieren'); }
