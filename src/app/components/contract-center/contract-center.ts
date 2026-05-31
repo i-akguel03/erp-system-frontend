@@ -58,6 +58,12 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   renewalBatchLoading = false;
   activeDetailTab: DetailTab = 'abonnements';
 
+  // Pagination
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+
   // Mobile
   isMobile = false;
   mobileView: 'contracts' | 'detail' = 'contracts';
@@ -123,7 +129,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.checkMobile();
     this.loadCustomers();
-    this.loadContracts();
+    this.loadPage(0);
     this.loadProducts();
   }
 
@@ -161,14 +167,24 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadContracts(): void {
+  loadContracts(): void { this.loadPage(this.currentPage); }
+
+  loadPage(page: number): void {
     this.loading = true;
     this.error = null;
-    this.contractService.getContracts(false).pipe(takeUntil(this.destroy$)).subscribe({
-      next: contracts => { this.contracts = contracts; this.loading = false; },
+    this.contractService.getContractsPaginated(page, this.pageSize).pipe(takeUntil(this.destroy$)).subscribe({
+      next: result => {
+        this.contracts = result.content;
+        this.currentPage = result.currentPage;
+        this.totalPages = result.totalPages;
+        this.totalElements = result.totalElements;
+        this.loading = false;
+      },
       error: err => { this.error = err.error?.message || `Fehler beim Laden (HTTP ${err.status})`; this.loading = false; }
     });
   }
+
+  onPageChange(page: number): void { this.loadPage(page); }
 
   private loadProducts(): void {
     this.productService.getProducts().pipe(takeUntil(this.destroy$)).subscribe({
@@ -326,7 +342,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
         this.renewalBatchLoading = false;
         const count = result?.renewedCount ?? result?.processed ?? '?';
         this.notificationService.success(`Verlängerungslauf: ${count} Vertrag/Verträge verlängert`);
-        this.loadContracts();
+        this.loadPage(0);
       },
       error: () => { this.renewalBatchLoading = false; this.notificationService.error('Fehler beim Verlängerungslauf'); }
     });

@@ -1,8 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, OnDestroy, HostListener, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SortPipe } from '../../../../shared/pipes/sort.pipe';
-import { SortState } from '../../../../shared/utils/sort-state';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { Contract } from '../../../../models/Contract';
@@ -16,60 +14,50 @@ interface ContractActionEvent {
 @Component({
   selector: 'app-contract-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SortPipe],
+  imports: [CommonModule, FormsModule],
   templateUrl: './contract-list.html',
   styleUrls: ['./contract-list.scss']
 })
 export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
-  sort = new SortState();
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
   @Input() contracts: Contract[] = [];
   @Input() customers: { [id: string]: Customer } = {};
-  @Input() loading: boolean = false;
+  @Input() loading = false;
   @Input() error: string | null = null;
   @Input() selectedContract: Contract | null = null;
+  @Input() currentPage = 0;
+  @Input() totalPages = 0;
+  @Input() totalElements = 0;
 
   @Output() contractSelected = new EventEmitter<Contract>();
   @Output() contractAction = new EventEmitter<ContractActionEvent>();
   @Output() retry = new EventEmitter<void>();
+  @Output() pageChange = new EventEmitter<number>();
 
   filteredContracts: Contract[] = [];
-  searchTerm: string = '';
-  statusFilter: string = '';
+  searchTerm = '';
+  statusFilter = '';
 
   contextMenuVisible = false;
   contextMenuPosition = { x: 0, y: 0 };
   contextMenuContract: Contract | null = null;
 
   ngOnInit(): void {
-    this.setupSearch();
+    this.searchSubject.pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(term => this.performSearch(term));
     this.filteredContracts = [...this.contracts];
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['contracts']) {
-      this.performSearch(this.searchTerm);
-    }
+    if (changes['contracts']) this.performSearch(this.searchTerm);
   }
 
-  private setupSearch(): void {
-    this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(term => this.performSearch(term));
-  }
-
-  filterContracts(): void {
-    this.searchSubject.next(this.searchTerm);
-  }
+  filterContracts(): void { this.searchSubject.next(this.searchTerm); }
+  clearSearch(): void { this.searchTerm = ''; this.performSearch(''); }
 
   filterByStatus(status: string): void {
     this.statusFilter = status;
@@ -78,95 +66,74 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
 
   private performSearch(term: string): void {
     let list = [...this.contracts];
-
     if (this.statusFilter === 'EXPIRING') {
       list = list.filter(c => this.isExpiringSoon(c));
     } else if (this.statusFilter) {
       list = list.filter(c => c.contractStatus === this.statusFilter);
     }
-
-    const searchTerm = term.toLowerCase().trim();
-    if (searchTerm) {
-      list = list.filter(contract => {
-        const customer = this.getCustomerById(contract.customerId);
-        const customerStr = customer
-          ? `${customer.firstName} ${customer.lastName} ${customer.customerNumber}`
-          : '';
-        return (
-          contract.contractNumber?.toLowerCase().includes(searchTerm) ||
-          contract.contractTitle?.toLowerCase().includes(searchTerm) ||
-          contract.contractStatus?.toLowerCase().includes(searchTerm) ||
-          customerStr.toLowerCase().includes(searchTerm)
-        );
+    const q = term.toLowerCase().trim();
+    if (q) {
+      list = list.filter(c => {
+        const cust = this.getCustomer(c.customerId);
+        const custStr = cust ? `${cust.firstName} ${cust.lastName} ${cust.customerNumber}` : '';
+        return c.contractNumber?.toLowerCase().includes(q) ||
+               c.contractTitle?.toLowerCase().includes(q) ||
+               custStr.toLowerCase().includes(q);
       });
     }
-
     this.filteredContracts = list;
+  }
+
+  isExpiringSoon(c: Contract): boolean {
+    if (!c.endDate || c.contractStatus !== 'ACTIVE') return false;
+    const days = Math.ceil((new Date(c.endDate).getTime() - Date.now()) / 86_400_000);
+    return days >= 0 && days <= 30;
   }
 
   getStatusCount(status: string): number {
     return this.contracts.filter(c => c.contractStatus === status).length;
   }
+  getExpiringCount(): number { return this.contracts.filter(c => this.isExpiringSoon(c)).length; }
 
-  getExpiringCount(): number {
-    return this.contracts.filter(c => this.isExpiringSoon(c)).length;
+  selectContract(c: Contract): void { this.contractSelected.emit(c); }
+  isSelected(c: Contract): boolean { return this.selectedContract?.id === c.id; }
+
+  getCustomer(customerId?: string): Customer | undefined {
+    return customerId ? this.customers[customerId] : undefined;
   }
 
-  isExpiringSoon(contract: Contract): boolean {
-    if (!contract.endDate || contract.contractStatus !== 'ACTIVE') return false;
-    const days = Math.ceil(
-      (new Date(contract.endDate).getTime() - Date.now()) / 86_400_000
-    );
-    return days >= 0 && days <= 30;
+  statusBadgeClass(status?: string): string {
+    const m: any = { ACTIVE:'badge bg-success', DRAFT:'badge bg-warning text-dark', SUSPENDED:'badge bg-secondary', TERMINATED:'badge bg-dark text-white', EXPIRED:'badge bg-danger' };
+    return m[status ?? ''] ?? 'badge bg-light text-dark';
+  }
+  statusLabel(status?: string): string {
+    const m: any = { ACTIVE:'Aktiv', DRAFT:'Entwurf', SUSPENDED:'Ausgesetzt', TERMINATED:'Gekündigt', EXPIRED:'Abgelaufen' };
+    return m[status ?? ''] ?? status ?? '–';
+  }
+  statusIcon(status?: string): string {
+    const m: any = { ACTIVE:'bi-check-circle-fill text-success', DRAFT:'bi-pencil-square text-warning', SUSPENDED:'bi-pause-circle text-secondary', TERMINATED:'bi-x-circle-fill text-danger', EXPIRED:'bi-clock-history text-danger' };
+    return m[status ?? ''] ?? 'bi-circle text-muted';
+  }
+  formatDate(d: any): string {
+    if (!d) return '∞';
+    try { return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch { return '–'; }
   }
 
-  getRowClass(contract: Contract): Record<string, boolean> {
-    return {
-      'table-active bg-primary bg-opacity-10': this.isSelectedContract(contract),
-      'row-expiring': !this.isSelectedContract(contract) && this.isExpiringSoon(contract),
-    };
+  // ─── Pagination ───────────────────────────────────────────────────────────
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages || page === this.currentPage) return;
+    this.pageChange.emit(page);
+  }
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(0, this.currentPage - 2);
+    const end = Math.min(this.totalPages - 1, this.currentPage + 2);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
   }
 
-  emitCreateContract(): void {
-    this.contractAction.emit({ action: 'neu', contract: {} });
-  }
-
-  selectContract(contract: Contract): void {
-    this.contractSelected.emit(contract);
-  }
-
-  isSelectedContract(contract: Contract): boolean {
-    return this.selectedContract?.id === contract.id;
-  }
-
-  getCustomerById(customerId?: string): Customer | undefined {
-    if (!customerId) return undefined;
-    return this.customers[customerId];
-  }
-
-  getContractStatus(contract: Contract): string {
-    const labels: Record<string, string> = {
-      ACTIVE: 'Aktiv',
-      DRAFT: 'Entwurf',
-      SUSPENDED: 'Ausgesetzt',
-      TERMINATED: 'Gekündigt',
-      EXPIRED: 'Abgelaufen',
-    };
-    return labels[contract.contractStatus ?? ''] ?? contract.contractStatus ?? 'Unbekannt';
-  }
-
-  getContractStatusClass(contract: Contract): string {
-    switch (contract.contractStatus) {
-      case 'ACTIVE':     return 'badge bg-success';
-      case 'DRAFT':      return 'badge bg-warning text-dark';
-      case 'SUSPENDED':  return 'badge bg-secondary';
-      case 'TERMINATED': return 'badge bg-dark text-white';
-      case 'EXPIRED':    return 'badge bg-danger';
-      default:           return 'badge bg-light text-dark';
-    }
-  }
-
-  onContractMenuClick(event: MouseEvent, contract: Contract): void {
+  // ─── Context Menu ─────────────────────────────────────────────────────────
+  onMenuClick(event: MouseEvent, contract: Contract): void {
     event.stopPropagation();
     const btn = event.currentTarget as HTMLElement;
     const rect = btn.getBoundingClientRect();
@@ -178,9 +145,8 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
     this.contextMenuVisible = true;
   }
 
-  onContractRightClick(event: MouseEvent, contract: Contract): void {
-    event.preventDefault();
-    event.stopPropagation();
+  onRightClick(event: MouseEvent, contract: Contract): void {
+    event.preventDefault(); event.stopPropagation();
     this.contextMenuContract = contract;
     this.contextMenuPosition = {
       x: Math.max(4, Math.min(event.clientX, window.innerWidth - 224)),
@@ -189,43 +155,20 @@ export class ContractListComponent implements OnInit, OnChanges, OnDestroy {
     this.contextMenuVisible = true;
   }
 
-  private calcMenuY(triggerBottom: number, triggerTop: number): number {
-    const menuH = 300;
-    const isMobile = window.innerWidth <= 768;
-    const headerH = isMobile ? 56 : 0;
-    const tabBarH = isMobile ? 62 : 0;
-    const panelH = window.innerHeight - headerH - tabBarH;
-    const bottomInPanel = triggerBottom - headerH;
-    const topInPanel    = triggerTop   - headerH;
-    const spaceBelow = panelH - bottomInPanel;
-    return spaceBelow >= menuH
-      ? Math.max(4, bottomInPanel + 4)
-      : Math.max(4, topInPanel - menuH - 4);
+  private calcMenuY(bottom: number, top: number): number {
+    const menuH = 260;
+    const spaceBelow = window.innerHeight - bottom;
+    return spaceBelow >= menuH ? Math.max(4, bottom + 4) : Math.max(4, top - menuH - 4);
   }
 
-  onContractAction(action: string): void {
+  onAction(action: string): void {
     if (!this.contextMenuContract) return;
     this.contractAction.emit({ action, contract: this.contextMenuContract });
-    this.closeContextMenu();
+    this.closeMenu();
   }
+  closeMenu(): void { this.contextMenuVisible = false; this.contextMenuContract = null; }
 
-  closeContextMenu(): void {
-    this.contextMenuVisible = false;
-    this.contextMenuContract = null;
-  }
-
-  @HostListener('document:click')
-  onDocumentClick(): void {
-    if (this.contextMenuVisible) this.closeContextMenu();
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscapeKey(): void {
-    if (this.contextMenuVisible) this.closeContextMenu();
-  }
-
-  @HostListener('window:resize')
-  onWindowResize(): void {
-    if (this.contextMenuVisible) this.closeContextMenu();
-  }
+  @HostListener('document:click') onDocClick(): void { if (this.contextMenuVisible) this.closeMenu(); }
+  @HostListener('document:keydown.escape') onEsc(): void { if (this.contextMenuVisible) this.closeMenu(); }
+  @HostListener('window:resize') onResize(): void { if (this.contextMenuVisible) this.closeMenu(); }
 }

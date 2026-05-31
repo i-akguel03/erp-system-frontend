@@ -25,7 +25,7 @@
       <div class="cc-sidebar-header">
         <i class="bi bi-file-earmark-check text-primary me-2"></i>
         <span class="fw-semibold">Verträge</span>
-        <span class="badge bg-secondary ms-2" *ngIf="contracts.length">{{ contracts.length }}</span>
+        <span class="badge bg-secondary ms-2" *ngIf="totalElements">{{ totalElements }}</span>
         <span class="badge bg-warning text-dark ms-1 d-flex align-items-center gap-1"
               *ngIf="expiringContractCount > 0" title="{{ expiringContractCount }} läuft bald ab">
           <i class="bi bi-clock" style="font-size:.65rem;"></i>{{ expiringContractCount }}
@@ -47,9 +47,13 @@
           [loading]="loading"
           [error]="error"
           [selectedContract]="selectedContract"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          [totalElements]="totalElements"
           (contractSelected)="onContractSelected($event)"
           (contractAction)="onContractAction($event)"
-          (retry)="loadContracts()">
+          (pageChange)="onPageChange($event)"
+          (retry)="loadPage(currentPage)">
         </app-contract-list>
       </div>
     </div>
@@ -266,9 +270,11 @@
         <app-contract-list
           [contracts]="contracts" [customers]="customers" [loading]="loading"
           [error]="error" [selectedContract]="selectedContract"
+          [currentPage]="currentPage" [totalPages]="totalPages" [totalElements]="totalElements"
           (contractSelected)="onContractSelected($event)"
           (contractAction)="onContractAction($event)"
-          (retry)="loadContracts()">
+          (pageChange)="onPageChange($event)"
+          (retry)="loadPage(currentPage)">
         </app-contract-list>
       </div>
     </div>
