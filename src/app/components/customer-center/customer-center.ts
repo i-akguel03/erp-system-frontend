@@ -315,6 +315,14 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
       });
   }
 
+  onOpenItemUpdated(updated: OpenItem): void {
+    const idx = this.openItems.findIndex(o => o.id === updated.id);
+    if (idx >= 0) {
+      this.openItems = [...this.openItems];
+      this.openItems[idx] = updated;
+    }
+  }
+
   onDocumentDeleted(id: string): void {
     this.confirmationService.confirm({
       message: 'Dokument löschen?', header: 'Dokument löschen',

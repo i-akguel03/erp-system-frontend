@@ -13,6 +13,8 @@ import { CrmNote, NotePriority } from '../../../../models/CrmNote';
 import { CrmActivity, ActivityType, ActivityStatus } from '../../../../models/CrmActivity';
 import { CrmContact } from '../../../../models/CrmContact';
 import { CrmDocument, DocumentType } from '../../../../models/CrmDocument';
+import { OpenItemService } from '../../../../services/open-item-service';
+import { NotificationService } from '../../../../services/notification.service';
 
 type Tab = 'uebersicht' | 'vertraege' | 'rechnungen' | 'zahlungen' | 'crm' | 'kontenblatt';
 type CrmSubTab = 'aktivitaeten' | 'notizen' | 'kontakte' | 'dokumente';
@@ -48,6 +50,7 @@ export class CustomerDetailTabsComponent implements OnChanges {
   @Output() contactDeleted = new EventEmitter<string>();
   @Output() documentUploaded = new EventEmitter<{ file: File; documentType?: string; description?: string }>();
   @Output() documentDeleted = new EventEmitter<string>();
+  @Output() openItemUpdated = new EventEmitter<OpenItem>();
 
   activeTab: Tab = 'uebersicht';
   activeCrmSubTab: CrmSubTab = 'aktivitaeten';
@@ -60,6 +63,14 @@ export class CustomerDetailTabsComponent implements OnChanges {
   showActivityModal = false; activityForm: Partial<CrmActivity> = {}; activityDateString = ''; dueDateString = '';
   showContactModal = false;  contactForm: Partial<CrmContact> = {};
   showDocumentModal = false; selectedFile: File | null = null; docDescription = ''; docType: DocumentType = 'SONSTIGES';
+
+  // Payment Modal
+  showPayModal = false;
+  selectedOpenItem: OpenItem | null = null;
+  payAmount = 0;
+  payMethod = '';
+  payRef = '';
+  paying = false;
 
   readonly notePriorityOptions: { label: string; value: NotePriority }[] = [
     { label: 'Niedrig', value: 'NIEDRIG' }, { label: 'Mittel', value: 'MITTEL' }, { label: 'Hoch', value: 'HOCH' }
@@ -74,6 +85,11 @@ export class CustomerDetailTabsComponent implements OnChanges {
     { label: 'Vertrag', value: 'VERTRAG' }, { label: 'Angebot', value: 'ANGEBOT' },
     { label: 'Rechnung', value: 'RECHNUNG' }, { label: 'Sonstiges', value: 'SONSTIGES' }
   ];
+
+  constructor(
+    private openItemService: OpenItemService,
+    private notification: NotificationService
+  ) {}
 
   ngOnChanges(): void {
     if (!this.customer) { this.activeTab = 'uebersicht'; this.expandedContractId = null; }
@@ -275,6 +291,37 @@ export class CustomerDetailTabsComponent implements OnChanges {
     if (!this.selectedFile) return;
     this.documentUploaded.emit({ file: this.selectedFile, documentType: this.docType, description: this.docDescription });
     this.closeDocumentModal();
+  }
+
+  // ─── Payment Modal ────────────────────────────────────────────────────────
+  canPay(item: OpenItem): boolean { return item.status !== 'CANCELLED' && item.status !== 'PAID'; }
+
+  openPayModal(item: OpenItem): void {
+    this.selectedOpenItem = item;
+    this.payAmount = item.outstandingAmount ?? item.amount ?? 0;
+    this.payMethod = '';
+    this.payRef = '';
+    this.showPayModal = true;
+  }
+  closePayModal(): void { this.showPayModal = false; this.selectedOpenItem = null; }
+  setFullPayment(): void { if (this.selectedOpenItem) this.payAmount = this.selectedOpenItem.outstandingAmount ?? this.selectedOpenItem.amount ?? 0; }
+  setHalfPayment(): void { if (this.selectedOpenItem) this.payAmount = Math.round(((this.selectedOpenItem.outstandingAmount ?? this.selectedOpenItem.amount ?? 0) / 2) * 100) / 100; }
+
+  confirmPayment(): void {
+    if (!this.selectedOpenItem?.id || this.paying) return;
+    this.paying = true;
+    this.openItemService.recordPayment(this.selectedOpenItem.id, this.payAmount, this.payMethod, this.payRef).subscribe({
+      next: updated => {
+        this.paying = false;
+        this.showPayModal = false;
+        this.openItemUpdated.emit(updated);
+        this.notification.success('Zahlung wurde erfasst.');
+      },
+      error: err => {
+        this.paying = false;
+        this.notification.error(err.error?.message || 'Fehler beim Erfassen der Zahlung');
+      }
+    });
   }
 
   trackById(_: number, item: any): string { return item.id; }
