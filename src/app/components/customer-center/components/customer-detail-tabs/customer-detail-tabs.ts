@@ -170,11 +170,11 @@ export class CustomerDetailTabsComponent implements OnChanges {
     return this.invoices.reduce((s, i) => s + (i.totalAmount ?? 0), 0);
   }
   get bezahlterUmsatz(): number {
-    return this.invoices.filter(i => (i.status as string) === 'PAID' || i.status === 'SENT').reduce((s, i) => s + (i.totalAmount ?? 0), 0);
+    return this.openItems.reduce((s, oi) => s + (oi.paidAmount ?? 0), 0);
   }
 
   get bezahlteRechnungenCount(): number {
-    return this.invoices.filter(i => (i.status as string) === 'PAID' || i.status === 'SENT').length;
+    return this.openItems.filter(oi => oi.status === 'PAID').length;
   }
 
   getOutstandingForInvoice(invoiceNumber?: string): number | null {
