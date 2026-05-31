@@ -15,6 +15,7 @@ import { CrmContact } from '../../../../models/CrmContact';
 import { CrmDocument, DocumentType } from '../../../../models/CrmDocument';
 import { OpenItemService } from '../../../../services/open-item-service';
 import { NotificationService } from '../../../../services/notification.service';
+import { KontenblattEintrag } from '../../../../models/KontenblattEintrag';
 
 type Tab = 'uebersicht' | 'vertraege' | 'rechnungen' | 'zahlungen' | 'crm' | 'kontenblatt';
 type CrmSubTab = 'aktivitaeten' | 'notizen' | 'kontakte' | 'dokumente';
@@ -55,6 +56,11 @@ export class CustomerDetailTabsComponent implements OnChanges {
   activeTab: Tab = 'uebersicht';
   activeCrmSubTab: CrmSubTab = 'aktivitaeten';
 
+  // Kontenblatt
+  kontenblattEintraege: KontenblattEintrag[] = [];
+  kontenblattLoading = false;
+  kontenblattSortDir: 'ASC' | 'DESC' = 'DESC';
+
   // Vertrag-Expansion
   expandedContractId: string | null = null;
 
@@ -92,11 +98,38 @@ export class CustomerDetailTabsComponent implements OnChanges {
   ) {}
 
   ngOnChanges(): void {
-    if (!this.customer) { this.activeTab = 'uebersicht'; this.expandedContractId = null; }
+    if (!this.customer) {
+      this.activeTab = 'uebersicht';
+      this.expandedContractId = null;
+      this.kontenblattEintraege = [];
+    } else if (this.activeTab === 'kontenblatt') {
+      this.loadKontenblatt();
+    }
   }
 
-  setTab(t: Tab): void { this.activeTab = t; }
+  setTab(t: Tab): void {
+    this.activeTab = t;
+    if (t === 'kontenblatt' && this.customer?.id && !this.kontenblattLoading && this.kontenblattEintraege.length === 0) {
+      this.loadKontenblatt();
+    }
+  }
+
   setCrmSubTab(s: CrmSubTab): void { this.activeCrmSubTab = s; }
+
+  loadKontenblatt(): void {
+    if (!this.customer?.id) return;
+    this.kontenblattLoading = true;
+    this.openItemService.getKontenblatt(this.customer.id, this.kontenblattSortDir).subscribe({
+      next: eintraege => { this.kontenblattEintraege = eintraege; this.kontenblattLoading = false; },
+      error: () => { this.kontenblattLoading = false; }
+    });
+  }
+
+  setKontenblattSort(dir: 'ASC' | 'DESC'): void {
+    if (this.kontenblattSortDir === dir) return;
+    this.kontenblattSortDir = dir;
+    this.loadKontenblatt();
+  }
 
   // ─── Vertrag expandieren ──────────────────────────────────────────────────
   toggleContract(contractId: string): void {

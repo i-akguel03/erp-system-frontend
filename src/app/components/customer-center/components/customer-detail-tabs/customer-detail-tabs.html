@@ -478,60 +478,120 @@
             </div>
           </div>
 
-          <!-- Monatliche Aufstellung -->
-          <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
-              <i class="bi bi-calendar3 text-primary"></i>
-              <span class="fw-semibold small">Umsatz nach Monat</span>
-            </div>
-            <div class="card-body p-0">
-              <div *ngIf="kontenblattRows.length===0" class="text-muted text-center py-3 small">Keine Rechnungen mit Datum</div>
-              <table class="table table-sm table-hover align-middle mb-0" *ngIf="kontenblattRows.length>0" style="font-size:.85rem;">
-                <thead class="table-light"><tr><th>Monat</th><th class="text-end">Einnahmen (Brutto)</th><th class="text-center">Rechnungen</th><th class="text-end">Anteil</th></tr></thead>
-                <tbody>
-                  @for (row of kontenblattRows; track row.month) {
-                    <tr>
-                      <td class="fw-semibold">{{ row.month }}</td>
-                      <td class="text-end text-success fw-semibold">{{ formatCurrency(row.einnahmen) }}</td>
-                      <td class="text-center text-muted">{{ row.count }}</td>
-                      <td class="text-end text-muted">{{ kontenblattGesamtEinnahmen > 0 ? ((row.einnahmen / kontenblattGesamtEinnahmen) * 100).toFixed(1) + '%' : '–' }}</td>
-                    </tr>
-                  }
-                </tbody>
-                <tfoot class="table-light fw-bold">
-                  <tr><td>Gesamt</td><td class="text-end text-success">{{ formatCurrency(kontenblattGesamtEinnahmen) }}</td><td class="text-center">{{ invoices.length }}</td><td class="text-end">100%</td></tr>
-                </tfoot>
-              </table>
+          <!-- Kontoauszug Toolbar -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="fw-semibold small text-muted d-flex align-items-center gap-2">
+              <i class="bi bi-bank text-primary"></i>Kontoauszug — Forderungen &amp; Zahlungen
+            </span>
+            <div class="btn-group btn-group-sm" role="group">
+              <button type="button" class="btn btn-outline-secondary"
+                      [class.active]="kontenblattSortDir==='DESC'"
+                      (click)="setKontenblattSort('DESC')">
+                <i class="bi bi-sort-down me-1"></i>Neueste zuerst
+              </button>
+              <button type="button" class="btn btn-outline-secondary"
+                      [class.active]="kontenblattSortDir==='ASC'"
+                      (click)="setKontenblattSort('ASC')">
+                <i class="bi bi-sort-up me-1"></i>Älteste zuerst
+              </button>
             </div>
           </div>
 
-          <!-- Alle Rechnungen + Zahlungsstatus -->
-          <div class="card border-0 shadow-sm">
-            <div class="card-header bg-light py-2 d-flex align-items-center gap-2">
-              <i class="bi bi-list-ul text-primary"></i>
-              <span class="fw-semibold small">Buchungsjournal</span>
-            </div>
+          <!-- Ladeindikator -->
+          <div *ngIf="kontenblattLoading" class="text-center py-4 text-muted small">
+            <div class="spinner-border spinner-border-sm me-2"></div>Lade Kontoauszug…
+          </div>
+
+          <!-- Leer-Zustand -->
+          <div *ngIf="!kontenblattLoading && kontenblattEintraege.length===0" class="cc-empty">
+            <i class="bi bi-bank2"></i><p>Noch keine Buchungen vorhanden</p>
+          </div>
+
+          <!-- Kontoauszug-Tabelle (Desktop) -->
+          <div class="card border-0 shadow-sm d-none d-md-block"
+               *ngIf="!kontenblattLoading && kontenblattEintraege.length>0">
             <div class="card-body p-0">
               <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle mb-0" style="font-size:.83rem;">
-                  <thead class="table-light"><tr><th>Datum</th><th>Rechnungsnr.</th><th>Fällig</th><th class="text-end">Betrag</th><th class="text-end">Offen</th><th>Status</th></tr></thead>
+                  <thead class="table-light">
+                    <tr>
+                      <th>Datum</th>
+                      <th>Buchungsart</th>
+                      <th>Beschreibung</th>
+                      <th class="text-end text-danger">Soll (−)</th>
+                      <th class="text-end text-success">Haben (+)</th>
+                      <th class="text-end">Saldo</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    @for (inv of invoices; track inv.id) {
-                      <tr [class.table-danger]="inv.status==='OVERDUE'">
-                        <td>{{ formatDate(inv.invoiceDate) }}</td>
-                        <td class="fw-semibold">{{ inv.invoiceNumber ?? '–' }}</td>
-                        <td>{{ formatDate(inv.dueDate) }}</td>
-                        <td class="text-end">{{ formatCurrency(inv.totalAmount) }}</td>
-                        <td class="text-end">
-                          {{ getOutstandingForInvoice(inv.invoiceNumber) != null ? formatCurrency(getOutstandingForInvoice(inv.invoiceNumber)) : '–' }}
+                    @for (e of kontenblattEintraege; track e.openItemId + '_' + e.typ) {
+                      <tr>
+                        <td class="text-nowrap">{{ formatDate(e.datum) }}</td>
+                        <td>
+                          <span class="badge"
+                                [class.bg-danger]="e.typ==='FORDERUNG'"
+                                [class.bg-success]="e.typ==='ZAHLUNG'">
+                            {{ e.typ==='FORDERUNG' ? 'Forderung' : 'Zahlung' }}
+                          </span>
                         </td>
-                        <td><span [class]="invoiceStatusBadge(inv.status)">{{ invoiceStatusLabel(inv.status) }}</span></td>
+                        <td>
+                          <div>{{ e.beschreibung }}</div>
+                          <div class="text-muted" style="font-size:.75rem" *ngIf="e.zahlungsart">
+                            <i class="bi bi-credit-card me-1"></i>{{ e.zahlungsart }}
+                            <span *ngIf="e.zahlungsreferenz"> · {{ e.zahlungsreferenz }}</span>
+                          </div>
+                        </td>
+                        <td class="text-end text-danger fw-semibold text-nowrap">
+                          {{ e.typ==='FORDERUNG' ? formatCurrency(e.betrag) : '' }}
+                        </td>
+                        <td class="text-end text-success fw-semibold text-nowrap">
+                          {{ e.typ==='ZAHLUNG' ? formatCurrency(e.betrag) : '' }}
+                        </td>
+                        <td class="text-end fw-bold text-nowrap"
+                            [class.text-danger]="(e.saldo ?? 0) < 0"
+                            [class.text-success]="(e.saldo ?? 0) >= 0">
+                          {{ formatCurrency(e.saldo) }}
+                        </td>
                       </tr>
                     }
                   </tbody>
                 </table>
               </div>
             </div>
+          </div>
+
+          <!-- Kontoauszug Mobile-Karten -->
+          <div class="d-block d-md-none"
+               *ngIf="!kontenblattLoading && kontenblattEintraege.length>0">
+            @for (e of kontenblattEintraege; track e.openItemId + '_' + e.typ) {
+              <div class="card border-0 shadow-sm mb-2 border-start border-3"
+                   [style.border-left-color]="e.typ==='FORDERUNG' ? '#dc3545' : '#198754'">
+                <div class="card-body py-2 px-3">
+                  <div class="d-flex justify-content-between align-items-start mb-1">
+                    <span class="badge"
+                          [class.bg-danger]="e.typ==='FORDERUNG'"
+                          [class.bg-success]="e.typ==='ZAHLUNG'">
+                      {{ e.typ==='FORDERUNG' ? 'Forderung' : 'Zahlung' }}
+                    </span>
+                    <span class="small text-muted">{{ formatDate(e.datum) }}</span>
+                  </div>
+                  <div class="small fw-semibold mb-1">{{ e.beschreibung }}</div>
+                  <div class="text-muted small" *ngIf="e.zahlungsart">
+                    <i class="bi bi-credit-card me-1"></i>{{ e.zahlungsart }}
+                    <span *ngIf="e.zahlungsreferenz"> · {{ e.zahlungsreferenz }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between mt-2">
+                    <span *ngIf="e.typ==='FORDERUNG'" class="text-danger fw-bold">− {{ formatCurrency(e.betrag) }}</span>
+                    <span *ngIf="e.typ==='ZAHLUNG'" class="text-success fw-bold">+ {{ formatCurrency(e.betrag) }}</span>
+                    <span class="fw-bold"
+                          [class.text-danger]="(e.saldo ?? 0) < 0"
+                          [class.text-success]="(e.saldo ?? 0) >= 0">
+                      Saldo: {{ formatCurrency(e.saldo) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
           </div>
         </ng-container>
       </div>

@@ -3,6 +3,7 @@ import { Observable, map } from 'rxjs';
 import { BaseApiService } from './base-api-service';
 import { OpenItem } from '../models/OpenItem';
 import { PagedResult } from '../models/PagedResult';
+import { KontenblattEintrag } from '../models/KontenblattEintrag';
 
 @Injectable({
   providedIn: 'root',
@@ -201,5 +202,18 @@ export class OpenItemService extends BaseApiService {
   createOpenItemsForInvoices(invoiceIds: string[]): Observable<OpenItem[]> {
     return this.http.post<OpenItem[]>(`${this.apiUrl}/bulk/create-for-invoices`, invoiceIds, { headers: this.getAuthHeaders() })
       .pipe(map(items => items.map(dto => this.mapToOpenItem(dto))));
+  }
+
+  // --- Kontenblatt ---
+  getKontenblatt(customerId: string, sortDirection: 'ASC' | 'DESC' = 'DESC'): Observable<KontenblattEintrag[]> {
+    return this.http.get<any[]>(
+      `${this.apiUrl}/kontenblatt/customer/${customerId}`,
+      { headers: this.getAuthHeaders(), params: { sortDirection } }
+    ).pipe(
+      map(dtos => dtos.map(dto => ({
+        ...dto,
+        datum: dto.datum ? new Date(dto.datum) : null,
+      }) as KontenblattEintrag))
+    );
   }
 }
