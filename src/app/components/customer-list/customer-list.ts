@@ -71,6 +71,10 @@ export class CustomerListComponent extends ListBase<Customer> implements OnInit 
 
   protected loadPage(): void { this.loadCustomers(); }
 
+  openInCustomerCenter(customer: Customer): void {
+    this.router.navigate(['/customer-center'], { queryParams: { customerId: customer.id } });
+  }
+
   filterCustomers(): void {
     const term = this.searchTerm.toLowerCase();
     this.filteredCustomers = this.customers.filter(c =>

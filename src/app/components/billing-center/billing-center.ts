@@ -1,7 +1,7 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Dialog } from 'primeng/dialog';
 import { forkJoin } from 'rxjs';
 
@@ -91,7 +91,14 @@ export class BillingCenterComponent implements OnInit {
     private emailService: EmailService,
     private notification: NotificationService,
     private dashboardService: DashboardService,
+    private router: Router,
   ) {}
+
+  openInCustomerCenter(item: EnrichedItem): void {
+    if (item.customerId) {
+      this.router.navigate(['/customer-center'], { queryParams: { customerId: item.customerId } });
+    }
+  }
 
   ngOnInit(): void { this.checkMobile(); this.load(); }
 

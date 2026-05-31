@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
 import { Customer } from '../../models/Customer';
@@ -71,12 +72,49 @@ export class CustomerCenterComponent implements OnInit, OnDestroy {
     private subscriptionService: SubscriptionService,
     private crmService: CrmService,
     private notificationService: NotificationService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.checkMobile();
-    this.loadPage(0);
+    const targetId = this.route.snapshot.queryParamMap.get('customerId');
+    if (targetId) {
+      this.loadPageAndSelect(targetId);
+    } else {
+      this.loadPage(0);
+    }
+  }
+
+  private loadPageAndSelect(customerId: string): void {
+    this.loadingCustomers = true;
+    this.listError = null;
+    this.customerService.getCustomersPaginated(0, this.pageSize)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: result => {
+          this.customers = result.content;
+          this.currentPage = result.currentPage;
+          this.totalPages = result.totalPages;
+          this.totalElements = result.totalElements;
+          this.loadingCustomers = false;
+          const found = this.customers.find(c => c.id === customerId);
+          if (found) {
+            this.onCustomerSelected(found);
+          } else {
+            this.customerService.getCustomerById(customerId)
+              .pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: customer => this.onCustomerSelected(customer),
+                error: () => {}
+              });
+          }
+        },
+        error: err => {
+          this.listError = err.error?.message || 'Fehler beim Laden der Kunden';
+          this.loadingCustomers = false;
+        }
+      });
   }
 
   ngOnDestroy(): void {

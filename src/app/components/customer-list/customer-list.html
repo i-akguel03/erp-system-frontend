@@ -19,23 +19,27 @@
         <tr class="border-bottom border-2">
           <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('customerNumber')">Kundennr. <i class="fas ms-1" [ngClass]="sort.icon('customerNumber')" style="font-size: 0.55rem;"></i></th>
           <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('lastName')">Name <i class="fas ms-1" [ngClass]="sort.icon('lastName')" style="font-size: 0.55rem;"></i></th>
+          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('email')">E-Mail <i class="fas ms-1" [ngClass]="sort.icon('email')" style="font-size: 0.55rem;"></i></th>
           <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('tel')">Telefon <i class="fas ms-1" [ngClass]="sort.icon('tel')" style="font-size: 0.55rem;"></i></th>
-          <th class="fw-semibold text-muted text-uppercase border-0" style="font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; user-select: none;" (click)="sort.toggle('residentialAddress.city')">Adresse <i class="fas ms-1" [ngClass]="sort.icon('residentialAddress.city')" style="font-size: 0.55rem;"></i></th>
-          <th class="border-0" style="width: 80px;"></th>
+          <th class="border-0" style="width: 110px;"></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let customer of filteredCustomers | sort:sort.key:sort.dir">
           <td class="fw-bold text-primary">{{ customer.customerNumber }}</td>
-          <td class="fw-medium">{{ customer.firstName }} {{ customer.lastName }}</td>
-          <td class="text-muted small">{{ customer.tel }}</td>
-          <td class="text-muted small">
-            {{ customer.residentialAddress?.street || '-' }},
-            {{ customer.residentialAddress?.postalCode || '' }}
-            {{ customer.residentialAddress?.city || '' }}
+          <td>
+            <div class="fw-medium">{{ customer.firstName }} {{ customer.lastName }}</div>
           </td>
+          <td class="text-muted small">
+            <a *ngIf="customer.email" [href]="'mailto:' + customer.email" class="text-decoration-none text-muted">{{ customer.email }}</a>
+            <span *ngIf="!customer.email">–</span>
+          </td>
+          <td class="text-muted small">{{ customer.tel || '–' }}</td>
           <td>
             <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-primary" (click)="openInCustomerCenter(customer)" title="Im Kundencenter öffnen">
+                <i class="bi bi-person-lines-fill"></i>
+              </button>
               <button class="btn btn-sm btn-outline-info" (click)="sendWelcomeEmail(customer)" [disabled]="emailSendingId === customer.id" title="Willkommens-E-Mail senden">
                 <i class="fas fa-envelope"></i>
               </button>
@@ -57,26 +61,26 @@
     <div *ngFor="let customer of filteredCustomers" class="card border-0 shadow-sm mb-3">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-2">
-          <div>
+          <div class="flex-grow-1 overflow-hidden">
             <div class="fw-bold text-primary small">{{ customer.customerNumber }}</div>
             <h6 class="mb-0 fw-semibold">{{ customer.firstName }} {{ customer.lastName }}</h6>
+            <div class="text-muted small mt-1" *ngIf="customer.email">
+              <i class="fas fa-envelope me-1"></i>{{ customer.email }}
+            </div>
+            <div class="text-muted small" *ngIf="customer.tel">
+              <i class="fas fa-phone me-1"></i>{{ customer.tel }}
+            </div>
           </div>
-          <span *ngIf="customer.tel" class="text-muted small">
-            <i class="fas fa-phone me-1"></i>{{ customer.tel }}
-          </span>
         </div>
-        <div class="text-muted small mb-3" *ngIf="customer.residentialAddress?.street">
-          <i class="fas fa-map-marker-alt me-1"></i>
-          {{ customer.residentialAddress?.street }},
-          {{ customer.residentialAddress?.postalCode }}
-          {{ customer.residentialAddress?.city }}
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-outline-info flex-grow-1" (click)="sendWelcomeEmail(customer)" [disabled]="emailSendingId === customer.id">
-            <i class="fas fa-envelope me-1"></i>E-Mail
+        <div class="d-flex gap-2 mt-2">
+          <button class="btn btn-sm btn-primary flex-grow-1" (click)="openInCustomerCenter(customer)">
+            <i class="bi bi-person-lines-fill me-1"></i>Kundencenter
           </button>
-          <button class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openEditModal(customer)">
-            <i class="fas fa-edit me-1"></i>Bearbeiten
+          <button class="btn btn-sm btn-outline-info" (click)="sendWelcomeEmail(customer)" [disabled]="emailSendingId === customer.id" title="Willkommens-E-Mail">
+            <i class="fas fa-envelope"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(customer)" title="Bearbeiten">
+            <i class="fas fa-edit"></i>
           </button>
           <button class="btn btn-sm btn-outline-danger" (click)="deleteCustomer(customer.id)" title="Löschen">
             <i class="fas fa-trash"></i>

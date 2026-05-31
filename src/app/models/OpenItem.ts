@@ -33,6 +33,9 @@ export interface OpenItem {
   // Customer info (from invoice relation)
   customerId?: string;
   customerName?: string;
+  customerFirstName?: string;
+  customerLastName?: string;
+  customerNumber?: string;
 }
 
 export enum OpenItemStatus {
