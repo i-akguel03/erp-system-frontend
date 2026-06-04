@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Dialog } from 'primeng/dialog';
 
 import { Customer } from '../../../../models/Customer';
@@ -15,6 +16,7 @@ import { CrmContact } from '../../../../models/CrmContact';
 import { CrmDocument, DocumentType } from '../../../../models/CrmDocument';
 import { OpenItemService } from '../../../../services/open-item-service';
 import { NotificationService } from '../../../../services/notification.service';
+import { CrmService } from '../../../../services/crm.service';
 import { KontenblattEintrag } from '../../../../models/KontenblattEintrag';
 
 type Tab = 'uebersicht' | 'vertraege' | 'rechnungen' | 'zahlungen' | 'crm' | 'kontenblatt';
@@ -70,6 +72,13 @@ export class CustomerDetailTabsComponent implements OnChanges {
   showContactModal = false;  contactForm: Partial<CrmContact> = {};
   showDocumentModal = false; selectedFile: File | null = null; docDescription = ''; docType: DocumentType = 'SONSTIGES';
 
+  // Vorschau-Modal
+  showPreviewModal = false;
+  previewDoc: CrmDocument | null = null;
+  previewUrl: SafeResourceUrl | null = null;
+  previewLoading = false;
+  private previewBlobUrl: string | null = null;
+
   // Payment Modal
   showPayModal = false;
   selectedOpenItem: OpenItem | null = null;
@@ -94,7 +103,9 @@ export class CustomerDetailTabsComponent implements OnChanges {
 
   constructor(
     private openItemService: OpenItemService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private crmService: CrmService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnChanges(): void {
@@ -274,6 +285,43 @@ export class CustomerDetailTabsComponent implements OnChanges {
     if (t === 'BILD') return 'bi-file-earmark-image text-info';
     if (t === 'EMAIL') return 'bi-envelope text-primary';
     return 'bi-file-earmark text-secondary';
+  }
+
+  isPreviewable(doc: CrmDocument): boolean {
+    return doc.mimeType?.startsWith('image/') === true
+        || doc.mimeType === 'application/pdf'
+        || doc.documentType === 'PDF'
+        || doc.documentType === 'BILD';
+  }
+
+  isPdf(doc: CrmDocument): boolean {
+    return doc.mimeType === 'application/pdf' || doc.documentType === 'PDF';
+  }
+
+  openPreview(doc: CrmDocument): void {
+    this.previewDoc = doc;
+    this.previewUrl = null;
+    this.previewLoading = true;
+    this.showPreviewModal = true;
+    this.crmService.fetchDocumentBlob(doc.id!).subscribe({
+      next: (blob) => {
+        if (this.previewBlobUrl) URL.revokeObjectURL(this.previewBlobUrl);
+        this.previewBlobUrl = URL.createObjectURL(blob);
+        this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewBlobUrl);
+        this.previewLoading = false;
+      },
+      error: () => { this.previewLoading = false; }
+    });
+  }
+
+  closePreview(): void {
+    if (this.previewBlobUrl) {
+      URL.revokeObjectURL(this.previewBlobUrl);
+      this.previewBlobUrl = null;
+    }
+    this.showPreviewModal = false;
+    this.previewDoc = null;
+    this.previewUrl = null;
   }
   subStatusBadge(s?: string): string {
     const m: any = { ACTIVE:'badge bg-success', PAUSED:'badge bg-warning text-dark', CANCELLED:'badge bg-secondary', EXPIRED:'badge bg-danger' };

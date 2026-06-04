@@ -154,6 +154,13 @@ export class CrmService extends BaseApiService {
     return this.http.delete<void>(`${this.base}/documents/${id}`, { headers: this.getAuthHeaders() });
   }
 
+  fetchDocumentBlob(documentId: string): Observable<Blob> {
+    return this.http.get(`${this.base}/documents/${documentId}/download`, {
+      headers: this.getAuthHeaders(),
+      responseType: 'blob'
+    });
+  }
+
   // ─── Mappers ──────────────────────────────────────────────────────────────
 
   private mapNote(dto: any): CrmNote {

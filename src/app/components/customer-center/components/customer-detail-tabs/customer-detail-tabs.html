@@ -435,6 +435,7 @@
                       <div class="text-muted small" *ngIf="d.description">{{ d.description }}</div>
                     </div>
                     <div class="d-flex gap-1 flex-shrink-0">
+                      <button *ngIf="isPreviewable(d)" class="btn btn-sm btn-outline-secondary py-0 px-1" (click)="openPreview(d)" title="Vorschau"><i class="bi bi-eye"></i></button>
                       <a *ngIf="d.id" [href]="'/api/crm/documents/'+d.id+'/download'" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-1" title="Herunterladen"><i class="bi bi-download"></i></a>
                       <button class="btn btn-sm btn-outline-danger py-0 px-1" (click)="documentDeleted.emit(d.id!)"><i class="bi bi-trash3"></i></button>
                     </div>
@@ -705,6 +706,45 @@
         Zahlung buchen
       </button>
     </div>
+  </div>
+</p-dialog>
+
+<p-dialog [(visible)]="showPreviewModal"
+          [header]="previewDoc?.originalFileName || 'Vorschau'"
+          [modal]="true"
+          [closable]="true"
+          [style]="{ width: '92vw', maxWidth: '1200px' }"
+          [contentStyle]="{ height: '80vh', padding: '0', overflow: 'hidden' }"
+          (onHide)="closePreview()">
+  <div class="d-flex align-items-center justify-content-center" style="height:100%;background:#f8f9fa;">
+
+    <div *ngIf="previewLoading" class="text-center text-muted">
+      <div class="spinner-border text-primary mb-2" role="status"></div>
+      <p class="small">Dokument wird geladen…</p>
+    </div>
+
+    <ng-container *ngIf="!previewLoading && previewUrl">
+      <!-- PDF -->
+      <iframe *ngIf="previewDoc && isPdf(previewDoc)"
+              [src]="previewUrl"
+              style="width:100%;height:80vh;border:none;"
+              title="Dokumentvorschau">
+      </iframe>
+      <!-- Bild -->
+      <img *ngIf="previewDoc && !isPdf(previewDoc)"
+           [src]="previewUrl"
+           style="max-width:100%;max-height:80vh;object-fit:contain;display:block;margin:auto;"
+           [alt]="previewDoc?.originalFileName">
+    </ng-container>
+
+    <div *ngIf="!previewLoading && !previewUrl" class="text-center text-muted p-4">
+      <i class="bi bi-exclamation-circle fs-3 d-block mb-2"></i>
+      <p class="small">Vorschau konnte nicht geladen werden.</p>
+      <a *ngIf="previewDoc?.id" [href]="'/api/crm/documents/'+previewDoc!.id+'/download'" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+        <i class="bi bi-download me-1"></i>Herunterladen
+      </a>
+    </div>
+
   </div>
 </p-dialog>
 
