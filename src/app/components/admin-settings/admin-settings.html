@@ -1,0 +1,135 @@
+<div class="p-3 p-md-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold">
+        <i class="fas fa-sliders-h me-2 text-primary"></i>Systemeinstellungen
+      </h4>
+      <small class="text-muted">Konfiguration des Audit-Logs</small>
+    </div>
+    <button class="btn btn-outline-primary btn-sm" (click)="load()" [disabled]="loading" title="Neu laden">
+      <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+    </button>
+  </div>
+
+  <!-- Feedback -->
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center gap-2 py-2">
+    <i class="fas fa-exclamation-triangle"></i>{{ error }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success d-flex align-items-center gap-2 py-2">
+    <i class="fas fa-check-circle"></i>{{ successMessage }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">Einstellungen werden geladen...</p>
+  </div>
+
+  <div *ngIf="!loading">
+
+    <!-- Sektion: Audit-Log Ausschlüsse -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white border-bottom py-3">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-filter text-warning"></i>
+          <span class="fw-semibold">Nicht protokollierte Entitäten</span>
+        </div>
+        <small class="text-muted d-block mt-1">
+          Diese Entitätstypen werden <strong>nicht</strong> ins Audit-Log geschrieben.
+          Änderungen gelten sofort und werden dauerhaft gespeichert.
+        </small>
+      </div>
+
+      <div class="card-body">
+
+        <!-- Bekannte Typen mit Toggle -->
+        <div class="mb-4">
+          <p class="text-muted small fw-semibold text-uppercase mb-2" style="font-size:0.7rem;letter-spacing:.05em;">
+            Bekannte Typen
+          </p>
+
+          <div *ngFor="let type of ['Notification', 'VorgangStep', 'AuditLog']"
+               class="d-flex align-items-center justify-content-between p-3 rounded mb-2"
+               [class.bg-light]="!isExcluded(type)"
+               [class.bg-warning]="isExcluded(type)"
+               [class.bg-opacity-10]="true"
+               style="border: 1px solid #dee2e6;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input"
+                       type="checkbox"
+                       [id]="'toggle-' + type"
+                       [checked]="isExcluded(type)"
+                       (change)="toggle(type)"
+                       style="cursor:pointer;">
+              </div>
+              <div>
+                <span class="fw-semibold">{{ type }}</span>
+                <span *ngIf="isExcluded(type)" class="badge bg-warning text-dark ms-2" style="font-size:0.65rem;">ausgeschlossen</span>
+                <span *ngIf="!isExcluded(type)" class="badge bg-success ms-2" style="font-size:0.65rem;">wird protokolliert</span>
+              </div>
+            </div>
+            <label [for]="'toggle-' + type" class="text-muted small mb-0" style="cursor:pointer;">
+              {{ isExcluded(type) ? 'Klicken zum Aktivieren' : 'Klicken zum Ausschließen' }}
+            </label>
+          </div>
+        </div>
+
+        <!-- Weitere ausgeschlossene Typen -->
+        <div *ngIf="excluded.length > 0" class="mb-4">
+          <p class="text-muted small fw-semibold text-uppercase mb-2" style="font-size:0.7rem;letter-spacing:.05em;">
+            Alle ausgeschlossenen Typen
+          </p>
+          <div class="d-flex flex-wrap gap-2">
+            <span *ngFor="let type of excluded"
+                  class="badge bg-warning text-dark d-flex align-items-center gap-1 px-3 py-2"
+                  style="font-size:0.8rem;">
+              {{ type }}
+              <button type="button"
+                      class="btn-close btn-close-white ms-1"
+                      style="font-size:0.6rem;filter:invert(1) brightness(0);"
+                      (click)="removeType(type)"
+                      [attr.title]="'&quot;' + type + '&quot; wieder protokollieren'">
+              </button>
+            </span>
+          </div>
+          <small class="text-muted mt-1 d-block">Auf × klicken um einen Typ wieder ins Audit-Log aufzunehmen.</small>
+        </div>
+
+        <div *ngIf="excluded.length === 0" class="text-muted small fst-italic mb-4">
+          Alle Entitätstypen werden aktuell protokolliert.
+        </div>
+
+        <!-- Eigenen Typ hinzufügen -->
+        <div>
+          <p class="text-muted small fw-semibold text-uppercase mb-2" style="font-size:0.7rem;letter-spacing:.05em;">
+            Weiteren Typ ausschließen
+          </p>
+          <div *ngIf="addError" class="alert alert-danger py-2 small mb-2">{{ addError }}</div>
+          <div class="d-flex gap-2" style="max-width: 400px;">
+            <input type="text"
+                   class="form-control form-control-sm"
+                   [(ngModel)]="newEntityType"
+                   placeholder="z.B. InventoryItem"
+                   (keydown.enter)="addCustomType()"
+                   autocomplete="off">
+            <button class="btn btn-outline-warning btn-sm"
+                    (click)="addCustomType()"
+                    [disabled]="!newEntityType.trim() || addLoading">
+              <span *ngIf="addLoading"><i class="fas fa-spinner fa-spin me-1"></i></span>
+              <span *ngIf="!addLoading"><i class="fas fa-plus me-1"></i></span>
+              Ausschließen
+            </button>
+          </div>
+          <small class="text-muted mt-1 d-block">
+            Entitätsname exakt wie im Backend (z.B. <code>Notification</code>, <code>Customer</code>).
+          </small>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

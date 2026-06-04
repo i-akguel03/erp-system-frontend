@@ -23,6 +23,7 @@ import { AuditLogComponent } from './components/audit-log/audit-log';
 import { AnalyseComponent } from './components/analyse/analyse';
 import { NotificationListComponent } from './components/notification-list/notification-list';
 import { InitComponent } from './components/init/init';
+import { AdminSettingsComponent } from './components/admin-settings/admin-settings';
 import { BillingCenterComponent } from './components/billing-center/billing-center';
 import { KontenplanComponent } from './components/buchhaltung/kontenplan/kontenplan';
 import { BuchungssatzListComponent } from './components/buchhaltung/buchungssatz-list/buchungssatz-list';
@@ -56,6 +57,7 @@ export const routes: Routes = [
   { path: 'admin', component: AdminComponent, canActivate: [AdminGuard] },
   { path: 'audit-logs', component: AuditLogComponent, canActivate: [AdminGuard] },
   { path: 'init', component: InitComponent, canActivate: [AdminGuard] },
+  { path: 'admin-settings', component: AdminSettingsComponent, canActivate: [AdminGuard] },
   { path: 'analyse', component: AnalyseComponent, canActivate: [AuthGuard] },
   { path: 'notifications', component: NotificationListComponent, canActivate: [AuthGuard] },
 
