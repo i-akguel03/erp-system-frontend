@@ -10,11 +10,18 @@ export class AdminSettingsService extends BaseApiService {
     return this.http.get<string[]>(`${this.baseUrl}/audit/excluded`, { headers: this.getAuthHeaders() });
   }
 
-  excludeEntityType(entityType: string): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/audit/excluded/${entityType}`, null, { headers: this.getAuthHeaders() });
+  excludeEntityType(entityType: string, password: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/audit/excluded/${entityType}`,
+      null,
+      { headers: this.getAuthHeaders(), params: { password } }
+    );
   }
 
-  includeEntityType(entityType: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/audit/excluded/${entityType}`, { headers: this.getAuthHeaders() });
+  includeEntityType(entityType: string, password: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/audit/excluded/${entityType}`,
+      { headers: this.getAuthHeaders(), params: { password } }
+    );
   }
 }

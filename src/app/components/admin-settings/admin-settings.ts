@@ -15,6 +15,8 @@ export class AdminSettingsComponent implements OnInit {
   error = '';
   successMessage = '';
 
+  password = '';
+
   newEntityType = '';
   addLoading = false;
   addError = '';
@@ -23,6 +25,10 @@ export class AdminSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  canAct(): boolean {
+    return this.password.trim().length > 0;
   }
 
   load(): void {
@@ -46,20 +52,20 @@ export class AdminSettingsComponent implements OnInit {
 
   toggle(type: string): void {
     if (this.isExcluded(type)) {
-      this.settingsService.includeEntityType(type).subscribe({
+      this.settingsService.includeEntityType(type, this.password).subscribe({
         next: () => {
           this.excluded = this.excluded.filter(e => e !== type);
           this.showSuccess(`"${type}" wird wieder ins Audit-Log geschrieben.`);
         },
-        error: () => { this.error = 'Fehler beim Speichern.'; }
+        error: (err) => { this.error = err?.error || 'Fehler beim Speichern.'; }
       });
     } else {
-      this.settingsService.excludeEntityType(type).subscribe({
+      this.settingsService.excludeEntityType(type, this.password).subscribe({
         next: () => {
           this.excluded = [...this.excluded, type].sort();
           this.showSuccess(`"${type}" wird nicht mehr ins Audit-Log geschrieben.`);
         },
-        error: () => { this.error = 'Fehler beim Speichern.'; }
+        error: (err) => { this.error = err?.error || 'Fehler beim Speichern.'; }
       });
     }
   }
@@ -73,27 +79,27 @@ export class AdminSettingsComponent implements OnInit {
     }
     this.addLoading = true;
     this.addError = '';
-    this.settingsService.excludeEntityType(type).subscribe({
+    this.settingsService.excludeEntityType(type, this.password).subscribe({
       next: () => {
         this.excluded = [...this.excluded, type].sort();
         this.newEntityType = '';
         this.addLoading = false;
         this.showSuccess(`"${type}" wird nicht mehr ins Audit-Log geschrieben.`);
       },
-      error: () => {
-        this.addError = 'Fehler beim Hinzufügen.';
+      error: (err) => {
+        this.addError = err?.error || 'Fehler beim Hinzufügen.';
         this.addLoading = false;
       }
     });
   }
 
   removeType(type: string): void {
-    this.settingsService.includeEntityType(type).subscribe({
+    this.settingsService.includeEntityType(type, this.password).subscribe({
       next: () => {
         this.excluded = this.excluded.filter(e => e !== type);
         this.showSuccess(`"${type}" wird wieder ins Audit-Log geschrieben.`);
       },
-      error: () => { this.error = 'Fehler beim Entfernen.'; }
+      error: (err) => { this.error = err?.error || 'Fehler beim Entfernen.'; }
     });
   }
 

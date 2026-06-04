@@ -13,6 +13,18 @@
     </button>
   </div>
 
+  <!-- Passwort -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="form-floating" style="max-width: 360px;">
+        <input type="password" class="form-control" id="settingsPwd" placeholder=" "
+               [(ngModel)]="password" autocomplete="off">
+        <label for="settingsPwd"><i class="fas fa-lock me-1"></i>Bestätigungspasswort</label>
+      </div>
+      <small class="text-muted mt-1 d-block">Alle Änderungen erfordern das Admin-Passwort.</small>
+    </div>
+  </div>
+
   <!-- Feedback -->
   <div *ngIf="error" class="alert alert-danger d-flex align-items-center gap-2 py-2">
     <i class="fas fa-exclamation-triangle"></i>{{ error }}
@@ -62,6 +74,7 @@
                        type="checkbox"
                        [id]="'toggle-' + type"
                        [checked]="isExcluded(type)"
+                       [disabled]="!canAct()"
                        (change)="toggle(type)"
                        style="cursor:pointer;">
               </div>
@@ -71,7 +84,8 @@
                 <span *ngIf="!isExcluded(type)" class="badge bg-success ms-2" style="font-size:0.65rem;">wird protokolliert</span>
               </div>
             </div>
-            <label [for]="'toggle-' + type" class="text-muted small mb-0" style="cursor:pointer;">
+            <label [for]="'toggle-' + type" class="text-muted small mb-0"
+                   [style.cursor]="canAct() ? 'pointer' : 'not-allowed'">
               {{ isExcluded(type) ? 'Klicken zum Aktivieren' : 'Klicken zum Ausschließen' }}
             </label>
           </div>
@@ -90,6 +104,7 @@
               <button type="button"
                       class="btn-close btn-close-white ms-1"
                       style="font-size:0.6rem;filter:invert(1) brightness(0);"
+                      [disabled]="!canAct()"
                       (click)="removeType(type)"
                       [attr.title]="'&quot;' + type + '&quot; wieder protokollieren'">
               </button>
@@ -117,7 +132,7 @@
                    autocomplete="off">
             <button class="btn btn-outline-warning btn-sm"
                     (click)="addCustomType()"
-                    [disabled]="!newEntityType.trim() || addLoading">
+                    [disabled]="!newEntityType.trim() || addLoading || !canAct()">
               <span *ngIf="addLoading"><i class="fas fa-spinner fa-spin me-1"></i></span>
               <span *ngIf="!addLoading"><i class="fas fa-plus me-1"></i></span>
               Ausschließen
