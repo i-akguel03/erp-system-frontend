@@ -335,7 +335,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
       acceptLabel: 'Stornieren', rejectLabel: 'Abbrechen',
       accept: () => this.contractService.terminateContract(contract.id!).pipe(takeUntil(this.destroy$)).subscribe({
         next: u => { this.updateLocalContract(u); this.notificationService.success('Vertrag storniert'); },
-        error: () => this.notificationService.error('Fehler beim Stornieren')
+        error: err => this.notificationService.error(err?.error?.message || 'Fehler beim Stornieren')
       })
     });
   }
@@ -400,7 +400,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     if (!sub.id) return;
     this.subscriptionService.activateSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement aktiviert'); },
-      error: () => this.notificationService.error('Fehler beim Aktivieren')
+      error: err => this.notificationService.error(err?.error?.message || 'Fehler beim Aktivieren')
     });
   }
 
@@ -408,7 +408,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     if (!sub.id) return;
     this.subscriptionService.pauseSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement pausiert'); },
-      error: () => this.notificationService.error('Fehler beim Pausieren')
+      error: err => this.notificationService.error(err?.error?.message || 'Fehler beim Pausieren')
     });
   }
 
@@ -416,7 +416,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     if (!sub.id) return;
     this.subscriptionService.terminateSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement gekündigt'); },
-      error: () => this.notificationService.error('Fehler beim Kündigen')
+      error: err => this.notificationService.error(err?.error?.message || 'Fehler beim Kündigen')
     });
   }
 
@@ -424,7 +424,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     if (!sub.id) return;
     this.subscriptionService.cancelSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement storniert'); },
-      error: () => this.notificationService.error('Fehler beim Stornieren')
+      error: err => this.notificationService.error(err?.error?.message || 'Fehler beim Stornieren')
     });
   }
 

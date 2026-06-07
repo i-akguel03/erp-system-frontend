@@ -50,7 +50,7 @@ export class SubscriptionPanelComponent {
 
   canActivate(sub: Subscription): boolean {
     const s = sub.subscriptionStatus?.toUpperCase();
-    return s === 'DRAFT' || s === 'PAUSED' || s === 'SUSPENDED' || s === 'TERMINATED' || s === 'EXPIRED' || s === 'CANCELLED';
+    return s === 'DRAFT' || s === 'PAUSED' || s === 'SUSPENDED' || s === 'TERMINATED' || s === 'EXPIRED';
   }
   canPause(sub: Subscription): boolean { return sub.subscriptionStatus?.toUpperCase() === 'ACTIVE'; }
   canTerminate(sub: Subscription): boolean {
