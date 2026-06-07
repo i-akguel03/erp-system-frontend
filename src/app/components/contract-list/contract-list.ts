@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Observable, of, switchMap } from 'rxjs';
 import { SortPipe } from '../../shared/pipes/sort.pipe';
 import { ListBase } from '../../shared/utils/list-base';
 import { ListToolbarComponent } from '../../shared/components/list-toolbar/list-toolbar.component';
@@ -35,6 +36,7 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
   newEndDateString = '';
   editStartDateString = '';
   editEndDateString = '';
+  private originalContractStatus: string | undefined;
 
   showTerminateModal = false;
   contractToTerminate: Contract | null = null;
@@ -125,6 +127,7 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
 
   openEditModal(contract: Contract): void {
     this.editContract = { ...contract };
+    this.originalContractStatus = contract.contractStatus;
     this.showEditModal = true;
     this.error = null;
     this.editStartDateString = this.formatDateForInput(contract.startDate);
@@ -174,17 +177,35 @@ export class ContractListComponent extends ListBase<Contract> implements OnInit 
       this.error = 'Bitte wählen Sie einen Kunden aus.';
       return;
     }
+    const statusChanged = this.originalContractStatus !== this.editContract.contractStatus;
+    const newStatus = this.editContract.contractStatus;
     const contractToUpdate = {
       ...this.editContract,
       startDate: this.editStartDateString ? new Date(this.editStartDateString) : new Date(),
-      endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
+      endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined,
+      contractStatus: statusChanged
+        ? (this.originalContractStatus as Contract['contractStatus'])
+        : this.editContract.contractStatus
     };
     if (this.saving) return;
     this.saving = true;
-    this.contractService.updateContract(this.editContract.id, contractToUpdate).subscribe({
+    this.contractService.updateContract(this.editContract.id, contractToUpdate).pipe(
+      switchMap(updated => statusChanged && newStatus
+        ? this.getStatusChangePatch(updated.id!, newStatus)
+        : of(updated))
+    ).subscribe({
       next: updated => { this.saving = false; this.updateLocalContract(updated); this.closeEditModal(); this.notification.success('Vertrag erfolgreich aktualisiert.'); },
-      error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren des Vertrags'); this.notification.error('Fehler beim Aktualisieren des Vertrags.'); }
+      error: err => { this.saving = false; this.handleApiError(err, 'Fehler beim Aktualisieren des Vertrags'); this.notification.error('Fehler beim Aktualisieren des Vertrags.'); }
     });
+  }
+
+  private getStatusChangePatch(id: string, status: string): Observable<Contract> {
+    switch (status) {
+      case 'ACTIVE':     return this.contractService.activateContract(id);
+      case 'SUSPENDED':  return this.contractService.suspendContract(id);
+      case 'TERMINATED': return this.contractService.terminateContract(id);
+      default:           return of({} as Contract);
+    }
   }
 
   activateContract(contractId: string): void {
