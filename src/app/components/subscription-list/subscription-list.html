@@ -156,7 +156,9 @@
     </div>
     <div class="form-floating">
       <select class="form-select" id="nSubStatus" [(ngModel)]="newSubscription.subscriptionStatus">
-        <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
+        <option value="ACTIVE">Aktiv</option>
+        <option value="PAUSED">Pausiert</option>
+        <option value="CANCELLED">Storniert</option>
       </select>
       <label for="nSubStatus">Status</label>
     </div>

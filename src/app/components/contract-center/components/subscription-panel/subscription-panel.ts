@@ -74,13 +74,13 @@ export class SubscriptionPanelComponent {
 
   getStatusBadgeClass(sub: Subscription): string {
     const s = sub.subscriptionStatus?.toUpperCase();
-    const m: any = { ACTIVE:'bg-success', PAUSED:'bg-warning text-dark', CANCELLED:'bg-danger', TERMINATED:'bg-secondary', EXPIRED:'bg-danger', SUSPENDED:'bg-secondary' };
+    const m: any = { ACTIVE:'bg-success', PAUSED:'bg-warning text-dark', CANCELLED:'bg-danger', TERMINATED:'bg-secondary', EXPIRED:'bg-secondary', SUSPENDED:'bg-secondary' };
     return m[s ?? ''] ?? 'bg-light text-dark';
   }
 
   getSubscriptionStatusText(sub: Subscription): string {
     const s = sub.subscriptionStatus?.toUpperCase();
-    const m: any = { ACTIVE:'Aktiv', PAUSED:'Pausiert', CANCELLED:'Gekündigt', TERMINATED:'Beendet', EXPIRED:'Abgelaufen', SUSPENDED:'Ausgesetzt' };
+    const m: any = { ACTIVE:'Aktiv', PAUSED:'Pausiert', CANCELLED:'Storniert', TERMINATED:'Gekündigt', EXPIRED:'Abgelaufen', SUSPENDED:'Ausgesetzt' };
     return m[s ?? ''] ?? sub.subscriptionStatus ?? 'Unbekannt';
   }
 
