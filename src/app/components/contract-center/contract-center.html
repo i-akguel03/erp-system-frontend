@@ -380,7 +380,9 @@
       @if (contractModalMode === 'edit') {
         <div class="form-floating">
           <select class="form-select" id="ccStatus" [(ngModel)]="contractForm.contractStatus" [disabled]="contractModalLoading">
-            <option value="DRAFT">Entwurf</option>
+            @if (contractForm.contractStatus === 'DRAFT') {
+              <option value="DRAFT">Entwurf</option>
+            }
             <option value="ACTIVE">Aktiv</option>
             <option value="SUSPENDED">Ausgesetzt</option>
             <option value="TERMINATED">Gekündigt</option>

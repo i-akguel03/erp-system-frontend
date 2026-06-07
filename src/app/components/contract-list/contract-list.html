@@ -193,7 +193,9 @@
     </div>
     <div class="form-floating">
       <select class="form-select" id="eConStatus" [(ngModel)]="editContract.contractStatus">
-        <option value="DRAFT">Entwurf</option>
+        @if (editContract.contractStatus === 'DRAFT') {
+          <option value="DRAFT">Entwurf</option>
+        }
         <option value="ACTIVE">Aktiv</option>
         <option value="SUSPENDED">Ausgesetzt</option>
       </select>
