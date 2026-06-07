@@ -54,12 +54,14 @@
       </div>
 
       <!-- Aktions-Button -->
-      <button class="btn btn-sm btn-outline-secondary border-0 rounded-circle sub-action-btn flex-shrink-0"
+      <button *ngIf="hasActions(sub)"
+              class="btn btn-sm btn-outline-secondary border-0 rounded-circle sub-action-btn flex-shrink-0"
               type="button"
               title="Aktionen"
               (click)="openMenu($event, sub)">
         <i class="bi bi-three-dots-vertical"></i>
       </button>
+      <div *ngIf="!hasActions(sub)" style="width:28px; flex-shrink:0;"></div>
     </div>
   }
 </div>

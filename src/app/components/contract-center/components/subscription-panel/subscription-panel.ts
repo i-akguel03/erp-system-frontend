@@ -50,7 +50,7 @@ export class SubscriptionPanelComponent {
 
   canActivate(sub: Subscription): boolean {
     const s = sub.subscriptionStatus?.toUpperCase();
-    return s === 'DRAFT' || s === 'PAUSED' || s === 'SUSPENDED' || s === 'TERMINATED' || s === 'EXPIRED';
+    return s === 'DRAFT' || s === 'PAUSED' || s === 'SUSPENDED' || s === 'TERMINATED' || s === 'EXPIRED' || s === 'CANCELLED';
   }
   canPause(sub: Subscription): boolean { return sub.subscriptionStatus?.toUpperCase() === 'ACTIVE'; }
   canTerminate(sub: Subscription): boolean {
@@ -62,21 +62,25 @@ export class SubscriptionPanelComponent {
     return s === 'ACTIVE' || s === 'PAUSED' || s === 'SUSPENDED' || s === 'TERMINATED';
   }
 
+  hasActions(sub: Subscription): boolean {
+    return this.canActivate(sub) || this.canPause(sub) || this.canTerminate(sub) || this.canCancel(sub);
+  }
+
   getStatusIcon(sub: Subscription): string {
     const s = sub.subscriptionStatus?.toUpperCase();
-    const m: any = { ACTIVE:'bi-check-circle-fill text-success', PAUSED:'bi-pause-circle-fill text-warning', CANCELLED:'bi-x-circle-fill text-danger', EXPIRED:'bi-clock-history text-danger', SUSPENDED:'bi-dash-circle-fill text-secondary' };
+    const m: any = { ACTIVE:'bi-check-circle-fill text-success', PAUSED:'bi-pause-circle-fill text-warning', CANCELLED:'bi-x-circle-fill text-danger', TERMINATED:'bi-x-circle text-secondary', EXPIRED:'bi-clock-history text-danger', SUSPENDED:'bi-dash-circle-fill text-secondary' };
     return m[s ?? ''] ?? 'bi-circle text-muted';
   }
 
   getStatusBadgeClass(sub: Subscription): string {
     const s = sub.subscriptionStatus?.toUpperCase();
-    const m: any = { ACTIVE:'bg-success', PAUSED:'bg-warning text-dark', CANCELLED:'bg-danger', EXPIRED:'bg-danger', SUSPENDED:'bg-secondary' };
+    const m: any = { ACTIVE:'bg-success', PAUSED:'bg-warning text-dark', CANCELLED:'bg-danger', TERMINATED:'bg-secondary', EXPIRED:'bg-danger', SUSPENDED:'bg-secondary' };
     return m[s ?? ''] ?? 'bg-light text-dark';
   }
 
   getSubscriptionStatusText(sub: Subscription): string {
     const s = sub.subscriptionStatus?.toUpperCase();
-    const m: any = { ACTIVE:'Aktiv', PAUSED:'Pausiert', CANCELLED:'Gekündigt', EXPIRED:'Abgelaufen', SUSPENDED:'Ausgesetzt' };
+    const m: any = { ACTIVE:'Aktiv', PAUSED:'Pausiert', CANCELLED:'Gekündigt', TERMINATED:'Beendet', EXPIRED:'Abgelaufen', SUSPENDED:'Ausgesetzt' };
     return m[s ?? ''] ?? sub.subscriptionStatus ?? 'Unbekannt';
   }
 
