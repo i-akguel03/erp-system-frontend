@@ -396,6 +396,44 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
 
   closeSubscriptionModal(): void { this.showSubscriptionModal = false; this.subscriptionForm = {}; this.subscriptionModalLoading = false; }
 
+  onActivateSubscription(sub: Subscription): void {
+    if (!sub.id) return;
+    this.subscriptionService.activateSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement aktiviert'); },
+      error: () => this.notificationService.error('Fehler beim Aktivieren')
+    });
+  }
+
+  onPauseSubscription(sub: Subscription): void {
+    if (!sub.id) return;
+    this.subscriptionService.pauseSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement pausiert'); },
+      error: () => this.notificationService.error('Fehler beim Pausieren')
+    });
+  }
+
+  onTerminateSubscription(sub: Subscription): void {
+    if (!sub.id) return;
+    this.subscriptionService.terminateSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement gekündigt'); },
+      error: () => this.notificationService.error('Fehler beim Kündigen')
+    });
+  }
+
+  onCancelSubscription(sub: Subscription): void {
+    if (!sub.id) return;
+    this.subscriptionService.cancelSubscription(sub.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: updated => { this.updateLocalSubscription(updated); this.notificationService.success('Abonnement storniert'); },
+      error: () => this.notificationService.error('Fehler beim Stornieren')
+    });
+  }
+
+  private updateLocalSubscription(updated: Subscription): void {
+    const idx = this.subscriptions.findIndex(s => s.id === updated.id);
+    if (idx >= 0) this.subscriptions[idx] = updated;
+    if (this.selectedSubscription?.id === updated.id) this.selectedSubscription = updated;
+  }
+
   saveSubscription(): void {
     if (!this.subscriptionForm.productId || !this.subscriptionForm.billingCycle || !this.subscriptionStartDateString) {
       this.notificationService.warn('Bitte füllen Sie alle Pflichtfelder aus.'); return;

@@ -53,7 +53,52 @@
         </div>
       </div>
 
-      <i class="bi bi-chevron-right text-muted flex-shrink-0 mt-1" style="font-size:.8rem;"></i>
+      <!-- Aktions-Dropdown -->
+      <div class="flex-shrink-0" (click)="$event.stopPropagation()">
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary border-0 rounded-circle sub-action-btn"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  title="Aktionen">
+            <i class="bi bi-three-dots-vertical"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:160px; font-size:.85rem;">
+            @if (canActivate(sub)) {
+              <li>
+                <button class="dropdown-item text-success" (click)="onActivate($event, sub)">
+                  <i class="bi bi-check-circle me-2"></i>Aktivieren
+                </button>
+              </li>
+            }
+            @if (canPause(sub)) {
+              <li>
+                <button class="dropdown-item text-warning" (click)="onPause($event, sub)">
+                  <i class="bi bi-pause-circle me-2"></i>Pausieren
+                </button>
+              </li>
+            }
+            @if (canTerminate(sub)) {
+              <li>
+                <button class="dropdown-item text-dark" (click)="onTerminate($event, sub)">
+                  <i class="bi bi-x-circle me-2"></i>Kündigen
+                </button>
+              </li>
+            }
+            @if (canCancel(sub)) {
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <button class="dropdown-item text-danger" (click)="onCancel($event, sub)">
+                  <i class="bi bi-slash-circle me-2"></i>Stornieren
+                </button>
+              </li>
+            }
+            @if (!canActivate(sub) && !canPause(sub) && !canTerminate(sub) && !canCancel(sub)) {
+              <li><span class="dropdown-item text-muted">Keine Aktionen</span></li>
+            }
+          </ul>
+        </div>
+      </div>
     </div>
   }
 </div>
@@ -73,4 +118,6 @@
 }
 .sub-item:hover { background:#f0f4ff; }
 .sub-item--selected { background:#e8f0fe !important; border-color:#c2d3fd; }
+.sub-action-btn { width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; opacity:.5; }
+.sub-item:hover .sub-action-btn { opacity:1; }
 </style>

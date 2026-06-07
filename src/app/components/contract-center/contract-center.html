@@ -231,7 +231,11 @@
               [selectedContract]="selectedContract"
               [selectedSubscription]="selectedSubscription"
               (subscriptionSelected)="onSubscriptionSelected($event)"
-              (createSubscription)="onCreateSubscription()">
+              (createSubscription)="onCreateSubscription()"
+              (activateSubscription)="onActivateSubscription($event)"
+              (pauseSubscription)="onPauseSubscription($event)"
+              (terminateSubscription)="onTerminateSubscription($event)"
+              (cancelSubscription)="onCancelSubscription($event)">
             </app-subscription-panel>
           </div>
 
@@ -328,7 +332,11 @@
             [subscriptions]="subscriptions" [selectedContract]="selectedContract"
             [selectedSubscription]="selectedSubscription"
             (subscriptionSelected)="onSubscriptionSelected($event)"
-            (createSubscription)="onCreateSubscription()">
+            (createSubscription)="onCreateSubscription()"
+            (activateSubscription)="onActivateSubscription($event)"
+            (pauseSubscription)="onPauseSubscription($event)"
+            (terminateSubscription)="onTerminateSubscription($event)"
+            (cancelSubscription)="onCancelSubscription($event)">
           </app-subscription-panel>
         </div>
         <!-- FINANZEN MOBILE -->

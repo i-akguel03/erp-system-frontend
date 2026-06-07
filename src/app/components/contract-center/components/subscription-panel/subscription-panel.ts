@@ -17,9 +17,32 @@ export class SubscriptionPanelComponent {
 
   @Output() subscriptionSelected = new EventEmitter<Subscription>();
   @Output() createSubscription = new EventEmitter<void>();
+  @Output() activateSubscription = new EventEmitter<Subscription>();
+  @Output() pauseSubscription = new EventEmitter<Subscription>();
+  @Output() terminateSubscription = new EventEmitter<Subscription>();
+  @Output() cancelSubscription = new EventEmitter<Subscription>();
 
   selectSubscription(sub: Subscription): void { this.subscriptionSelected.emit(sub); }
   isSelectedSubscription(sub: Subscription): boolean { return this.selectedSubscription?.id === sub.id; }
+
+  onActivate(event: Event, sub: Subscription): void { event.stopPropagation(); this.activateSubscription.emit(sub); }
+  onPause(event: Event, sub: Subscription): void { event.stopPropagation(); this.pauseSubscription.emit(sub); }
+  onTerminate(event: Event, sub: Subscription): void { event.stopPropagation(); this.terminateSubscription.emit(sub); }
+  onCancel(event: Event, sub: Subscription): void { event.stopPropagation(); this.cancelSubscription.emit(sub); }
+
+  canActivate(sub: Subscription): boolean {
+    const s = sub.subscriptionStatus?.toUpperCase();
+    return s === 'DRAFT' || s === 'PAUSED' || s === 'SUSPENDED' || s === 'TERMINATED' || s === 'EXPIRED';
+  }
+  canPause(sub: Subscription): boolean { return sub.subscriptionStatus?.toUpperCase() === 'ACTIVE'; }
+  canTerminate(sub: Subscription): boolean {
+    const s = sub.subscriptionStatus?.toUpperCase();
+    return s === 'ACTIVE' || s === 'PAUSED' || s === 'SUSPENDED';
+  }
+  canCancel(sub: Subscription): boolean {
+    const s = sub.subscriptionStatus?.toUpperCase();
+    return s === 'ACTIVE' || s === 'PAUSED' || s === 'SUSPENDED' || s === 'TERMINATED';
+  }
 
   getStatusIcon(sub: Subscription): string {
     const s = sub.subscriptionStatus?.toUpperCase();
