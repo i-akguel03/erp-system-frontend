@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, switchMap, of, Observable } from 'rxjs';
 import { Dialog } from 'primeng/dialog';
 
 import { Contract } from '../../models/Contract';
@@ -76,6 +76,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
   contractStartDateString = '';
   contractEndDateString = '';
   contractModalLoading = false;
+  private originalContractStatus: string | undefined;
 
   // Subscription-Modal
   showSubscriptionModal = false;
@@ -247,6 +248,7 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     } else if (mode === 'edit' && contract) {
       this.contractModalTitle = 'Vertrag bearbeiten';
       this.contractForm = { ...contract };
+      this.originalContractStatus = contract.contractStatus;
       this.contractStartDateString = this.formatDateForInput(contract.startDate);
       this.contractEndDateString = this.formatDateForInput(contract.endDate);
     } else if (mode === 'duplicate' && contract) {
@@ -258,7 +260,16 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     this.showContractModal = true;
   }
 
-  closeContractModal(): void { this.showContractModal = false; this.contractForm = {}; this.contractModalLoading = false; }
+  closeContractModal(): void { this.showContractModal = false; this.contractForm = {}; this.contractModalLoading = false; this.originalContractStatus = undefined; }
+
+  private getStatusChangePatch(id: string, status: string): Observable<Contract> {
+    switch (status) {
+      case 'ACTIVE':     return this.contractService.activateContract(id);
+      case 'SUSPENDED':  return this.contractService.suspendContract(id);
+      case 'TERMINATED': return this.contractService.terminateContract(id);
+      default:           return of({} as Contract);
+    }
+  }
 
   saveContract(): void {
     if (!this.contractForm.contractTitle?.trim() || !this.contractForm.customerId) {
@@ -268,7 +279,17 @@ export class ContractCenterComponent implements OnInit, OnDestroy {
     const contract: Contract = { ...this.contractForm, startDate: this.contractStartDateString || undefined, endDate: this.contractEndDateString || undefined };
     this.contractModalLoading = true;
     if (this.contractModalMode === 'edit' && contract.id) {
-      this.contractService.updateContract(contract.id, contract).pipe(takeUntil(this.destroy$)).subscribe({
+      const statusChanged = this.originalContractStatus !== contract.contractStatus;
+      const newStatus = contract.contractStatus;
+      const contractForPut: Contract = statusChanged
+        ? { ...contract, contractStatus: this.originalContractStatus as Contract['contractStatus'] }
+        : contract;
+      this.contractService.updateContract(contract.id, contractForPut).pipe(
+        switchMap(updated => statusChanged && newStatus
+          ? this.getStatusChangePatch(contract.id!, newStatus)
+          : of(updated)),
+        takeUntil(this.destroy$)
+      ).subscribe({
         next: updated => { this.updateLocalContract(updated); this.closeContractModal(); this.notificationService.success('Vertrag aktualisiert'); },
         error: () => { this.contractModalLoading = false; this.notificationService.error('Fehler beim Aktualisieren'); }
       });
