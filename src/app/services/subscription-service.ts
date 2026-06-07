@@ -119,7 +119,12 @@ export class SubscriptionService extends BaseApiService {
   }
 
   pauseSubscription(id: string): Observable<Subscription> {
-    return this.http.patch<Subscription>(`${this.apiUrl}/${id}/pause`, {}, { headers: this.getAuthHeaders() })
+    return this.http.patch<Subscription>(`${this.apiUrl}/${id}/suspend`, {}, { headers: this.getAuthHeaders() })
+      .pipe(map(dto => this.mapToSubscription(dto)));
+  }
+
+  terminateSubscription(id: string): Observable<Subscription> {
+    return this.http.patch<Subscription>(`${this.apiUrl}/${id}/terminate`, {}, { headers: this.getAuthHeaders() })
       .pipe(map(dto => this.mapToSubscription(dto)));
   }
 

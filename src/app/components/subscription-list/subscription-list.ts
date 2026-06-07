@@ -181,10 +181,12 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
 
   private getStatusChangePatch(id: string, status: string): Observable<Subscription> {
     switch (status) {
-      case 'ACTIVE':    return this.subscriptionService.activateSubscription(id);
-      case 'PAUSED':    return this.subscriptionService.pauseSubscription(id);
-      case 'CANCELLED': return this.subscriptionService.cancelSubscription(id);
-      default:          return of({} as Subscription);
+      case 'ACTIVE':      return this.subscriptionService.activateSubscription(id);
+      case 'PAUSED':
+      case 'SUSPENDED':   return this.subscriptionService.pauseSubscription(id);
+      case 'TERMINATED':  return this.subscriptionService.terminateSubscription(id);
+      case 'CANCELLED':   return this.subscriptionService.cancelSubscription(id);
+      default:            return of({} as Subscription);
     }
   }
 

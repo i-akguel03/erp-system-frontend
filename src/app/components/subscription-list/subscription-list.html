@@ -211,7 +211,14 @@
     </div>
     <div class="form-floating">
       <select class="form-select" id="eSubStatus" [(ngModel)]="editSubscription.subscriptionStatus">
-        <option *ngFor="let status of ['ACTIVE','PAUSED','CANCELLED']" [value]="status">{{ status }}</option>
+        @if (editSubscription.subscriptionStatus === 'DRAFT') {
+          <option value="DRAFT">Entwurf</option>
+        }
+        <option value="ACTIVE">Aktiv</option>
+        <option value="PAUSED">Pausiert</option>
+        <option value="TERMINATED">Gekündigt</option>
+        <option value="CANCELLED">Storniert</option>
+        <option value="EXPIRED">Abgelaufen</option>
       </select>
       <label for="eSubStatus">Status</label>
     </div>

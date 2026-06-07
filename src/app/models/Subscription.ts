@@ -14,8 +14,11 @@ export interface Subscription {
 
 // --- Enums ---
 export enum SubscriptionStatus {
+  DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
   PAUSED = 'PAUSED',
+  SUSPENDED = 'SUSPENDED',
+  TERMINATED = 'TERMINATED',
   CANCELLED = 'CANCELLED',
   EXPIRED = 'EXPIRED'
 }
