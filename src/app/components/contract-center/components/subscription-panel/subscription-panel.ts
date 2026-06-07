@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from '../../../../models/Subscription';
 import { Contract } from '../../../../models/Contract';
@@ -22,13 +22,31 @@ export class SubscriptionPanelComponent {
   @Output() terminateSubscription = new EventEmitter<Subscription>();
   @Output() cancelSubscription = new EventEmitter<Subscription>();
 
+  menuSub: Subscription | null = null;
+  menuPos = { x: 0, y: 0 };
+
   selectSubscription(sub: Subscription): void { this.subscriptionSelected.emit(sub); }
   isSelectedSubscription(sub: Subscription): boolean { return this.selectedSubscription?.id === sub.id; }
 
-  onActivate(event: Event, sub: Subscription): void { event.stopPropagation(); this.activateSubscription.emit(sub); }
-  onPause(event: Event, sub: Subscription): void { event.stopPropagation(); this.pauseSubscription.emit(sub); }
-  onTerminate(event: Event, sub: Subscription): void { event.stopPropagation(); this.terminateSubscription.emit(sub); }
-  onCancel(event: Event, sub: Subscription): void { event.stopPropagation(); this.cancelSubscription.emit(sub); }
+  openMenu(event: MouseEvent, sub: Subscription): void {
+    event.stopPropagation();
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.menuPos = {
+      x: Math.min(rect.right, window.innerWidth - 180),
+      y: rect.bottom + 2
+    };
+    this.menuSub = this.menuSub?.id === sub.id ? null : sub;
+  }
+
+  closeMenu(): void { this.menuSub = null; }
+
+  @HostListener('document:click') onDocClick(): void { this.closeMenu(); }
+  @HostListener('document:keydown.escape') onEsc(): void { this.closeMenu(); }
+
+  onActivate(): void { if (this.menuSub) { this.activateSubscription.emit(this.menuSub); this.closeMenu(); } }
+  onPause(): void { if (this.menuSub) { this.pauseSubscription.emit(this.menuSub); this.closeMenu(); } }
+  onTerminate(): void { if (this.menuSub) { this.terminateSubscription.emit(this.menuSub); this.closeMenu(); } }
+  onCancel(): void { if (this.menuSub) { this.cancelSubscription.emit(this.menuSub); this.closeMenu(); } }
 
   canActivate(sub: Subscription): boolean {
     const s = sub.subscriptionStatus?.toUpperCase();
