@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Observable, of, switchMap } from 'rxjs';
 import { SortPipe } from '../../shared/pipes/sort.pipe';
 import { ListBase } from '../../shared/utils/list-base';
 import { ListToolbarComponent } from '../../shared/components/list-toolbar/list-toolbar.component';
@@ -38,6 +39,7 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
   newEndDateString = '';
   editStartDateString = '';
   editEndDateString = '';
+  private originalSubscriptionStatus: string | undefined;
 
   showPauseModal = false;
   subscriptionToPause: Subscription | null = null;
@@ -114,6 +116,7 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
 
   openEditModal(subscription: Subscription): void {
     this.editSubscription = { ...subscription };
+    this.originalSubscriptionStatus = subscription.subscriptionStatus;
     this.showEditModal = true;
     this.error = null;
     this.editStartDateString = this.formatDateForInput(subscription.startDate);
@@ -152,18 +155,37 @@ export class SubscriptionListComponent extends ListBase<Subscription> implements
     const selectedProduct = this.getProductById(this.editSubscription.productId);
     if (!selectedProduct) { this.error = 'Ausgewähltes Produkt existiert nicht.'; return; }
 
+    const statusChanged = this.originalSubscriptionStatus !== this.editSubscription.subscriptionStatus;
+    const newStatus = this.editSubscription.subscriptionStatus;
+
     const subscriptionToUpdate: Subscription = {
       ...this.editSubscription,
       productName: selectedProduct.name,
       startDate: new Date(this.editStartDateString),
-      endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined
+      endDate: this.editEndDateString ? new Date(this.editEndDateString) : undefined,
+      subscriptionStatus: statusChanged
+        ? (this.originalSubscriptionStatus as SubscriptionStatus)
+        : this.editSubscription.subscriptionStatus
     };
     if (this.saving) return;
     this.saving = true;
-    this.subscriptionService.updateSubscription(this.editSubscription.id, subscriptionToUpdate).subscribe({
+    this.subscriptionService.updateSubscription(this.editSubscription.id, subscriptionToUpdate).pipe(
+      switchMap(updated => statusChanged && newStatus
+        ? this.getStatusChangePatch(updated.id!, newStatus)
+        : of(updated))
+    ).subscribe({
       next: updated => { this.saving = false; this.updateLocalSubscription(updated); this.closeEditModal(); this.notification.success('Abonnement erfolgreich aktualisiert.'); },
-      error: err => { this.handleApiError(err, 'Fehler beim Aktualisieren'); this.notification.error('Fehler beim Aktualisieren des Abonnements.'); }
+      error: err => { this.saving = false; this.handleApiError(err, 'Fehler beim Aktualisieren'); this.notification.error('Fehler beim Aktualisieren des Abonnements.'); }
     });
+  }
+
+  private getStatusChangePatch(id: string, status: string): Observable<Subscription> {
+    switch (status) {
+      case 'ACTIVE':    return this.subscriptionService.activateSubscription(id);
+      case 'PAUSED':    return this.subscriptionService.pauseSubscription(id);
+      case 'CANCELLED': return this.subscriptionService.cancelSubscription(id);
+      default:          return of({} as Subscription);
+    }
   }
 
   activateSubscription(subscriptionId: string): void {
